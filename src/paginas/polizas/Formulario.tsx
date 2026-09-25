@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useBlocker, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Building2,
   FilePen,
