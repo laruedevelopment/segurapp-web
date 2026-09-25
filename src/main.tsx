@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from 'react-router'
 import { Toaster } from 'sonner'
 import { ProveedorConfirmar } from '@/components/ui/dialogo'
+import { configurarAlCerrar } from '@/lib/sesion'
 import { router } from './rutas'
 import './index.css'
 
@@ -12,6 +13,9 @@ const queryClient = new QueryClient({
     queries: { retry: 1, refetchOnWindowFocus: false },
   },
 })
+
+// Al cerrar sesión (o al vencer) se descartan todos los datos en memoria.
+configurarAlCerrar(() => queryClient.clear())
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

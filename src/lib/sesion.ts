@@ -21,6 +21,15 @@ export function configurarAlVencer(fn: () => void) {
   alVencer = fn
 }
 
+/**
+ * Qué borrar al cerrar sesión (lo configura main.tsx: la caché de consultas).
+ * El siguiente usuario del mismo equipo no debe ver lo que cargó el anterior.
+ */
+let alCerrar: (() => void) | null = null
+export function configurarAlCerrar(fn: () => void) {
+  alCerrar = fn
+}
+
 function leerGuardada(): EstadoSesion | null {
   try {
     const raw = localStorage.getItem(CLAVE)
@@ -118,6 +127,7 @@ export async function iniciarSesion(apodo: string, clave: string): Promise<Resul
 export function cerrarSesion() {
   sesion = null
   fijarToken(null)
+  alCerrar?.()
   if (timer) clearTimeout(timer)
   timer = null
   try {
