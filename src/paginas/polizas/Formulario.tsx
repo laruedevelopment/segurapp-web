@@ -57,7 +57,6 @@ import {
   eliminarPoliza,
   existeNroPoliza,
   obtenerPoliza,
-  siguienteIdPoliza,
 } from '@/datos/polizas'
 import { quitarPolizaDeCache, refrescarPolizas } from '@/datos/usePolizas'
 import { normalizarAlfanumerico } from '@/lib/filtros'
@@ -240,13 +239,6 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
   const ramo = ramos.find((r) => r.id === f.ramoId) ?? null
   const producto = listas.productos.find((p) => p.id === f.productoId) ?? null
 
-  const siguienteId = useQuery({
-    queryKey: ['polizas', 'siguiente-id'],
-    queryFn: siguienteIdPoliza,
-    enabled: !esEdicion,
-    staleTime: 0,
-    refetchInterval: 60_000,
-  })
 
   // ── Carga inicial ─────────────────────────────────────────────────────────
   /** Cliente que leyó la IA y no está en la base: se ofrece crearlo. */
@@ -781,9 +773,11 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
         {/* ── Identificación y vigencia ─────────────────────────────── */}
         <SeccionTarjeta titulo="Identificación y vigencia" icono={<Hash />}>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[140px_minmax(0,1.6fr)_repeat(3,minmax(0,1fr))]">
-            <Campo etiqueta="Código" ayuda={esEdicion ? 'Automático' : 'Se confirma al guardar'}>
+            {/* El código real se asigna al guardar: mostrar un "siguiente" hacía
+                que dos personas digitando a la vez anotaran un código equivocado. */}
+            <Campo etiqueta="Código" ayuda={esEdicion ? 'Automático' : 'Se asigna al guardar'}>
               <ValorFijo className="justify-start" destacado={esEdicion}>
-                {esEdicion ? polizaId : siguienteId.data ? `≈ ${siguienteId.data}` : '—'}
+                {esEdicion ? polizaId : '—'}
               </ValorFijo>
             </Campo>
             <div id="campo-nro">

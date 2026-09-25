@@ -20,6 +20,9 @@ export async function trasCambiarAbonos(qc: QueryClient, idsPolizas: number[]) {
     refrescarPolizas(qc, [...new Set(idsPolizas)]),
     qc.invalidateQueries({ queryKey: CLAVE_REPORTES }),
     qc.invalidateQueries({ queryKey: ['estado-cuenta'] }),
+    // Las listas cortas (recientes, búsquedas, pólizas del cliente) muestran
+    // la prima pagada y el estado que la base acaba de recalcular.
+    qc.invalidateQueries({ queryKey: ['polizas'], predicate: (q) => q.queryKey[1] !== 'todas' }),
   ])
 }
 

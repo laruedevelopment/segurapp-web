@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from 'react-router'
 import { Toaster } from 'sonner'
 import { ProveedorConfirmar } from '@/components/ui/dialogo'
+import { cancelarCargaMasiva } from '@/datos/cargaMasiva'
 import { configurarAlCerrar } from '@/lib/sesion'
 import { router } from './rutas'
 import './index.css'
@@ -15,7 +16,10 @@ const queryClient = new QueryClient({
 })
 
 // Al cerrar sesión (o al vencer) se descartan todos los datos en memoria.
-configurarAlCerrar(() => queryClient.clear())
+configurarAlCerrar(() => {
+  cancelarCargaMasiva()
+  queryClient.clear()
+})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

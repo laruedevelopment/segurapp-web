@@ -129,10 +129,11 @@ function FormularioAbono({
   const errorPrima = intentoGuardar && prima == null ? 'Requerido' : null
   const errorAbono = intentoGuardar && valorAbono == null ? 'Requerido' : null
   const errorPoliza = intentoGuardar && esNuevo && !poliza ? 'Seleccione una póliza' : null
+  const errorFecha = intentoGuardar && !fechaPago ? 'Requerido' : null
 
   const guardar = async () => {
     setIntentoGuardar(true)
-    if (prima == null || valorAbono == null) return
+    if (prima == null || valorAbono == null || !fechaPago) return
     if (!poliza) {
       toast.error('Seleccione una póliza')
       return
@@ -205,8 +206,8 @@ function FormularioAbono({
       )}
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Campo etiqueta="Fecha de pago" obligatorio>
-          <InputFecha valor={fechaPago} onCambio={setFechaPago} />
+        <Campo etiqueta="Fecha de pago" obligatorio error={errorFecha}>
+          <InputFecha valor={fechaPago} onCambio={setFechaPago} error={!!errorFecha} />
         </Campo>
         <Campo etiqueta="Estado">
           <SelectorSimple valor={estadoPago} onCambio={(v) => setEstadoPago(v ?? 'R')} opciones={OPCIONES_ESTADO} />

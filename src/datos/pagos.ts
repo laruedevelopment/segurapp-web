@@ -136,11 +136,9 @@ export async function actualizarReporte(id: number, datos: DatosReporte) {
 }
 
 export async function eliminarReporte(id: number) {
+  // Sus abonos se borran con él (ON DELETE CASCADE en la base).
   const { error } = await db.from('reportes_pago').delete().eq('id', id)
-  if (error) {
-    if (error.code === '23503') throw new Error('No se puede eliminar: el reporte tiene abonos. Elimínelos primero.')
-    throw error
-  }
+  if (error) throw error
 }
 
 // ── Abonos ──────────────────────────────────────────────────────────────────

@@ -41,6 +41,9 @@ export function Buscador<T>(props: Props<T>) {
   const [texto, setTexto] = useState('')
   const [remotas, setRemotas] = useState<T[]>([])
   const [buscando, setBuscando] = useState(false)
+  /** Texto con el que se obtuvieron los resultados que están en pantalla. */
+  const [textoResultados, setTextoResultados] = useState<string | null>(null)
+  const [errorBusqueda, setErrorBusqueda] = useState(false)
   const [activo, setActivo] = useState(0)
   const listaRef = useRef<HTMLDivElement>(null)
 
@@ -49,10 +52,20 @@ export function Buscador<T>(props: Props<T>) {
     if (!props.buscar || !abierto) return
     let vigente = true
     setBuscando(true)
+    setErrorBusqueda(false)
     const t = setTimeout(async () => {
       try {
         const r = await props.buscar!(texto)
-        if (vigente) setRemotas(r)
+        if (vigente) {
+          setRemotas(r)
+          setTextoResultados(texto)
+        }
+      } catch {
+        if (vigente) {
+          setRemotas([])
+          setTextoResultados(texto)
+          setErrorBusqueda(true)
+        }
       } finally {
         if (vigente) setBuscando(false)
       }
@@ -95,6 +108,9 @@ export function Buscador<T>(props: Props<T>) {
       setActivo((a) => Math.max(a - 1, 0))
     } else if (e.key === 'Enter') {
       e.preventDefault()
+      // Mientras llega la búsqueda de lo recién digitado, la lista en pantalla
+      // es la de la búsqueda anterior: Enter no debe elegir de ahí.
+      if (props.buscar && (buscando || textoResultados !== texto)) return
       if (filtradas[activo]) elegir(filtradas[activo])
     }
   }
@@ -158,7 +174,9 @@ export function Buscador<T>(props: Props<T>) {
           </div>
           <div ref={listaRef} className="max-h-72 overflow-y-auto p-1" role="listbox">
             {filtradas.length === 0 && !buscando && (
-              <div className="px-3 py-6 text-center text-[13px] text-ink-soft">Sin resultados</div>
+              <div className="px-3 py-6 text-center text-[13px] text-ink-soft">
+                {errorBusqueda ? 'No se pudo buscar. Revise su conexión e intente de nuevo.' : 'Sin resultados'}
+              </div>
             )}
             {filtradas.map((o, i) => {
               const k = clave(o)

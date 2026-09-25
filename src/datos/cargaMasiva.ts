@@ -117,6 +117,19 @@ export function limpiarCargaMasiva() {
   fijar({ items: [], procesados: 0 })
 }
 
+/** Cambia en cada cierre de sesión: un lote de la sesión anterior deja de procesar. */
+let generacion = 0
+
+/**
+ * Al cerrar sesión: corta el lote en curso (los archivos que falten no se
+ * procesan con el usuario siguiente) y olvida la lista.
+ */
+export function cancelarCargaMasiva() {
+  generacion++
+  window.removeEventListener('beforeunload', avisoAlCerrar)
+  fijar({ items: [], procesados: 0, procesando: false })
+}
+
 /** Aseguradora + ramo + producto activos, para que la IA escoja combinaciones reales. */
 export async function catalogoProductosParaIA(): Promise<{ aseguradora: string; ramo: string; producto: string }[]> {
   const [productos, aseguradoras, ramos] = await Promise.all([
@@ -156,6 +169,8 @@ function avisoAlCerrar(e: BeforeUnloadEvent) {
  */
 export async function procesarTodos(qc?: QueryClient): Promise<void> {
   if (estado.procesando || estado.items.length === 0) return
+  const miGeneracion = generacion
+  const cancelado = () => generacion !== miGeneracion
   fijar({ procesando: true, procesados: estado.items.filter((i) => i.estado === 'ok').length })
   window.addEventListener('beforeunload', avisoAlCerrar)
   const refrescarPendientes = () => void qc?.invalidateQueries({ queryKey: ['pendientes'] })
@@ -168,6 +183,7 @@ export async function procesarTodos(qc?: QueryClient): Promise<void> {
     for (const i of estado.items) if (i.estado === 'ok' && i.firma) vistos.add(i.firma)
 
     for (const { id } of [...estado.items]) {
+      if (cancelado()) return
       const item = estado.items.find((i) => i.id === id)
       if (!item || item.estado === 'ok') continue
 
@@ -186,6 +202,7 @@ export async function procesarTodos(qc?: QueryClient): Promise<void> {
           throw new Error('El archivo pesa más de 15 MB. Use una versión más liviana.')
         }
         const datos = await conReintentos(() => extraerPoliza(item.archivo, catalogo))
+        if (cancelado()) return
         await crearPendiente({
           estado: 'pendiente_revision',
           datos,
@@ -194,6 +211,7 @@ export async function procesarTodos(qc?: QueryClient): Promise<void> {
         })
         cambiarItem(id, { estado: 'ok' })
       } catch (e) {
+        if (cancelado()) return
         const msg = mensajeError(e).replace(/^Exception: /, '')
         // Se deja registrado una vez en Pendientes, con el error a la vista,
         // en vez de perderse en silencio.
@@ -218,6 +236,7 @@ export async function procesarTodos(qc?: QueryClient): Promise<void> {
       refrescarPendientes()
     }
   } catch (e) {
+    if (cancelado()) return
     // Falla antes de empezar (por ejemplo, sin conexión al traer el catálogo).
     const msg = `No se pudo iniciar la carga: ${mensajeError(e)}`
     fijar({
@@ -226,9 +245,11 @@ export async function procesarTodos(qc?: QueryClient): Promise<void> {
       ),
     })
   } finally {
-    // Nunca queda trabada en "procesando".
-    window.removeEventListener('beforeunload', avisoAlCerrar)
-    fijar({ procesando: false })
-    refrescarPendientes()
+    // Nunca queda trabada en "procesando" (si se canceló, ya se limpió).
+    if (!cancelado()) {
+      window.removeEventListener('beforeunload', avisoAlCerrar)
+      fijar({ procesando: false })
+      refrescarPendientes()
+    }
   }
 }
