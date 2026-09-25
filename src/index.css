@@ -1,0 +1,49 @@
+@import 'tailwindcss';
+
+/* Paleta de marca (Rueda Serrano Asesores de Seguros): navy + verde sobre
+   blanco — la misma de la app Flutter (lib/ui/theme/app_theme.dart). */
+@theme {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-navy: #1c4870;
+  --color-navy-dark: #123553;
+  --color-navy-soft: #dce6ee;
+  --color-green: #1e9b4e;
+  --color-green-light: #2fb05f;
+  --color-green-soft: #dcf0e2;
+  --color-green-ink: #11512a;
+  --color-warning: #b7791b;
+  --color-warning-soft: #f3e4c4;
+  --color-warning-ink: #6b4e14;
+  --color-danger: #a6402c;
+  --color-danger-soft: #f3ded8;
+
+  --color-bg: #f5f7f9;
+  --color-surface: #ffffff;
+  --color-muted: #e7ecf1;
+  --color-line: #d7dee5;
+  --color-line-strong: #a9b4bf;
+  --color-ink: #1b2430;
+  --color-ink-soft: #5b6675;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-bg font-sans text-ink antialiased;
+    font-size: 14px;
+  }
+  /* Cifras alineadas en tablas: primas, valores, fechas, números de póliza. */
+  .num {
+    @apply font-mono;
+    font-variant-numeric: tabular-nums;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-1 outline-navy;
+  }
+}
