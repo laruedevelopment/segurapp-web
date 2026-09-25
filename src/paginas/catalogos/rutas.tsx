@@ -1,10 +1,10 @@
 import { lazy } from 'react'
 import type { RouteObject } from 'react-router'
 import { Diferida } from '@/components/layout/guardas'
-import EnConstruccion from '@/paginas/EnConstruccion'
 
-void lazy
+const Catalogos = lazy(() => import('./Catalogos'))
 
+// El módulo de catálogos completa estas rutas (clientes, aseguradoras, …).
 export const rutasCatalogos: RouteObject[] = [
-  { path: 'catalogos/*', element: <Diferida><EnConstruccion titulo="Catálogos" /></Diferida> },
+  { path: 'catalogos', element: <Diferida><Catalogos /></Diferida> },
 ]
