@@ -59,7 +59,11 @@ async function invocar(funcion: string, archivo: File, extra?: Record<string, un
           /* sin JSON */
         }
       }
-      throw new Error(mensaje ?? 'No se pudo leer el documento. Intente de nuevo.')
+      // Sin mensaje del servidor (502/503/504 del gateway): el código sirve
+      // para decidir si se reintenta.
+      throw new Error(
+        mensaje ?? `No se pudo leer el documento${ctx?.status ? ` (${ctx.status})` : ''}. Intente de nuevo.`,
+      )
     }
     return data
   } catch (e) {

@@ -99,6 +99,7 @@ export interface FormaPago {
 export interface EstadoPoliza {
   id: string
   nombre_estado: string
+  estado_activo?: boolean
 }
 
 /** Columnas propias de la tabla `polizas`. */
