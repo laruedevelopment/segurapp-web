@@ -15,6 +15,7 @@ import { fmtDinero, fmtNum } from '@/lib/numeros'
 import { mensajeError } from '@/lib/utils'
 import { CLAVE_REPORTES, trasCambiarAbonos } from './comun'
 import { EstadoPago } from './EstadoPago'
+import { useApodos } from './UsuariosReporte'
 
 const FILTROS_ESTADO = ['TODOS', 'I', 'C', 'R', 'V', 'A'] as const
 type FiltroEstado = (typeof FILTROS_ESTADO)[number]
@@ -23,6 +24,7 @@ export default function ListaReportes() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const confirmar = useConfirmar()
+  const apodo = useApodos()
   const [texto, setTexto] = useState('')
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>('TODOS')
@@ -129,6 +131,23 @@ export default function ListaReportes() {
       ordenar: (r) => r.vlrsumcom_rep ?? 0,
     },
     { id: 'estado', titulo: 'Estado', ancho: 110, celda: (r) => <EstadoPago estado={r.estado_rep} />, ordenar: (r) => r.estado_rep },
+    {
+      id: 'usuarios',
+      titulo: 'Creado / editado por',
+      ancho: 150,
+      celda: (r) => {
+        const creador = apodo(r.usuario_id)
+        const editor = apodo(r.usuario_ultmod_id)
+        return (
+          <div className="leading-tight">
+            <div className="truncate">{creador ?? '—'}</div>
+            {editor && editor !== creador && <div className="truncate text-[11.5px] text-ink-soft">Editó: {editor}</div>}
+          </div>
+        )
+      },
+      ordenar: (r) => apodo(r.usuario_id),
+      titleDe: (r) => `Creó: ${apodo(r.usuario_id) ?? '—'}\nÚltima edición: ${apodo(r.usuario_ultmod_id) ?? '—'}`,
+    },
     {
       id: 'acciones',
       titulo: '',

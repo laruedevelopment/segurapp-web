@@ -31,7 +31,10 @@ export interface ReportePago {
   vlrsumcom_rep: number | null
   estado_rep: string
   obs_rep: string | null
+  /** Quién creó el reporte (no cambia al editar; lo pone la base). */
   usuario_id: number | null
+  /** Quién lo editó por última vez (lo pone la base). */
+  usuario_ultmod_id: number | null
   fcreado: string | null
   fultmod: string | null
   nombre_aseg: string | null
@@ -95,7 +98,7 @@ const VISTA_ABONOS = 'vw_abonos_detalle'
 
 const COLS_REPORTE =
   'id, fecha_rep, aseg_id, interm_id, fini_rep, ffin_rep, vlrprima_rep, vlrsumprima_rep, vlrcom_rep, ' +
-  'vlrsumcom_rep, estado_rep, obs_rep, usuario_id, fcreado, fultmod, nombre_aseg, nombre_interm, num_abonos'
+  'vlrsumcom_rep, estado_rep, obs_rep, usuario_id, usuario_ultmod_id, fcreado, fultmod, nombre_aseg, nombre_interm, num_abonos'
 
 const COLS_ABONO =
   'id, idrep_pago, id_poliza, fecha_pago, vlrprima_poliza, vlrabono_prima, porccomision, vlrcomision, porccomad, ' +

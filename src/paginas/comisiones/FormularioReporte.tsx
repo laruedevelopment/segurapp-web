@@ -18,6 +18,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import { Contenido, EncabezadoPagina } from '@/components/layout/AppShell'
+import { CreadoEditado } from './UsuariosReporte'
 import { Aviso, Cargando, Cifra, MensajeError, SeccionTarjeta, Vacio } from '@/components/ui/basicos'
 import { Buscador } from '@/components/ui/buscador'
 import { Boton } from '@/components/ui/button'
@@ -330,7 +331,14 @@ function Editor({ reporte }: { reporte: ReportePago | null }) {
     <div className="flex h-full flex-col">
       <EncabezadoPagina
         titulo={titulo}
-        subtitulo={reporte?.nombre_aseg ?? undefined}
+        subtitulo={
+          reporte ? (
+            <>
+              {reporte.nombre_aseg && <span className="mr-2">{reporte.nombre_aseg} ·</span>}
+              <CreadoEditado reporte={reporte} />
+            </>
+          ) : undefined
+        }
         volver="/comisiones"
         acciones={
           <>
