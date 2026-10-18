@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { CheckCircle2, History, ListChecks, RefreshCw, Trash2, Undo2, Wallet } from 'lucide-react'
+import { CheckCircle2, Clock, History, ListChecks, RefreshCw, Trash2, Undo2, UserRound, Wallet } from 'lucide-react'
 import { Contenido, EncabezadoPagina } from '@/components/layout/AppShell'
 import { Aviso, Cargando, Chip, MensajeError, Tarjeta, Vacio } from '@/components/ui/basicos'
 import { Boton } from '@/components/ui/button'
@@ -167,7 +167,7 @@ function Bandeja() {
           </Boton>
         }
       />
-      <Contenido className="flex min-h-0 flex-1 flex-col gap-3">
+      <Contenido className="flex max-w-4xl flex-col gap-4">
         <div className="flex flex-wrap gap-2">
           <Chip activo={!verHistorial} onClick={() => setVerHistorial(false)}>
             <ListChecks />
@@ -224,7 +224,7 @@ function Bandeja() {
                 Rechazar y restaurar ({sel.size})
               </Boton>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pb-6">
+            <div className="flex flex-col gap-3 pb-6">
               {agruparPorLote(pendientes).map((items) => (
                 <TarjetaLote key={items[0].lote} items={items} sel={sel} trabajando={trabajando} alternar={alternar} />
               ))}
@@ -322,19 +322,14 @@ function TarjetaLote({
                   onChange={(e) => alternar([s.id], e.target.checked)}
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-semibold">
-                    Cód. {s.polizaId} · {s.nroPoliza ?? 'sin número'}
-                  </div>
-                  <div className="text-[12px] text-ink-soft">
-                    {[
-                      s.cliente,
-                      s.aseguradora,
-                      s.ramo,
-                      `Prima ${s.prima ? fmtDinero(s.prima) : '—'}`,
-                      s.fini && s.ffin ? `${dia(s.fini)} – ${dia(s.ffin)}` : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
+                  <div className="text-[15px] font-bold">{s.cliente ?? 'Sin cliente'}</div>
+                  <div className="mt-1.5 flex flex-wrap gap-x-7 gap-y-2">
+                    <Dato etiqueta="N.º de póliza" valor={s.nroPoliza ?? 'sin número'} mono={!!s.nroPoliza} />
+                    {s.aseguradora && <Dato etiqueta="Aseguradora" valor={s.aseguradora} />}
+                    {s.ramo && <Dato etiqueta="Ramo" valor={s.ramo} />}
+                    <Dato etiqueta="Prima" valor={s.prima ? fmtDinero(s.prima) : '—'} mono />
+                    {s.fini && s.ffin && <Dato etiqueta="Vigencia" valor={`${dia(s.fini)} – ${dia(s.ffin)}`} mono />}
+                    <Dato etiqueta="Código" valor={String(s.polizaId)} mono />
                   </div>
                   {s.nPagos > 0 && (
                     <div className="mt-1 flex items-start gap-1.5 text-[12px] font-semibold text-warning-ink">
@@ -355,32 +350,67 @@ function TarjetaLote({
   )
 }
 
+/** Dato con su etiqueta encima (mismo formato que la bandeja de pendientes). */
+function Dato({ etiqueta, valor, mono = false }: { etiqueta: string; valor: string; mono?: boolean }) {
+  return (
+    <div className="min-w-0">
+      <div className="text-[11px] text-ink-soft">{etiqueta}</div>
+      <div className={`text-[13px] font-semibold ${mono ? 'num' : ''}`}>{valor}</div>
+    </div>
+  )
+}
+
+function Origen({ icono, children }: { icono: ReactNode; children: ReactNode }) {
+  return (
+    <span className="inline-flex min-w-0 items-center gap-1.5 text-[12px] text-ink-soft [&_svg]:size-3.5 [&_svg]:shrink-0">
+      {icono}
+      <span className="truncate">{children}</span>
+    </span>
+  )
+}
+
+/**
+ * Tarjeta del historial, en tres niveles como las pendientes:
+ *  1. Número de póliza y resultado.  2. Datos clave con etiqueta.  3. Quién pidió y quién resolvió.
+ */
 function VistaHistorial({ historial }: { historial: HistorialEliminacion[] }) {
   if (historial.length === 0) {
     return <Vacio titulo="Todavía no hay eliminaciones resueltas." />
   }
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pb-6">
+    <div className="flex flex-col gap-2 pb-6">
       {historial.map((h) => {
         const aprobada = h.estado === 'aprobada'
+        const tono = aprobada ? 'bg-danger-soft text-danger' : 'bg-green-soft text-green-ink'
         return (
-          <Tarjeta key={h.id} className="p-3">
-            <div className="flex flex-wrap items-center gap-2">
-              {aprobada ? <Trash2 className="size-4 text-danger" /> : <Undo2 className="size-4 text-green-ink" />}
-              <span className="min-w-0 flex-1 text-[13px] font-bold">
-                Cód. {h.polizaId} · {h.nroPoliza ?? 'sin número'}
-              </span>
-              <span className={`text-[11.5px] font-bold ${aprobada ? 'text-danger' : 'text-green-ink'}`}>
-                {aprobada ? 'Eliminada' : 'Rechazada, volvió a las listas'}
-              </span>
+          <Tarjeta key={h.id} className="flex items-start gap-3.5 px-4 py-3">
+            <span className={`flex size-10 shrink-0 items-center justify-center rounded-full [&_svg]:size-5 ${tono}`}>
+              {aprobada ? <Trash2 /> : <Undo2 />}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start gap-2.5">
+                <div className="min-w-0 flex-1 text-[15px] font-bold">{h.nroPoliza ?? 'Sin número de póliza'}</div>
+                <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11.5px] font-bold ${tono}`}>
+                  {aprobada ? 'Eliminada' : 'Rechazada: volvió a las listas'}
+                </span>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-7 gap-y-2">
+                <Dato etiqueta="Código" valor={String(h.polizaId)} mono />
+                {h.prima ? <Dato etiqueta="Prima" valor={fmtDinero(h.prima)} mono /> : null}
+                <Dato etiqueta="Motivo" valor={h.motivo || '—'} />
+              </div>
+              <div className="mt-2.5 flex flex-wrap gap-x-[18px] gap-y-1 border-t border-line pt-2">
+                <Origen icono={<UserRound />}>
+                  Pedido por {h.solicitadoPor}
+                  {h.solicitadoEn ? <> el <span className="num">{cuando(h.solicitadoEn)}</span></> : null}
+                </Origen>
+                <Origen icono={<Clock />}>
+                  {aprobada ? 'Autorizada' : 'Rechazada'} por {h.resueltoPor}
+                  {h.resueltoEn ? <> el <span className="num">{cuando(h.resueltoEn)}</span></> : null}
+                </Origen>
+              </div>
+              {h.nota && <p className="mt-2 text-[12.5px] text-ink-soft">Nota: {h.nota}</p>}
             </div>
-            <p className="mt-1 text-[12.5px]">Motivo: {h.motivo}</p>
-            <p className="text-[12px] text-ink-soft">
-              Pedido por {h.solicitadoPor}
-              {h.solicitadoEn ? ` el ${cuando(h.solicitadoEn)}` : ''} · {aprobada ? 'autorizada' : 'rechazada'} por {h.resueltoPor}
-              {h.resueltoEn ? ` el ${cuando(h.resueltoEn)}` : ''}
-            </p>
-            {h.nota && <p className="text-[12px] text-ink-soft">Nota: {h.nota}</p>}
           </Tarjeta>
         )
       })}
