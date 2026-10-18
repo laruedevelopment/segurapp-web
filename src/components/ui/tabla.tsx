@@ -81,14 +81,14 @@ export function Tabla<T>({
 
   return (
     <div ref={contenedor} className={cn('relative overflow-auto rounded-xl border border-line bg-surface', className)}>
-      <div style={{ width: anchoTotal, minWidth: '100%' }}>
+      <div style={{ width: '100%', minWidth: anchoTotal }}>
         <div className="sticky top-0 z-10 flex border-b border-line bg-muted text-[12px] font-semibold text-ink-soft">
           {columnas.map((c) => {
             const activa = orden?.columna === c.id
             // Sin orden: no es un botón (puede llevar una casilla u otro control adentro).
             if (!c.ordenar) {
               return (
-                <div key={c.id} style={{ width: c.ancho }} className={cn('flex shrink-0 items-center px-2.5 py-2.5 select-none', alinear(c.alinear))}>
+                <div key={c.id} style={{ width: c.ancho, flexGrow: c.ancho }} className={cn('flex shrink-0 items-center px-2.5 py-2.5 select-none', alinear(c.alinear))}>
                   <span className="min-w-0 truncate">{c.titulo}</span>
                 </div>
               )
@@ -97,7 +97,7 @@ export function Tabla<T>({
               <button
                 key={c.id}
                 type="button"
-                style={{ width: c.ancho }}
+                style={{ width: c.ancho, flexGrow: c.ancho }}
                 onClick={() => setOrden(activa ? { columna: c.id, asc: !orden!.asc } : { columna: c.id, asc: true })}
                 className={cn(
                   'flex shrink-0 items-center gap-1 px-2.5 py-2.5 select-none',
@@ -137,7 +137,7 @@ export function Tabla<T>({
                   {columnas.map((c) => (
                     <div
                       key={c.id}
-                      style={{ width: c.ancho }}
+                      style={{ width: c.ancho, flexGrow: c.ancho }}
                       title={c.titleDe?.(fila)}
                       className={cn('flex min-w-0 shrink-0 items-center px-2.5', alinear(c.alinear))}
                     >
