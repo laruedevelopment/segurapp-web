@@ -48,17 +48,25 @@ export function usePolizasTodas(activo = true) {
  * memoria (en vez de descargar las 33 mil después de guardar una).
  */
 export async function refrescarPolizas(qc: QueryClient, ids: number[]) {
-  const actual = qc.getQueryData<{ polizas: PolizaLista[]; cargadasEn: Date }>(CLAVE_TODAS)
-  if (!actual || !ids.length) return
+  if (!qc.getQueryData(CLAVE_TODAS) || !ids.length) return
   try {
     const nuevas = await listarPolizasPorIds(ids)
-    const porId = new Map(nuevas.map((p) => [p.id, p]))
-    const existentes = new Set(actual.polizas.map((p) => p.id))
-    const lista = [
-      ...nuevas.filter((p) => !existentes.has(p.id)),
-      ...actual.polizas.flatMap((p) => (ids.includes(p.id) ? (porId.has(p.id) ? [porId.get(p.id)!] : []) : [p])),
-    ]
-    qc.setQueryData(CLAVE_TODAS, { ...actual, polizas: lista })
+    // La caché se lee de nuevo DESPUÉS de esperar: otro refresco o una póliza
+    // marcada para eliminar mientras tanto no se deben pisar.
+    qc.setQueryData<{ polizas: PolizaLista[]; cargadasEn: Date }>(CLAVE_TODAS, (viejo) => {
+      if (!viejo) return viejo
+      const porId = new Map(nuevas.map((p) => [p.id, p]))
+      const existentes = new Set(viejo.polizas.map((p) => p.id))
+      const lista = [
+        ...nuevas.filter((p) => !existentes.has(p.id) && !idsQuitados.has(p.id)),
+        ...viejo.polizas.flatMap((p) => {
+          if (!ids.includes(p.id)) return [p]
+          const n = porId.get(p.id)
+          return n && !idsQuitados.has(p.id) ? [n] : []
+        }),
+      ]
+      return { ...viejo, polizas: lista }
+    })
   } catch {
     qc.invalidateQueries({ queryKey: CLAVE_TODAS })
   }

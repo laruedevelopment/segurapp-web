@@ -160,12 +160,15 @@ function Contenido({
               : 'Todavía no se borra. Queda pendiente de que un administrador la autorice.'}
           </p>
           <p className="mt-1 text-[13px]">
-            Mientras tanto no la verá en listas ni estadísticas. Si el administrador la rechaza, vuelve a aparecer.
-            {admin ? ' Como usted es administrador, la autoriza desde "Eliminaciones por autorizar".' : ''}
+            {varias
+              ? 'Mientras tanto no las verá en listas ni estadísticas. Si el administrador las rechaza, vuelven a aparecer.'
+              : 'Mientras tanto no la verá en listas ni estadísticas. Si el administrador la rechaza, vuelve a aparecer.'}
+            {admin ? ' Como usted es administrador, lo autoriza desde "Eliminaciones por autorizar".' : ''}
           </p>
           <p className="mt-1.5 text-[13px]">
-            Una póliza con pagos registrados no se puede eliminar: primero hay que mover los pagos a la póliza correcta. Si
-            solo quiere que deje de contar, anúlela (se puede revertir).
+            {varias
+              ? 'Las pólizas con pagos registrados no se pueden eliminar: primero hay que mover los pagos a la póliza correcta. Si solo quiere que dejen de contar, anúlelas (se puede revertir).'
+              : 'Una póliza con pagos registrados no se puede eliminar: primero hay que mover los pagos a la póliza correcta. Si solo quiere que deje de contar, anúlela (se puede revertir).'}
           </p>
         </Aviso>
 
@@ -189,7 +192,7 @@ function Contenido({
 
         <Campo
           etiqueta="Motivo (obligatorio)"
-          error={motivo && !motivoValido(motivo) ? 'Escriba al menos 5 letras.' : null}
+          error={motivo && !motivoValido(motivo) ? 'Escriba al menos 5 caracteres (sin contar espacios).' : null}
           ayuda={!motivo ? 'Ej.: está repetida, es la misma del cód. 1234' : undefined}
         >
           <AreaTexto

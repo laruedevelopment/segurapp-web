@@ -46,11 +46,11 @@ describe('mensajeAnulacion', () => {
     expect(mensajeAnulacion(0, 0)).toBe('Póliza anulada')
   })
   test('con pagos anulados', () => {
-    expect(mensajeAnulacion(2, 0)).toBe('Póliza anulada y 2 pago(s) anulado(s)')
+    expect(mensajeAnulacion(2, 0)).toBe('Póliza anulada y 2 pagos anulados')
   })
   test('con fallos', () => {
     expect(mensajeAnulacion(1, 1)).toBe(
-      'Póliza anulada y 1 pago(s) anulado(s). 1 pago(s) no se pudieron anular: revíselos en Editar abono',
+      'Póliza anulada y 1 pago anulado. 1 pago no se pudo anular: revíselo en Editar abono',
     )
   })
 })

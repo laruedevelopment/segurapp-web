@@ -66,6 +66,7 @@ import { usuarioId } from '@/lib/sesion'
 import type { Aseguradora, EstadoPoliza, FormaExpedicion, FormaPago, Intermediario, PolizaLista, Producto, Ramo } from '@/lib/tipos'
 import { mensajeAmigable } from '@/lib/errores'
 import DialogoEliminar from './DialogoEliminar'
+import { plural } from '@/datos/eliminacionLogica'
 import { DialogoCliente, type PropsDialogoCliente } from '@/paginas/catalogos/DialogoCliente'
 import {
   aplicarExtraccion,
@@ -299,7 +300,7 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
               nuevo = r.form
               sugerenciaRef.current = r.sugerencia
               if (r.completados > 0)
-                toast.info(`Póliza predigitada: revise los ${r.completados} campo(s) antes de guardar.${avisoExtraccion(pend.datos)}`, { duration: 10000 })
+                toast.info(`Póliza predigitada: revise ${plural(r.completados, 'el campo completado', 'los campos completados')} antes de guardar.${avisoExtraccion(pend.datos)}`, { duration: 10000 })
               else toast.warning('No se pudo aplicar la información predigitada; complétela a mano.')
               if (r.seriedadSinProducto) toast.warning(avisoSinSeriedad(aseguradoras.find((a) => a.id === r.form.asegId)?.nombre_aseg))
               if (!nuevo.cliente && Object.keys(pend.datos).length) await avisarClienteNoEncontrado(pend.datos, nuevo.asegId, r.esGarantia)
@@ -600,7 +601,7 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
         setClienteExtraido(null)
       }
       if (r.completados > 0)
-        toast.success(`Se completaron ${r.completados} campo(s) automáticamente. Revise antes de guardar.${aviso}${avisoExtraccion(datos)}`, {
+        toast.success(`${r.completados === 1 ? 'Se completó 1 campo' : `Se completaron ${r.completados} campos`} automáticamente. Revise antes de guardar.${aviso}${avisoExtraccion(datos)}`, {
           duration: 12000,
         })
       else toast.warning('No se pudo identificar ningún dato en el documento.')

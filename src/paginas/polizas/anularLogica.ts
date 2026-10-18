@@ -43,7 +43,9 @@ export function idsAAnular(marcados: ReadonlySet<number>, abonos: readonly PagoA
 export function mensajeAnulacion(hechos: number, fallidos: number): string {
   return (
     'Póliza anulada' +
-    (hechos > 0 ? ` y ${hechos} pago(s) anulado(s)` : '') +
-    (fallidos > 0 ? `. ${fallidos} pago(s) no se pudieron anular: revíselos en Editar abono` : '')
+    (hechos > 0 ? ` y ${hechos} ${hechos === 1 ? 'pago anulado' : 'pagos anulados'}` : '') +
+    (fallidos > 0
+      ? `. ${fallidos} ${fallidos === 1 ? 'pago no se pudo anular' : 'pagos no se pudieron anular'}: ${fallidos === 1 ? 'revíselo' : 'revíselos'} en Editar abono`
+      : '')
   )
 }

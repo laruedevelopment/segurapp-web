@@ -20,6 +20,13 @@ export function mensajeAmigable(error: unknown, accion?: string): string {
   return `${a}. ${causa}`
 }
 
+/** Igual que mensajeAmigable pero sin escribir en la consola: para usar al pintar (render). */
+export function causaAmigable(error: unknown, accion?: string): string {
+  const causa = causaDe(error)
+  if (!accion || !accion.trim()) return causa
+  return `${accion.trim().replace(/[.:]+$/, '')}. ${causa}`
+}
+
 function causaDe(error: unknown): string {
   const e = (typeof error === 'object' && error !== null ? error : {}) as ErrorConCodigo
   const texto = typeof error === 'string' ? error : (e.message ?? '')
@@ -31,7 +38,7 @@ function causaDe(error: unknown): string {
   if (code === 'P0001' && texto.trim()) return texto.trim()
 
   if (code === '23503' || bajo.includes('foreign key')) {
-    return 'Está en uso por otros registros (por ejemplo pólizas, incluso pólizas marcadas para eliminar que aún esperan autorización), así que no se puede eliminar o cambiar.'
+    return 'Está en uso por otros registros (por ejemplo pólizas), así que no se puede eliminar o cambiar. Si acaba de marcar pólizas para eliminar, espere a que un administrador las resuelva.'
   }
   if (code === '23505' || bajo.includes('duplicate key')) return 'Ya existe un registro con esos datos.'
   if (code === '23502') return 'Falta un dato obligatorio.'

@@ -7,7 +7,7 @@ import { Boton } from '@/components/ui/button'
 import { SelectorRango } from '@/components/ui/fecha'
 import { FiltroOpciones } from '@/components/ui/filtro-opciones'
 import { MINUTOS_DASHBOARD, useAbonosDashboard } from '@/datos/dashboard'
-import { contarPendientes } from '@/datos/pendientes'
+import { CLAVE_CASOS, contarCasosPendientes } from '@/datos/casos'
 import { CLAVE_TODAS, usePolizasTodas, useProgresoPolizas } from '@/datos/usePolizas'
 import { esAdmin, useSesion } from '@/lib/sesion'
 import { cn } from '@/lib/utils'
@@ -94,8 +94,8 @@ function Tablero() {
   const aq = useAbonosDashboard()
   const progreso = useProgresoPolizas()
   const casosQ = useQuery({
-    queryKey: ['dashboard', 'casos'],
-    queryFn: contarPendientes,
+    queryKey: [...CLAVE_CASOS, 'contador'],
+    queryFn: contarCasosPendientes,
     staleTime: 5 * 60_000,
     retry: false,
   })

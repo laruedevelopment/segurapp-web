@@ -47,15 +47,19 @@ export async function contarCasosPendientes(): Promise<number> {
   return (data ?? []).length
 }
 
+const CASO_NO_DISPONIBLE = 'El caso ya no está disponible (otra persona pudo cambiarlo). Recargue la lista.'
+
 /** Quién y cuándo lo pone la base (trigger). */
 export async function resolverCaso(id: number, respuesta: string) {
-  const { error } = await db.from(TABLA).update({ estado: 'R', respuesta: respuesta.trim() }).eq('id', id)
+  const { data, error } = await db.from(TABLA).update({ estado: 'R', respuesta: respuesta.trim() }).eq('id', id).select('id')
   if (error) throw error
+  if (!data?.length) throw new Error(CASO_NO_DISPONIBLE)
 }
 
 export async function reabrirCaso(id: number) {
-  const { error } = await db.from(TABLA).update({ estado: 'P' }).eq('id', id)
+  const { data, error } = await db.from(TABLA).update({ estado: 'P' }).eq('id', id).select('id')
   if (error) throw error
+  if (!data?.length) throw new Error(CASO_NO_DISPONIBLE)
 }
 
 /**

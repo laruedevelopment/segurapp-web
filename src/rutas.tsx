@@ -37,6 +37,6 @@ export const router = createBrowserRouter(
 )
 
 // Al vencer la sesión (12 horas), de vuelta al login con un aviso.
-configurarAlVencer(() => {
-  router.navigate('/login', { replace: true, state: { mensaje: 'Su sesión venció. Inicie sesión de nuevo.' } })
+configurarAlVencer((mensaje) => {
+  router.navigate('/login', { replace: true, state: { mensaje: mensaje ?? 'Su sesión venció. Inicie sesión de nuevo.' } })
 })

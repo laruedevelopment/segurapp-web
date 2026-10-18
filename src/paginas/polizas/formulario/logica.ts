@@ -181,7 +181,7 @@ export function sugerirFin(f: EstadoForm, inicio: Date | null): EstadoForm {
 }
 
 /** Número de póliza con guiones en lugar de espacios ("1 0987 2" → "1-0987-2"). */
-export const formatearNroPoliza = (s: string) => s.trim().replace(/\s+/g, '-')
+export const formatearNroPoliza = (s: string) => s.trim().replace(/[\s-]+/g, '-')
 
 /**
  * ¿Hay que verificar si el número está repetido? Siempre en una póliza

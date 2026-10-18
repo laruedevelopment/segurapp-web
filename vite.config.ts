@@ -13,5 +13,7 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    // Las copias de trabajo de agentes (.claude/) no son parte del proyecto.
+    exclude: ['**/node_modules/**', '**/dist/**', '.claude/**', '.codex/**'],
   },
 })

@@ -16,8 +16,8 @@ let timer: ReturnType<typeof setTimeout> | null = null
 const oyentes = new Set<() => void>()
 
 /** Qué hacer cuando vence la sesión (lo configura el router). */
-let alVencer: (() => void) | null = null
-export function configurarAlVencer(fn: () => void) {
+let alVencer: ((mensaje?: string) => void) | null = null
+export function configurarAlVencer(fn: (mensaje?: string) => void) {
   alVencer = fn
 }
 
@@ -64,6 +64,17 @@ function programarVencimiento() {
 if (sesion) {
   fijarToken(sesion.token)
   programarVencimiento()
+}
+
+// Si se cierra sesión en otra pestaña, esta también se cierra (sin esto seguiría
+// con su copia del token hasta que venza).
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === CLAVE && e.newValue === null && sesion) {
+      cerrarSesion()
+      alVencer?.('Cerró sesión en otra pestaña. Inicie sesión de nuevo.')
+    }
+  })
 }
 
 export function obtenerSesion() {

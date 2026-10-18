@@ -11,7 +11,9 @@ import { aFecha, fmtFecha } from '@/lib/fechas'
 import { fmtDinero } from '@/lib/numeros'
 import { useSesion, veComisiones } from '@/lib/sesion'
 import type { PolizaLista } from '@/lib/tipos'
-import { cn, mensajeError } from '@/lib/utils'
+import { causaAmigable } from '@/lib/errores'
+import { plural } from '@/datos/eliminacionLogica'
+import { cn } from '@/lib/utils'
 import { DialogoAnular } from './DialogoAnular'
 import {
   AYUDA_TIPO,
@@ -94,7 +96,7 @@ export default function Duplicadas() {
           <MensajeError
             error={
               <div className="flex items-center gap-3">
-                <span className="flex-1">No se pudieron cargar las pólizas repetidas: {mensajeError(consulta.error)}</span>
+                <span className="flex-1">{causaAmigable(consulta.error, 'No se pudieron cargar las pólizas repetidas')}</span>
                 <Boton tamano="sm" variante="secundario" onClick={() => void consulta.refetch()}>
                   Reintentar
                 </Boton>
@@ -108,7 +110,7 @@ export default function Duplicadas() {
         ) : (
           <>
             <p className="text-[13px] text-ink-soft">
-              {visibles.length} número(s) repetido(s) — {resumen.totalPolizas} póliza(s). Se ignoran espacios y guiones
+              {plural(visibles.length, 'número repetido', 'números repetidos')} — {plural(resumen.totalPolizas, 'póliza', 'pólizas')}. Se ignoran espacios y guiones
               al comparar y solo cuenta la misma aseguradora. Aquí puede ver los pagos de cada póliza, corregirla o
               anular la que sobra; nada se borra ni cambia solo.
             </p>
@@ -192,7 +194,7 @@ function Grupo({
             <Etiqueta tono={resuelto ? 'neutro' : TONO_TIPO[tipo]}>{resuelto ? 'Resuelto' : ETIQUETA_TIPO[tipo]}</Etiqueta>
           </span>
           <span className="block truncate text-[12.5px] text-ink-soft">
-            {grupo.polizas.length} pólizas con este número · {polizasActivas(grupo.polizas).length} activa(s)
+            {plural(grupo.polizas.length, 'póliza', 'pólizas')} con este número · {plural(polizasActivas(grupo.polizas).length, 'activa', 'activas')}
             {primera.nombre_aseg ? ` · ${primera.nombre_aseg}` : ''}
           </span>
         </span>

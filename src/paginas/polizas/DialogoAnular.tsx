@@ -11,7 +11,7 @@ import { actualizarPoliza, obtenerPoliza } from '@/datos/polizas'
 import { fmtDinero } from '@/lib/numeros'
 import { useSesion, veComisiones } from '@/lib/sesion'
 import type { Poliza } from '@/lib/tipos'
-import { mensajeError } from '@/lib/utils'
+import { causaAmigable, mensajeAmigable } from '@/lib/errores'
 import { trasCambiarAbonos } from '@/paginas/comisiones/comun'
 import { ESTADO_ANULADA, alternarMarca, idsAAnular, mensajeAnulacion, textoPago, yaAnulado } from './anularLogica'
 
@@ -81,7 +81,7 @@ function ContenidoAnular({ idPoliza, onCerrar }: { idPoliza: number; onCerrar: (
   useEffect(() => {
     if (!consulta.isError || avisado.current) return
     avisado.current = true
-    toast.error(`No se pudo preparar la anulación: ${mensajeError(consulta.error)}`)
+    toast.error(mensajeAmigable(consulta.error, 'No se pudo preparar la anulación'))
     onCerrar(false)
   }, [consulta.isError, consulta.error, onCerrar])
 
@@ -95,7 +95,7 @@ function ContenidoAnular({ idPoliza, onCerrar }: { idPoliza: number; onCerrar: (
     try {
       await actualizarPoliza(idPoliza, { estado_poliza_id: ESTADO_ANULADA })
     } catch (e) {
-      toast.error(`No se pudo anular la póliza: ${mensajeError(e)}`)
+      toast.error(mensajeAmigable(e, 'No se pudo anular la póliza'))
       setGuardando(false)
       return
     }
@@ -104,7 +104,7 @@ function ContenidoAnular({ idPoliza, onCerrar }: { idPoliza: number; onCerrar: (
       toast[fallidos > 0 ? 'error' : 'success'](mensajeAnulacion(hechos, fallidos))
       await Promise.all([trasCambiarAbonos(qc, [idPoliza]), qc.invalidateQueries({ queryKey: CLAVE_CASOS })])
     } catch (e) {
-      toast.error(`La póliza se anuló, pero no se pudo actualizar la pantalla: ${mensajeError(e)}`)
+      toast.error(mensajeAmigable(e, 'La póliza se anuló, pero no se pudo actualizar la pantalla'))
     } finally {
       setGuardando(false)
       onCerrar(true)
@@ -134,7 +134,7 @@ function ContenidoAnular({ idPoliza, onCerrar }: { idPoliza: number; onCerrar: (
       {consulta.isPending ? (
         <Cargando className="py-6" texto="Cargando póliza…" />
       ) : consulta.isError ? (
-        <MensajeError error={mensajeError(consulta.error)} />
+        <MensajeError error={causaAmigable(consulta.error, 'No se pudo cargar la póliza')} />
       ) : (
         poliza && (
           <div className="flex flex-col gap-3 text-[13.5px]">

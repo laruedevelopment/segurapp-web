@@ -31,3 +31,4 @@ dist-ssr
 # Copias de trabajo de agentes
 .claude/
 .codex/
+.mcp.json

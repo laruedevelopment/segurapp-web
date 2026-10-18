@@ -92,14 +92,18 @@ export async function actualizarPendiente(id: number, cambios: { estado?: Estado
 }
 
 /** Ya no borra: la marca como descartada y se puede restaurar unos días. */
+const PENDIENTE_NO_DISPONIBLE = 'La póliza pendiente ya no está disponible (otra persona pudo borrarla o ya venció su plazo). Recargue la lista.'
+
 export async function descartarPendiente(id: number) {
-  const { error } = await db.from(TABLA).update({ fdescartado: new Date().toISOString() }).eq('id', id)
+  const { data, error } = await db.from(TABLA).update({ fdescartado: new Date().toISOString() }).eq('id', id).select('id')
   if (error) throw error
+  if (!data?.length) throw new Error(PENDIENTE_NO_DISPONIBLE)
 }
 
 export async function restaurarPendiente(id: number) {
-  const { error } = await db.from(TABLA).update({ fdescartado: null }).eq('id', id)
+  const { data, error } = await db.from(TABLA).update({ fdescartado: null }).eq('id', id).select('id')
   if (error) throw error
+  if (!data?.length) throw new Error(PENDIENTE_NO_DISPONIBLE)
 }
 
 /**

@@ -118,6 +118,8 @@ describe('fecha fin automática', () => {
 describe('número de póliza', () => {
   test('espacios → guiones', () => {
     expect(formatearNroPoliza(' 1 0987  2 ')).toBe('1-0987-2')
+    expect(formatearNroPoliza('96 - 95')).toBe('96-95')
+    expect(formatearNroPoliza('ABC--123')).toBe('ABC-123')
   })
   test('verificar duplicado', () => {
     expect(debeVerificarNro('', 1, null)).toBe(false)

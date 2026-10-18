@@ -23,7 +23,7 @@ import {
 import { obtenerAbono, type AbonoPoliza } from '@/datos/pagos'
 import { fmtFechaHora } from '@/lib/fechas'
 import { useSesion, veComisiones } from '@/lib/sesion'
-import { mensajeError } from '@/lib/utils'
+import { causaAmigable, mensajeAmigable } from '@/lib/errores'
 import { DialogoAbono } from '@/paginas/comisiones/DialogoAbono'
 import { DialogoAnular } from '@/paginas/polizas/DialogoAnular'
 
@@ -76,7 +76,7 @@ export default function Casos() {
       toast.success('Caso reabierto')
       await recargar()
     } catch (e) {
-      toast.error(mensajeError(e))
+      toast.error(mensajeAmigable(e, 'No se pudo reabrir el caso'))
     }
   }
 
@@ -94,7 +94,7 @@ export default function Casos() {
       }
       setAbonoEditando(abono)
     } catch (e) {
-      toast.error(mensajeError(e))
+      toast.error(mensajeAmigable(e, 'No se pudo abrir el abono'))
     }
   }
 
@@ -134,7 +134,7 @@ export default function Casos() {
           <MensajeError
             error={
               <div className="flex items-center gap-3">
-                <span className="flex-1">No se pudieron cargar los casos: {mensajeError(consulta.error)}</span>
+                <span className="flex-1">{causaAmigable(consulta.error, 'No se pudieron cargar los casos')}</span>
                 <Boton tamano="sm" variante="secundario" onClick={() => void consulta.refetch()}>
                   Reintentar
                 </Boton>
@@ -308,7 +308,7 @@ function FormularioResolver({ caso, onCerrar }: { caso: CasoRevision; onCerrar: 
       toast.success('Caso resuelto')
       onCerrar(true)
     } catch (e) {
-      toast.error(mensajeError(e))
+      toast.error(mensajeAmigable(e, 'No se pudo resolver el caso'))
       setGuardando(false)
     }
   }
