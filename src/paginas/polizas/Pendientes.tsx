@@ -7,6 +7,7 @@ import {
   ArrowUp,
   CheckCircle2,
   Clock,
+  Eye,
   FileText,
   Loader2,
   RefreshCw,
@@ -47,6 +48,7 @@ import { aFechaHora, fmtFechaHora } from '@/lib/fechas'
 import { fmtDinero } from '@/lib/numeros'
 import { mensajeAmigable } from '@/lib/errores'
 import { cn } from '@/lib/utils'
+import { DialogoDetalle } from './DialogoDetalle'
 
 type Vista = 'activos' | 'descartados'
 
@@ -153,6 +155,8 @@ export default function Pendientes() {
     }
   }
 
+  const [detalle, setDetalle] = useState<PolizaPendiente | null>(null)
+
   const fila = (p: PolizaPendiente, descartada: boolean) => (
     <FilaPendiente
       key={p.id}
@@ -161,6 +165,7 @@ export default function Pendientes() {
       quien={quienSubio(p, usuarios)}
       ocupada={trabajando === p.id}
       onAbrir={() => abrir(p)}
+      onDetalle={() => setDetalle(p)}
       onDescartar={() => void descartar(p)}
       onRestaurar={() => void restaurar(p)}
     />
@@ -307,6 +312,14 @@ export default function Pendientes() {
           </>
         )}
       </Contenido>
+
+      {detalle && (
+        <DialogoDetalle
+          titulo={`Detalle · ${resumenDe(detalle.datos)}`}
+          datos={{ ...detalle.datos, nombre_archivo: detalle.nombre_archivo, error_msg: detalle.error_msg }}
+          onCerrar={() => setDetalle(null)}
+        />
+      )}
     </div>
   )
 }
@@ -324,6 +337,7 @@ function FilaPendiente({
   quien,
   ocupada,
   onAbrir,
+  onDetalle,
   onDescartar,
   onRestaurar,
 }: {
@@ -332,6 +346,7 @@ function FilaPendiente({
   quien: string | null
   ocupada: boolean
   onAbrir: () => void
+  onDetalle: () => void
   onDescartar: () => void
   onRestaurar: () => void
 }) {
@@ -437,6 +452,9 @@ function FilaPendiente({
           {contenido}
         </div>
       )}
+      <Boton variante="fantasma" tamano="icono" title="Ver detalle completo" aria-label="Ver detalle completo" onClick={onDetalle}>
+        <Eye />
+      </Boton>
       {descartada ? (
         <Boton variante="fantasma" tamano="sm" onClick={onRestaurar} cargando={ocupada}>
           Restaurar

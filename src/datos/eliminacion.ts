@@ -34,6 +34,16 @@ export async function listarEliminacionesPendientes(): Promise<SolicitudEliminac
   return ((data as unknown[] | null) ?? []).map(parsearSolicitud)
 }
 
+/**
+ * Detalle completo de una póliza marcada (o ya eliminada). Solo Administrador.
+ * Devuelve null si la base ya no tiene ni la póliza ni su copia.
+ */
+export async function obtenerDetalleEliminacion(polizaId: number): Promise<Record<string, unknown> | null> {
+  const { data, error } = await db.rpc('polizas_eliminacion_detalle', { p_poliza_id: polizaId })
+  if (error) throw error
+  return data && typeof data === 'object' ? (data as Record<string, unknown>) : null
+}
+
 export async function listarHistorialEliminaciones(limite = 100): Promise<HistorialEliminacion[]> {
   const { data, error } = await db.rpc('polizas_eliminacion_historial', { p_limite: limite })
   if (error) throw error

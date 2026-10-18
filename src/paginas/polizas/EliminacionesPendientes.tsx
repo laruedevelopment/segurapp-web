@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { CheckCircle2, Clock, History, ListChecks, RefreshCw, Trash2, Undo2, UserRound, Wallet } from 'lucide-react'
+import { CheckCircle2, Clock, Eye, History, ListChecks, RefreshCw, Trash2, Undo2, UserRound, Wallet } from 'lucide-react'
 import { Contenido, EncabezadoPagina } from '@/components/layout/AppShell'
 import { Aviso, Cargando, Chip, MensajeError, Tarjeta, Vacio } from '@/components/ui/basicos'
 import { Boton } from '@/components/ui/button'
 import { AreaTexto, Campo, Input } from '@/components/ui/campos'
 import { Dialogo } from '@/components/ui/dialogo'
+import { DialogoDetalle } from './DialogoDetalle'
 import {
   CLAVE_CONTEO_ELIMINACIONES,
   CLAVE_ELIMINACIONES,
   listarEliminacionesPendientes,
   listarHistorialEliminaciones,
+  obtenerDetalleEliminacion,
   resolverEliminaciones,
 } from '@/datos/eliminacion'
 import {
@@ -272,6 +274,43 @@ function Bandeja() {
   )
 }
 
+/** Botón "Ver detalle": trae la póliza completa y la muestra en un diálogo de solo lectura. */
+function BotonDetalle({ polizaId, titulo }: { polizaId: number; titulo: string }) {
+  const [datos, setDatos] = useState<Record<string, unknown> | null>(null)
+  const [cargando, setCargando] = useState(false)
+  const abrir = async () => {
+    setCargando(true)
+    try {
+      const d = await obtenerDetalleEliminacion(polizaId)
+      if (d) setDatos(d)
+      else toast.error('Ya no hay datos guardados de esta póliza.')
+    } catch (e) {
+      toast.error(mensajeAmigable(e, 'No se pudo abrir el detalle'))
+    } finally {
+      setCargando(false)
+    }
+  }
+  return (
+    <>
+      <Boton
+        variante="fantasma"
+        tamano="sm"
+        cargando={cargando}
+        onClick={(e) => {
+          // Dentro de una fila con casilla: no debe marcarla.
+          e.preventDefault()
+          e.stopPropagation()
+          void abrir()
+        }}
+      >
+        {!cargando && <Eye />}
+        Ver detalle
+      </Boton>
+      {datos && <DialogoDetalle titulo={titulo} datos={datos} onCerrar={() => setDatos(null)} />}
+    </>
+  )
+}
+
 function TarjetaLote({
   items,
   sel,
@@ -322,7 +361,10 @@ function TarjetaLote({
                   onChange={(e) => alternar([s.id], e.target.checked)}
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="text-[15px] font-bold">{s.cliente ?? 'Sin cliente'}</div>
+                  <div className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1 text-[15px] font-bold">{s.cliente ?? 'Sin cliente'}</div>
+                    <BotonDetalle polizaId={s.polizaId} titulo={`Detalle · Cód. ${s.polizaId} · ${s.nroPoliza ?? 'sin número'}`} />
+                  </div>
                   <div className="mt-1.5 flex flex-wrap gap-x-7 gap-y-2">
                     <Dato etiqueta="N.º de póliza" valor={s.nroPoliza ?? 'sin número'} mono={!!s.nroPoliza} />
                     {s.aseguradora && <Dato etiqueta="Aseguradora" valor={s.aseguradora} />}
@@ -390,6 +432,7 @@ function VistaHistorial({ historial }: { historial: HistorialEliminacion[] }) {
             <div className="min-w-0 flex-1">
               <div className="flex items-start gap-2.5">
                 <div className="min-w-0 flex-1 text-[15px] font-bold">{h.nroPoliza ?? 'Sin número de póliza'}</div>
+                <BotonDetalle polizaId={h.polizaId} titulo={`Detalle · Cód. ${h.polizaId} · ${h.nroPoliza ?? 'sin número'}`} />
                 <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11.5px] font-bold ${tono}`}>
                   {aprobada ? 'Eliminada' : 'Rechazada: volvió a las listas'}
                 </span>
