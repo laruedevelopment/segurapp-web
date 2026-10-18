@@ -306,7 +306,7 @@ function BotonDetalle({ polizaId, titulo }: { polizaId: number; titulo: string }
         {!cargando && <Eye />}
         Ver detalle
       </Boton>
-      {datos && <DialogoDetalle titulo={titulo} datos={datos} onCerrar={() => setDatos(null)} />}
+      {datos && <DialogoDetalle titulo={titulo} datos={datos} soloConocidos onCerrar={() => setDatos(null)} />}
     </>
   )
 }

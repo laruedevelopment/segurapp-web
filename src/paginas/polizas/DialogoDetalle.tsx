@@ -8,15 +8,18 @@ export function DialogoDetalle({
   titulo,
   datos,
   encabezado,
+  soloConocidos = false,
   onCerrar,
 }: {
   titulo: ReactNode
   datos: Record<string, unknown>
   /** Contenido opcional encima de los datos (estado, motivo, etc.). */
   encabezado?: ReactNode
+  /** Oculta los campos técnicos que no tienen etiqueta propia (para filas de la base). */
+  soloConocidos?: boolean
   onCerrar: () => void
 }) {
-  const entradas = entradasDetalle(datos)
+  const entradas = entradasDetalle(datos, !soloConocidos)
   return (
     <Dialogo
       abierto

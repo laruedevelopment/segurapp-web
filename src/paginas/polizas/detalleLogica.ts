@@ -88,7 +88,7 @@ function formatear(v: unknown, tipo: Tipo): string | null {
  * o fila de la tabla) en líneas legibles: primero los campos conocidos, luego el
  * resto con su nombre "humanizado". Omite lo vacío, los ids y los campos técnicos.
  */
-export function entradasDetalle(datos: Record<string, unknown>): EntradaDetalle[] {
+export function entradasDetalle(datos: Record<string, unknown>, incluirOtros = true): EntradaDetalle[] {
   const salida: EntradaDetalle[] = []
   const usadas = new Set<string>()
   const etiquetasPuestas = new Set<string>()
@@ -101,6 +101,7 @@ export function entradasDetalle(datos: Record<string, unknown>): EntradaDetalle[
     etiquetasPuestas.add(etiqueta)
     salida.push({ clave, etiqueta, valor })
   }
+  if (!incluirOtros) return salida
   for (const [clave, v] of Object.entries(datos)) {
     if (usadas.has(clave) || OCULTOS.has(clave) || clave.endsWith('_id')) continue
     const valor = formatear(v, 'texto')
