@@ -3,14 +3,14 @@ import { Link, useNavigate } from 'react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { toast } from 'sonner'
-import { AlertCircle, CopyCheck, Download, FilePlus2, Inbox, ListChecks, Loader2, Pencil, RefreshCw, Search, Trash2, Upload, Wallet, X } from 'lucide-react'
+import { AlertCircle, Columns3, CopyCheck, Download, FilePlus2, Inbox, ListChecks, Loader2, Pencil, RefreshCw, Search, Trash2, Upload, Wallet, X } from 'lucide-react'
 import { Contenido, EncabezadoPagina } from '@/components/layout/AppShell'
 import { Aviso, Cargando, MensajeError, Vacio } from '@/components/ui/basicos'
 import { Boton } from '@/components/ui/button'
 import { CasillaTactil, Input } from '@/components/ui/campos'
 import { FiltroOpciones } from '@/components/ui/filtro-opciones'
 import { ItemMenu, MenuAcciones } from '@/components/ui/menu'
-import { Tabla, type Columna } from '@/components/ui/tabla'
+import { Tabla, restablecerColumnas, type Columna } from '@/components/ui/tabla'
 import { useCargaMasiva } from '@/datos/cargaMasiva'
 import { useConteoEliminaciones } from '@/datos/eliminacion'
 import {
@@ -191,6 +191,7 @@ export default function ListaPolizas() {
     return () => window.removeEventListener('keydown', h)
   }, [navigate])
 
+  const [versionColumnas, setVersionColumnas] = useState(0)
   const recargar = () => {
     if (busqueda) resultadoBusqueda.refetch()
     else if (todas.data) todas.refetch()
@@ -410,6 +411,15 @@ export default function ListaPolizas() {
                   Por autorizar
                 </ItemMenu>
               )}
+              <ItemMenu
+                icono={<Columns3 />}
+                onSelect={() => {
+                  restablecerColumnas('polizas')
+                  setVersionColumnas((v) => v + 1)
+                }}
+              >
+                Restablecer columnas
+              </ItemMenu>
               <ItemMenu icono={<RefreshCw className={fuente.isFetching ? 'animate-spin' : ''} />} disabled={fuente.isFetching} onSelect={recargar}>
                 Recargar
               </ItemMenu>
@@ -525,6 +535,7 @@ export default function ListaPolizas() {
         ) : (
           ancha ? (
             <Tabla
+              key={versionColumnas}
               className="min-h-[320px] flex-1"
               claveAnchos="polizas"
               filas={filtradas}

@@ -43,6 +43,42 @@ function guardarAnchos(clave: string | undefined, anchos: Record<string, number>
   }
 }
 
+const PREFIJO_COLUMNAS = 'segurapp.columnas.'
+/** Columnas que no se mueven: la casilla de selección y las acciones. */
+const FIJAS = new Set(['sel', 'acciones'])
+
+/** Borra los anchos y el orden guardados de una tabla (para "Restablecer columnas"). */
+export function restablecerColumnas(clave: string) {
+  try {
+    localStorage.removeItem(PREFIJO_ANCHOS + clave)
+    localStorage.removeItem(PREFIJO_COLUMNAS + clave)
+  } catch {
+    /* nada que borrar */
+  }
+}
+
+function leerOrden(clave?: string): string[] {
+  if (!clave) return []
+  try {
+    const v = JSON.parse(localStorage.getItem(PREFIJO_COLUMNAS + clave) ?? '[]')
+    return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+/** Aplica el orden guardado a las columnas movibles; las fijas conservan su lugar. */
+function ordenarColumnas<T>(columnas: Columna<T>[], guardado: string[]): Columna<T>[] {
+  const movibles = columnas.filter((c) => !FIJAS.has(c.id))
+  const pos = (id: string) => {
+    const i = guardado.indexOf(id)
+    return i < 0 ? Infinity : i
+  }
+  const orden = [...movibles].sort((a, b) => pos(a.id) - pos(b.id) || movibles.indexOf(a) - movibles.indexOf(b))
+  let k = 0
+  return columnas.map((c) => (FIJAS.has(c.id) ? c : orden[k++]))
+}
+
 const cmp = (a: unknown, b: unknown) => {
   if (a == null || a === '') return b == null || b === '' ? 0 : 1
   if (b == null || b === '') return -1
@@ -56,7 +92,7 @@ const cmp = (a: unknown, b: unknown) => {
  */
 export function Tabla<T>({
   filas,
-  columnas,
+  columnas: columnasBase,
   clave,
   alHacerClic,
   ordenInicial,
@@ -80,6 +116,27 @@ export function Tabla<T>({
 }) {
   const [orden, setOrden] = useState<Orden | null>(ordenInicial ?? null)
   const contenedor = useRef<HTMLDivElement>(null)
+  const [ordenCols, setOrdenCols] = useState<string[]>(() => leerOrden(claveAnchos))
+  const [arrastrando, setArrastrando] = useState<string | null>(null)
+  const columnas = useMemo(() => (claveAnchos ? ordenarColumnas(columnasBase, ordenCols) : columnasBase), [columnasBase, ordenCols, claveAnchos])
+  useEffect(() => {
+    if (!claveAnchos || ordenCols.length === 0) return
+    try {
+      localStorage.setItem(PREFIJO_COLUMNAS + claveAnchos, JSON.stringify(ordenCols))
+    } catch {
+      /* vale solo para esta sesión */
+    }
+  }, [claveAnchos, ordenCols])
+  const moverColumna = (origen: string, destino: string) => {
+    if (origen === destino || FIJAS.has(origen) || FIJAS.has(destino)) return
+    const ids = columnas.filter((c) => !FIJAS.has(c.id)).map((c) => c.id)
+    const sale = ids.indexOf(origen)
+    const entra = ids.indexOf(destino)
+    if (sale < 0 || entra < 0) return
+    ids.splice(sale, 1)
+    ids.splice(entra, 0, origen)
+    setOrdenCols(ids)
+  }
   const [anchos, setAnchos] = useState<Record<string, number>>(() => leerAnchos(claveAnchos))
   const ancho = (c: Columna<T>) => anchos[c.id] ?? c.ancho
   const estilo = (c: Columna<T>) => ({ width: ancho(c), flexGrow: anchos[c.id] ? 0 : c.ancho })
@@ -142,7 +199,26 @@ export function Tabla<T>({
               </button>
             )
             return (
-              <div key={c.id} style={estilo(c)} className="relative flex shrink-0">
+              <div
+                key={c.id}
+                style={estilo(c)}
+                className={cn('relative flex shrink-0', arrastrando === c.id && 'opacity-50')}
+                draggable={!!claveAnchos && !FIJAS.has(c.id)}
+                onDragStart={(e) => {
+                  e.dataTransfer.effectAllowed = 'move'
+                  e.dataTransfer.setData('text/plain', c.id)
+                  setArrastrando(c.id)
+                }}
+                onDragOver={(e) => {
+                  if (arrastrando && !FIJAS.has(c.id)) e.preventDefault()
+                }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  if (arrastrando) moverColumna(arrastrando, c.id)
+                  setArrastrando(null)
+                }}
+                onDragEnd={() => setArrastrando(null)}
+              >
                 {contenido}
                 {claveAnchos && (
                   <div
@@ -153,6 +229,8 @@ export function Tabla<T>({
                     className="absolute -right-1 top-0 z-20 flex h-full w-2.5 cursor-col-resize touch-none justify-center hover:[&>div]:bg-navy"
                     onClick={(e) => e.stopPropagation()}
                     onDoubleClick={() => ajustar(c.id, null)}
+                    draggable={false}
+                    onMouseDown={(e) => e.preventDefault()}
                     onPointerDown={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
