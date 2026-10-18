@@ -11,7 +11,8 @@ import { fusionarClientes, listarClientesDuplicados } from '@/datos/catalogos'
 import { normalizarAlfanumerico } from '@/lib/filtros'
 import { fmtDoc } from '@/lib/numeros'
 import type { Cliente } from '@/lib/tipos'
-import { cn, mensajeError } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { mensajeAmigable } from '@/lib/errores'
 import { CLAVE_CLIENTES } from './clientesDatos'
 import { BotonRecargar, useGuardando } from './comun'
 import { DialogoCliente } from './DialogoCliente'
@@ -85,7 +86,7 @@ export default function ClientesDuplicados() {
         toast.success('Clientes fusionados.')
         await qc.invalidateQueries({ queryKey: CLAVE_CLIENTES })
       } catch (e) {
-        toast.error(`No se pudo fusionar: ${mensajeError(e)}`)
+        toast.error(mensajeAmigable(e, 'No se pudo fusionar'))
       }
     })
   }
@@ -100,7 +101,7 @@ export default function ClientesDuplicados() {
       />
       <Contenido className="max-w-4xl">
         {consulta.isError ? (
-          <MensajeError error={`No se pudieron cargar los duplicados: ${mensajeError(consulta.error)}`} />
+          <MensajeError error={mensajeAmigable(consulta.error, 'No se pudieron cargar los duplicados')} />
         ) : consulta.isPending ? (
           <Cargando />
         ) : grupos.length === 0 ? (

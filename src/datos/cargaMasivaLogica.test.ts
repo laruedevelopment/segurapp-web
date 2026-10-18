@@ -30,6 +30,7 @@ describe('esErrorTemporal', () => {
     expect(esErrorTemporal('Se alcanzó el límite de uso de la IA. Intente de nuevo en un minuto.')).toBe(true)
     expect(esErrorTemporal('El servicio de IA no está disponible en este momento.')).toBe(true)
     expect(esErrorTemporal('No se pudo leer el documento (503).')).toBe(true)
+    expect(esErrorTemporal('No se pudo leer este documento. Intente de nuevo.')).toBe(true)
     expect(esErrorTemporal('La IA no pudo procesar este archivo.')).toBe(false)
   })
 })

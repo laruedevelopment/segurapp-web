@@ -11,7 +11,7 @@ import { listarPolizasDeCliente } from '@/datos/polizas'
 import { aFecha, fmtFecha } from '@/lib/fechas'
 import { fmtDinero, fmtDoc } from '@/lib/numeros'
 import type { PolizaLista } from '@/lib/tipos'
-import { mensajeError } from '@/lib/utils'
+import { mensajeAmigable } from '@/lib/errores'
 import { CLAVE_CLIENTES, claveCliente } from './clientesDatos'
 import { BotonRecargar } from './comun'
 import { DialogoCliente } from './DialogoCliente'
@@ -89,7 +89,7 @@ export default function PolizasCliente() {
         {!valido ? (
           <MensajeError error="El código de cliente no es válido." />
         ) : polizas.isError ? (
-          <MensajeError error={`No se pudieron cargar las pólizas: ${mensajeError(polizas.error)}`} />
+          <MensajeError error={mensajeAmigable(polizas.error, 'No se pudieron cargar las pólizas')} />
         ) : polizas.isPending ? (
           <Cargando texto="Cargando pólizas…" />
         ) : (

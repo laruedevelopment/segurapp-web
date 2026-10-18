@@ -54,6 +54,7 @@ export function esErrorTemporal(mensaje: string): boolean {
   return (
     s.includes('límite de uso') ||
     s.includes('no está disponible') ||
+    s.includes('no se pudo leer este documento') ||
     s.includes('(429)') ||
     s.includes('(502)') ||
     s.includes('(503)') ||

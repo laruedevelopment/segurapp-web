@@ -14,8 +14,24 @@ export const TOLERANCIA_DINERO = 0.005
 /** Los porcentajes se digitan y guardan con hasta 5 decimales. */
 export const DECIMALES_PORC = 5
 
+/**
+ * Rótulos del panel que muestra el cliente elegido para cotejarlo con la
+ * póliza física: NIT (o el tipo de documento) y razón social (o nombre).
+ */
+export function rotulosCliente(c: { tipopers_cliente?: string | null; tipodoc_cliente?: string | null }): { documento: string; nombre: string } {
+  const tipoDoc = (c.tipodoc_cliente ?? '').trim()
+  const juridica = c.tipopers_cliente === 'J'
+  return {
+    documento: juridica || tipoDoc === 'NIT' ? 'NIT' : tipoDoc || 'Documento',
+    nombre: juridica ? 'Razón social' : 'Nombre',
+  }
+}
+
 /** Lo que el formulario necesita del cliente elegido (búsqueda, IA o la póliza). */
-export type ClienteSel = Pick<Cliente, 'id' | 'nombre_cliente' | 'tipodoc_cliente' | 'doc_cliente'>
+export type ClienteSel = Pick<Cliente, 'id' | 'nombre_cliente' | 'tipodoc_cliente' | 'doc_cliente'> & {
+  /** 'J' (jurídica) o 'N' (natural); no viene cuando el cliente sale de una póliza ya guardada. */
+  tipopers_cliente?: string | null
+}
 
 export interface EstadoForm {
   nro: string

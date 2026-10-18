@@ -66,6 +66,57 @@ export function matchPorNombre<T>(lista: T[], nombre: (x: T) => string, candidat
   return null
 }
 
+// ── Pólizas de garantía: cumplimiento y seriedad de la oferta ───────────────
+
+/** Cumplimiento o seriedad, según el texto del ramo, el producto o el bien asegurado. */
+export const esFamiliaGarantia = (textos: Iterable<string | null | undefined>): boolean =>
+  [...textos].some((t) => {
+    const n = normalizarTextoIA(t ?? '')
+    return n.includes('CUMPLIMIENTO') || n.includes('SERIEDAD')
+  })
+
+/** ¿Lo que leyó la IA es una póliza de garantía? */
+export const esPolizaDeGarantia = (datos: Record<string, unknown>): boolean =>
+  esFamiliaGarantia([datos.nombre_ramo, datos.nombre_producto, datos.bien_asegurado].map((v) => (v == null ? null : String(v))))
+
+/**
+ * El texto habla de "seriedad" (de la oferta): no es una póliza de
+ * cumplimiento aunque el ramo diga Cumplimiento.
+ */
+export const textoIndicaSeriedad = (textos: Iterable<string | null | undefined>): boolean =>
+  [...textos].some((t) => normalizarTextoIA(t ?? '').includes('SERIEDAD'))
+
+export const esProductoSeriedad = (p: Pick<Producto, 'nombre_prod'> | null | undefined): boolean =>
+  p != null && normalizarTextoIA(p.nombre_prod).includes('SERIEDAD')
+
+/**
+ * Al guardar: una póliza de cumplimiento cuyo bien asegurado u observación
+ * hablan de "seriedad" y que no tiene el producto de seriedad pide confirmar.
+ */
+export function requiereConfirmarSeriedad(a: {
+  ramo: string | null | undefined
+  producto: Pick<Producto, 'nombre_prod'> | null | undefined
+  bien: string
+  obs: string
+}): boolean {
+  return (
+    esFamiliaGarantia([a.ramo, a.producto?.nombre_prod]) &&
+    textoIndicaSeriedad([a.bien, a.obs]) &&
+    !esProductoSeriedad(a.producto)
+  )
+}
+
+/**
+ * Avisos que devuelve la función de extracción (`aviso_total`: el total leído
+ * no cuadraba con prima + gastos + IVA y se corrigió; `aviso_lectura`: la
+ * lectura salió incompleta). Texto listo para añadir a un mensaje, con un
+ * espacio al inicio; vacío si no hay.
+ */
+export function avisoExtraccion(datos: Record<string, unknown>): string {
+  const avisos = [datos.aviso_total, datos.aviso_lectura].filter((a): a is string => typeof a === 'string' && a.length > 0)
+  return avisos.length ? ` ${avisos.join(' ')}` : ''
+}
+
 export interface DepsExtraccion {
   buscarClientePorDoc: (doc: string) => Promise<ClienteSel | null>
   buscarClientes: (texto: string, limite: number) => Promise<ClienteSel[]>
@@ -81,6 +132,12 @@ export interface DepsExtraccion {
 export async function buscarClienteExtraido(
   candidatos: { rol: RolCliente; nombre: string | null; doc: string | null }[],
   deps: DepsExtraccion,
+  /**
+   * Pólizas de garantía (cumplimiento/seriedad): el cliente es únicamente el
+   * tomador y se busca solo por su NIT; si no existe, no se cae al nombre ni
+   * a otro rol: el cliente queda vacío.
+   */
+  soloDocumento = false,
 ): Promise<{ cliente: ClienteSel | null; rol: RolCliente | null }> {
   try {
     for (const c of candidatos) {
@@ -89,6 +146,7 @@ export async function buscarClienteExtraido(
       const m = await deps.buscarClientePorDoc(limpio)
       if (m) return { cliente: m, rol: c.rol }
     }
+    if (soloDocumento) return { cliente: null, rol: null }
     const primero = candidatos[0]
     const nombre = primero?.nombre
     if (nombre) {
@@ -136,6 +194,10 @@ export interface ResultadoExtraccion {
   form: EstadoForm
   completados: number
   sugerencia: SugerenciaIA
+  /** Es una póliza de cumplimiento/seriedad: el cliente es solo el tomador, por NIT. */
+  esGarantia: boolean
+  /** Habla de seriedad pero la aseguradora no tiene producto de seriedad en el catálogo. */
+  seriedadSinProducto: boolean
 }
 
 const texto = (datos: Record<string, unknown>, k: string): string | null => {
@@ -178,16 +240,26 @@ export async function aplicarExtraccion(
   let completados = 0
   const sug = sugerenciaVacia()
   const productosActivos = cat.productos.filter((p) => p.estado_prod)
+  let seriedadSinProducto = false
 
   const matchAseg = matchPorNombre(cat.aseguradoras, (a) => a.nombre_aseg, texto(datos, 'nombre_aseguradora'))
 
+  // Garantía (cumplimiento/seriedad): el cliente es SOLO el tomador (según la
+  // aseguradora se llama Tomador, Afianzado o Garantizado). El asegurado y el
+  // beneficiario son la entidad contratante, no el cliente. Se busca
+  // únicamente por su NIT; si no existe, el cliente queda vacío.
+  const esGarantia = esPolizaDeGarantia(datos)
+  const tomador = { rol: 'tomador' as const, nombre: texto(datos, 'nombre_cliente'), doc: texto(datos, 'doc_cliente') }
   const { cliente, rol } = await buscarClienteExtraido(
-    [
-      { rol: 'tomador', nombre: texto(datos, 'nombre_cliente'), doc: texto(datos, 'doc_cliente') },
-      { rol: 'asegurado', nombre: texto(datos, 'nombre_asegurado'), doc: texto(datos, 'doc_asegurado') },
-      { rol: 'beneficiario', nombre: texto(datos, 'nombre_beneficiario'), doc: texto(datos, 'doc_beneficiario') },
-    ],
+    esGarantia
+      ? [tomador]
+      : [
+          tomador,
+          { rol: 'asegurado', nombre: texto(datos, 'nombre_asegurado'), doc: texto(datos, 'doc_asegurado') },
+          { rol: 'beneficiario', nombre: texto(datos, 'nombre_beneficiario'), doc: texto(datos, 'doc_beneficiario') },
+        ],
     deps,
+    esGarantia,
   )
   if (cliente && rol && matchAseg) {
     sug.clienteSugeridoId = cliente.id
@@ -277,7 +349,15 @@ export async function aplicarExtraccion(
       }
     }
 
+    // Si el documento habla de "seriedad" (de la oferta), el producto es el
+    // de seriedad de esa aseguradora, no Cumplimiento aunque el ramo diga
+    // Cumplimiento; ni siquiera lo aprendido pisa esto.
+    const indicaSeriedad = textoIndicaSeriedad([texto(datos, 'nombre_producto'), texto(datos, 'nombre_ramo'), texto(datos, 'bien_asegurado')])
+    const productoSeriedad = indicaSeriedad ? (candidatos.find((p) => esProductoSeriedad(p)) ?? null) : null
+    seriedadSinProducto = indicaSeriedad && !productoSeriedad
+
     const matchProd =
+      productoSeriedad ??
       aprendido ??
       matchPorNombre(candidatos, (p) => p.nombre_prod, texto(datos, 'nombre_producto')) ??
       matchPorNombre(candidatos, (p) => p.nombre_prod, texto(datos, 'nombre_ramo'))
@@ -321,7 +401,7 @@ export async function aplicarExtraccion(
     }
   }
 
-  return { form: f, completados, sugerencia: sug }
+  return { form: f, completados, sugerencia: sug, esGarantia, seriedadSinProducto }
 }
 
 /** Nombre y documento extraídos para el rol dado (sugerencia de cliente nuevo). */

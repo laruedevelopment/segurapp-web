@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import type { QueryClient } from '@tanstack/react-query'
-import { mensajeError } from '@/lib/utils'
+import { mensajeAmigable } from '@/lib/errores'
 import { listarCatalogo } from './catalogos'
 import { conReintentos, BYTES_FIRMA, firmaArchivo, mimeDeNombre } from './cargaMasivaLogica'
 import { extraerPoliza, MAX_BYTES_ARCHIVO } from './ia'
@@ -212,7 +212,7 @@ export async function procesarTodos(qc?: QueryClient): Promise<void> {
         cambiarItem(id, { estado: 'ok' })
       } catch (e) {
         if (cancelado()) return
-        const msg = mensajeError(e).replace(/^Exception: /, '')
+        const msg = mensajeAmigable(e)
         // Se deja registrado una vez en Pendientes, con el error a la vista,
         // en vez de perderse en silencio.
         let registrado = item.errorRegistrado
@@ -238,7 +238,7 @@ export async function procesarTodos(qc?: QueryClient): Promise<void> {
   } catch (e) {
     if (cancelado()) return
     // Falla antes de empezar (por ejemplo, sin conexión al traer el catálogo).
-    const msg = `No se pudo iniciar la carga: ${mensajeError(e)}`
+    const msg = `No se pudo iniciar la carga: ${mensajeAmigable(e)}`
     fijar({
       items: estado.items.map((i) =>
         i.estado === 'pendiente' || i.estado === 'procesando' ? { ...i, estado: 'error', error: msg } : i,

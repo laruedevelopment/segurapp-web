@@ -31,7 +31,7 @@ import { Aviso, Cargando, Chip, MensajeError, SeccionTarjeta } from '@/component
 import { Buscador } from '@/components/ui/buscador'
 import { Boton } from '@/components/ui/button'
 import { AreaTexto, Campo, Input, InputNumero } from '@/components/ui/campos'
-import { useConfirmar } from '@/components/ui/dialogo'
+import { Dialogo, useConfirmar } from '@/components/ui/dialogo'
 import { InputFecha } from '@/components/ui/fecha'
 import {
   buscarClientePorDoc,
@@ -63,12 +63,14 @@ import { normalizarAlfanumerico } from '@/lib/filtros'
 import { fmtDoc, fmtNum } from '@/lib/numeros'
 import { usuarioId } from '@/lib/sesion'
 import type { Aseguradora, EstadoPoliza, FormaExpedicion, FormaPago, Intermediario, Producto, Ramo } from '@/lib/tipos'
-import { mensajeError } from '@/lib/utils'
+import { mensajeAmigable } from '@/lib/errores'
 import { DialogoCliente, type PropsDialogoCliente } from '@/paginas/catalogos/DialogoCliente'
 import {
   aplicarExtraccion,
   aprendizajeAlGuardar,
+  avisoExtraccion,
   clienteExtraidoPorRol,
+  requiereConfirmarSeriedad,
   sugerenciaVacia,
   type CatalogosExtraccion,
   type DepsExtraccion,
@@ -92,6 +94,7 @@ import {
   productosDisponibles,
   ramosDisponibles,
   recalcularComision,
+  rotulosCliente,
   sugerirComDistrib,
   sugerirFin,
   sumaPorcAdicional,
@@ -105,7 +108,10 @@ import { DialogoGuardada, FilaAsesor, TotalPorcentaje, ValorFijo } from './formu
 
 const EXTENSIONES = ['pdf', 'jpg', 'jpeg', 'png', 'webp']
 
-type EstadoConActivo = EstadoPoliza & { estado_activo?: boolean | null }
+const avisoSinSeriedad = (aseguradora: string | undefined) =>
+  `El documento parece de seriedad de la oferta, pero ${aseguradora ?? 'la aseguradora'} no tiene un producto de seriedad en el catálogo. Revise el producto antes de guardar.`
+
+type EstadoConActivo =EstadoPoliza & { estado_activo?: boolean | null }
 
 export default function Pagina() {
   const { id } = useParams()
@@ -167,7 +173,7 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
   const [original, setOriginal] = useState<Original | null>(null)
   const [pendiente, setPendiente] = useState<PolizaPendiente | null>(null)
   const [nombreArchivo, setNombreArchivo] = useState<string | null>(null)
-  const [clienteExtraido, setClienteExtraido] = useState<{ nombre: string | null; doc: string | null } | null>(null)
+  const [clienteExtraido, setClienteExtraido] = useState<{ nombre: string | null; doc: string | null; garantia: boolean } | null>(null)
   const [intento, setIntento] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [guardandoBorrador, setGuardandoBorrador] = useState(false)
@@ -242,9 +248,10 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
 
   // ── Carga inicial ─────────────────────────────────────────────────────────
   /** Cliente que leyó la IA y no está en la base: se ofrece crearlo. */
-  const avisarClienteNoEncontrado = async (datos: Record<string, unknown>, asegId: number | null) => {
+  const avisarClienteNoEncontrado = async (datos: Record<string, unknown>, asegId: number | null, garantia = false) => {
+    // Garantía: el cliente es siempre el tomador (por su NIT), sin rol aprendido.
     let rol: string | null = 'tomador'
-    if (asegId != null) {
+    if (asegId != null && !garantia) {
       try {
         rol = (await rolClientePreferido(asegId)) ?? 'tomador'
       } catch {
@@ -252,7 +259,7 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
       }
     }
     const c = clienteExtraidoPorRol(datos, rol)
-    if (vivoRef.current) setClienteExtraido(c.nombre || c.doc ? c : null)
+    if (vivoRef.current) setClienteExtraido(c.nombre || c.doc ? { ...c, garantia } : null)
     return c
   }
 
@@ -288,9 +295,11 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
               const r = await aplicarExtraccion(nuevo, pend.datos, catIA, depsIA)
               nuevo = r.form
               sugerenciaRef.current = r.sugerencia
-              if (r.completados > 0) toast.info(`Póliza predigitada: revise los ${r.completados} campo(s) antes de guardar.`)
+              if (r.completados > 0)
+                toast.info(`Póliza predigitada: revise los ${r.completados} campo(s) antes de guardar.${avisoExtraccion(pend.datos)}`, { duration: 10000 })
               else toast.warning('No se pudo aplicar la información predigitada; complétela a mano.')
-              if (!nuevo.cliente && Object.keys(pend.datos).length) await avisarClienteNoEncontrado(pend.datos, nuevo.asegId)
+              if (r.seriedadSinProducto) toast.warning(avisoSinSeriedad(aseguradoras.find((a) => a.id === r.form.asegId)?.nombre_aseg))
+              if (!nuevo.cliente && Object.keys(pend.datos).length) await avisarClienteNoEncontrado(pend.datos, nuevo.asegId, r.esGarantia)
             }
           }
         }
@@ -300,7 +309,7 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
           nuevo.productoId = null
         if (vivoRef.current) setForm(nuevo)
       } catch (e) {
-        if (vivoRef.current) setErrorCarga(mensajeError(e))
+        if (vivoRef.current) setErrorCarga(mensajeAmigable(e, 'No se pudo abrir el formulario'))
       }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -409,6 +418,26 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
       return
     }
 
+    // Una póliza de cumplimiento cuyo texto habla de "seriedad" (de la oferta)
+    // es de seriedad: se pide confirmar antes de guardarla con otro producto.
+    if (requiereConfirmarSeriedad({ ramo: ramo?.nombre_ramo, producto, bien: actual.bien, obs: actual.obs })) {
+      const seguir = await confirmar({
+        titulo: '¿Es una póliza de seriedad?',
+        mensaje: (
+          <>
+            El bien asegurado o la observación mencionan «seriedad», pero el producto elegido es «{producto?.nombre_prod ?? '—'}». Una
+            póliza de seriedad de la oferta no se clasifica como cumplimiento.
+            <br />
+            <br />
+            ¿Guardar con este producto de todas formas?
+          </>
+        ),
+        confirmar: 'Guardar igual',
+        cancelar: 'Revisar',
+      })
+      if (!seguir || !vivoRef.current) return
+    }
+
     setGuardando(true)
     try {
       if (debeVerificarNro(actual.nro, actual.asegId, original)) {
@@ -469,18 +498,19 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
         volver()
       }
     } catch (e) {
-      toast.error('Error guardando: ' + mensajeError(e))
+      toast.error(mensajeAmigable(e, 'No se pudo guardar la póliza'))
     } finally {
       if (vivoRef.current) setGuardando(false)
     }
   }
 
   // ── Borrador (no exige ningún campo) ──────────────────────────────────────
-  const guardarBorrador = async () => {
-    if (esEdicion || guardando || guardandoBorrador || importando || !formRef.current) return
+  /** [salida]: si se guarda desde el aviso de salida, devuelve true y no navega (lo hace el bloqueo). */
+  const guardarBorrador = async (salida = false): Promise<boolean> => {
+    if (esEdicion || guardando || guardandoBorrador || importando || !formRef.current) return false
     await confirmarCampoActivo()
     const actual = formRef.current
-    if (!actual) return
+    if (!actual) return false
     setGuardandoBorrador(true)
     try {
       // nombre_cliente solo sirve para identificarlo en la lista de Pendientes.
@@ -490,9 +520,12 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
       toast.success('Guardado como borrador.')
       invalidarListas()
       sucioRef.current = false
-      volver()
+      if (salida) permitirSalidaRef.current = true
+      else volver()
+      return true
     } catch (e) {
-      toast.error('Error guardando el borrador: ' + mensajeError(e))
+      toast.error(mensajeAmigable(e, 'No se pudo guardar el borrador'))
+      return false
     } finally {
       if (vivoRef.current) setGuardandoBorrador(false)
     }
@@ -523,7 +556,7 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
       permitirSalidaRef.current = true
       navigate('/polizas', { replace: true })
     } catch (e) {
-      toast.error(mensajeError(e))
+      toast.error(mensajeAmigable(e, 'No se pudo eliminar la póliza'))
     } finally {
       if (vivoRef.current) setEliminando(false)
     }
@@ -555,16 +588,22 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
       setIntento(false)
       let aviso = ''
       if (!r.form.cliente) {
-        const c = await avisarClienteNoEncontrado(datos, r.form.asegId)
-        aviso = ` Cliente extraído: "${c.nombre ?? '—'}" (doc. "${c.doc ?? '—'}"); no se encontró en la base, búsquelo o créelo.`
+        const c = await avisarClienteNoEncontrado(datos, r.form.asegId, r.esGarantia)
+        aviso = r.esGarantia
+          ? // Garantía: el cliente es el tomador/afianzado/garantizado y solo se busca por su NIT.
+            ` No existe en la base el cliente con NIT "${c.doc ?? '—'}" (${c.nombre ?? '—'}), que es el tomador/afianzado/garantizado: selecciónelo o créelo antes de guardar.`
+          : ` Cliente extraído: "${c.nombre ?? '—'}" (doc. "${c.doc ?? '—'}"); no se encontró en la base, búsquelo o créelo.`
       } else {
         setClienteExtraido(null)
       }
       if (r.completados > 0)
-        toast.success(`Se completaron ${r.completados} campo(s) automáticamente. Revise antes de guardar.${aviso}`, { duration: 8000 })
+        toast.success(`Se completaron ${r.completados} campo(s) automáticamente. Revise antes de guardar.${aviso}${avisoExtraccion(datos)}`, {
+          duration: 12000,
+        })
       else toast.warning('No se pudo identificar ningún dato en el documento.')
+      if (r.seriedadSinProducto) toast.warning(avisoSinSeriedad(aseguradoras.find((a) => a.id === r.form.asegId)?.nombre_aseg))
     } catch (e) {
-      toast.error('Error al importar: ' + mensajeError(e))
+      toast.error(mensajeAmigable(e, 'No se pudo importar el documento'))
     } finally {
       if (vivoRef.current) setImportando(false)
     }
@@ -599,19 +638,19 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
       !permitirSalidaRef.current &&
       currentLocation.pathname + currentLocation.search !== nextLocation.pathname + nextLocation.search,
   )
-  useEffect(() => {
-    if (blocker.state !== 'blocked') return
-    confirmar({
-      titulo: '¿Salir sin guardar?',
-      mensaje: esEdicion
-        ? 'Los cambios que hizo en esta póliza se perderán.'
-        : 'Lo digitado se perderá. Si quiere terminarla después, use «Guardar borrador».',
-      confirmar: 'Salir sin guardar',
-      cancelar: 'Seguir editando',
-      peligro: true,
-    }).then((ok) => (ok ? blocker.proceed() : blocker.reset()))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blocker.state])
+  // Al intentar salir con cambios: seguir editando, guardar como borrador
+  // (solo en pólizas nuevas) o salir sin guardar.
+  const seguirEditando = () => {
+    if (blocker.state === 'blocked') blocker.reset()
+  }
+  const salirSinGuardar = () => {
+    if (blocker.state === 'blocked') blocker.proceed()
+  }
+  const salirGuardandoBorrador = async () => {
+    const ok = await guardarBorrador(true)
+    if (!ok) return // el error ya se avisó; el aviso de salida sigue abierto
+    if (blocker.state === 'blocked') blocker.proceed()
+  }
   useEffect(() => {
     const h = (e: BeforeUnloadEvent) => {
       if (sucioRef.current && !permitirSalidaRef.current) e.preventDefault()
@@ -630,7 +669,7 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
         setClienteExtraido(null)
       }
     } catch (e) {
-      toast.error('No se pudo cargar el cliente: ' + mensajeError(e))
+      toast.error(mensajeAmigable(e, 'No se pudo cargar el cliente'))
     }
   }
 
@@ -653,7 +692,7 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
       <div>
         <EncabezadoPagina titulo={titulo} volver="/polizas" />
         <Contenido className="max-w-[1100px]">
-          <MensajeError error={errorCarga ?? `No se pudieron cargar los catálogos: ${mensajeError(errorCatalogo)}`} />
+          <MensajeError error={errorCarga ?? mensajeAmigable(errorCatalogo, 'No se pudieron cargar los catálogos')} />
         </Contenido>
       </div>
     )
@@ -728,7 +767,7 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
                   tamano="sm"
                   cargando={guardandoBorrador}
                   disabled={ocupado}
-                  onClick={guardarBorrador}
+                  onClick={() => void guardarBorrador()}
                   title="Guardar lo digitado para terminarlo después, sin exigir campos (Alt+B)"
                 >
                   {!guardandoBorrador && <FileText />}
@@ -772,7 +811,8 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
 
         {/* ── Identificación y vigencia ─────────────────────────────── */}
         <SeccionTarjeta titulo="Identificación y vigencia" icono={<Hash />}>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[140px_minmax(0,1.6fr)_repeat(3,minmax(0,1fr))]">
+          {/* Letra más chica (13 px) en esta sección, como en la app de escritorio. */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[140px_minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] [&_input]:text-[13px]">
             {/* El código real se asigna al guardar: mostrar un "siguiente" hacía
                 que dos personas digitando a la vez anotaran un código equivocado. */}
             <Campo etiqueta="Código" ayuda={esEdicion ? 'Automático' : 'Se asigna al guardar'}>
@@ -942,22 +982,47 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
               </Boton>
             </div>
           </div>
-          {f.cliente?.doc_cliente && (
-            <p className="mt-1 text-[12px] text-ink-soft">
-              {f.cliente.tipodoc_cliente} <span className="num">{fmtDoc(f.cliente.doc_cliente)}</span> · Cliente #{f.cliente.id}
-            </p>
+          {/* Vista previa para cotejar contra la póliza física: NIT o documento
+              y nombre / razón social del cliente elegido. */}
+          {f.cliente && (
+            <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 rounded-lg border border-navy/15 bg-navy-soft/40 px-3 py-2.5 text-[13px]">
+              <span>
+                <b className="font-semibold">{rotulosCliente(f.cliente).documento}:</b>{' '}
+                {f.cliente.doc_cliente ? (
+                  <span className="num">{fmtDoc(f.cliente.doc_cliente)}</span>
+                ) : (
+                  <span className="text-danger">sin documento registrado</span>
+                )}
+              </span>
+              <span className="min-w-0">
+                <b className="font-semibold">{rotulosCliente(f.cliente).nombre}:</b> {f.cliente.nombre_cliente}
+              </span>
+              <span className="text-ink-soft">
+                Cliente <span className="num">#{f.cliente.id}</span>
+              </span>
+            </div>
           )}
           {clienteExtraido && !f.cliente && (
             <Aviso className="mt-3" icono={<Info />}>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="flex-1">
-                  El documento trae el cliente <b>{clienteExtraido.nombre ?? '—'}</b>
-                  {clienteExtraido.doc && (
+                  {clienteExtraido.garantia ? (
                     <>
-                      {' '}(doc. <span className="num">{clienteExtraido.doc}</span>)
+                      El cliente de una póliza de cumplimiento o seriedad es el tomador (afianzado o garantizado), y se busca solo por su NIT.
+                      No existe en la base el cliente con NIT <span className="num">{clienteExtraido.doc ?? '—'}</span> (
+                      <b>{clienteExtraido.nombre ?? '—'}</b>): selecciónelo arriba o créelo antes de guardar.
+                    </>
+                  ) : (
+                    <>
+                      El documento trae el cliente <b>{clienteExtraido.nombre ?? '—'}</b>
+                      {clienteExtraido.doc && (
+                        <>
+                          {' '}(doc. <span className="num">{clienteExtraido.doc}</span>)
+                        </>
+                      )}
+                      , pero no se encontró en la base. Búsquelo arriba o créelo.
                     </>
                   )}
-                  , pero no se encontró en la base. Búsquelo arriba o créelo.
                 </span>
                 <Boton tamano="sm" variante="secundario" onClick={() => setDlgCliente({ clienteId: null, inicial: inicialClienteExtraido() })}>
                   <UserPlus />
@@ -1123,6 +1188,33 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
         </div>
       </div>
 
+      <Dialogo
+        abierto={blocker.state === 'blocked'}
+        onCerrar={seguirEditando}
+        titulo="Hay cambios sin guardar"
+        ancho="sm"
+        pie={
+          <>
+            <Boton variante="secundario" onClick={seguirEditando} disabled={guardandoBorrador}>
+              Seguir editando
+            </Boton>
+            {!esEdicion && (
+              <Boton variante="secundario" onClick={() => void salirGuardandoBorrador()} cargando={guardandoBorrador}>
+                Guardar como borrador
+              </Boton>
+            )}
+            <Boton variante="peligro" onClick={salirSinGuardar} disabled={guardandoBorrador}>
+              Salir sin guardar
+            </Boton>
+          </>
+        }
+      >
+        <p className="text-ink-soft">
+          {esEdicion
+            ? 'Si sale ahora, perderá los cambios hechos en esta póliza.'
+            : 'Si sale ahora, perderá lo digitado. Puede guardarlo como borrador y retomarlo después desde Pólizas pendientes.'}
+        </p>
+      </Dialogo>
       <DialogoCliente
         abierto={!!dlgCliente}
         clienteId={dlgCliente?.clienteId ?? null}

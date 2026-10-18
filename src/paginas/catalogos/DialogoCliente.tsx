@@ -10,9 +10,10 @@ import { actualizarCliente, crearCliente, existeDocCliente, obtenerCliente, useC
 import { normalizarAlfanumerico } from '@/lib/filtros'
 import { fmtDoc } from '@/lib/numeros'
 import type { Asesor, Cliente, Municipio } from '@/lib/tipos'
-import { mensajeError } from '@/lib/utils'
+import { mensajeAmigable } from '@/lib/errores'
 import { CLAVE_CLIENTES, claveCliente } from './clientesDatos'
 import { DialogoFormulario, Seccion, avisarCreado, mensajeGuardar, useGuardando } from './comun'
+import { MENSAJE_ELEGIR_MUNICIPIO, resolverMunicipio } from './municipios'
 import { TIPOS_DOC, correoValido, docEsNumerico, docParaGuardar, formatearDoc, limpiar, oNull } from './utilidades'
 
 /**
@@ -36,6 +37,8 @@ export interface PropsDialogoCliente {
     tel_cliente: string
     correo_cliente: string
     dir_cliente: string
+    /** Nombre de municipio escrito (ej. el que leyó la IA); se resuelve contra la lista al guardar. */
+    municipio: string
   }>
   onCerrar: () => void
   onGuardado: (id: number) => void
@@ -67,7 +70,7 @@ function CargarCliente({ id, ...props }: PropsDialogoCliente & { id: number }) {
       {q.isPending ? (
         <Cargando texto="Cargando cliente…" />
       ) : q.isError ? (
-        <MensajeError error={`No se pudo cargar el cliente: ${mensajeError(q.error)}`} />
+        <MensajeError error={mensajeAmigable(q.error, 'No se pudo cargar el cliente')} />
       ) : (
         <MensajeError error={`No se encontró el cliente con código ${id}.`} />
       )}
@@ -86,7 +89,7 @@ function tipoDocSugerido(t: string | undefined): string | null {
   return null
 }
 
-type Errores = Partial<Record<'nombre' | 'tipodoc' | 'doc' | 'correo', string>>
+type Errores = Partial<Record<'nombre' | 'tipodoc' | 'doc' | 'correo' | 'municipio', string>>
 
 function FormularioCliente({
   cliente,
@@ -122,6 +125,17 @@ function FormularioCliente({
   const [activo, setActivo] = useState(cliente?.estado_cliente ?? true)
   const [recordar, setRecordar] = useState(cliente?.recordar_cliente ?? false)
   const [errores, setErrores] = useState<Errores>({})
+  // Quitó a propósito el municipio (X): ya no se usa el texto sugerido.
+  const [municipioDescartado, setMunicipioDescartado] = useState(false)
+
+  // El municipio sugerido como texto se resuelve contra la lista apenas
+  // cargan los municipios (si no hay duda); si no, queda para elegirlo.
+  const textoMunic = cliente ? '' : (inicial?.municipio?.trim() ?? '')
+  const municSugeridoId = useMemo(
+    () => (textoMunic && municipios.data ? (resolverMunicipio(municipios.data, textoMunic)?.id ?? null) : null),
+    [textoMunic, municipios.data],
+  )
+  const municIdActual = municId ?? (municipioDescartado ? null : municSugeridoId)
 
   const numerico = docEsNumerico(tipodoc)
 
@@ -133,12 +147,12 @@ function FormularioCliente({
   }, [tipodoc])
 
   const municipio: Municipio | null = useMemo(() => {
-    if (municId == null) return null
+    if (municIdActual == null) return null
     return (
-      municipios.data?.find((m) => m.id === municId) ??
-      (cliente?.municipio?.id === municId ? cliente.municipio : null) ?? { id: municId, nombre_munic: `Municipio ${municId}` }
+      municipios.data?.find((m) => m.id === municIdActual) ??
+      (cliente?.municipio?.id === municIdActual ? cliente.municipio : null) ?? { id: municIdActual, nombre_munic: `Municipio ${municIdActual}` }
     )
-  }, [municId, municipios.data, cliente])
+  }, [municIdActual, municipios.data, cliente])
 
   // Asesores activos, más el asignado aunque esté inactivo.
   const opcionesAsesor = useMemo(
@@ -163,6 +177,10 @@ function FormularioCliente({
     const docGuardar = docParaGuardar(doc)
     const tipo = oNull(tipodoc)
     if (docGuardar && !tipo) errs.tipodoc = 'Seleccione el tipo de documento.'
+    // Municipio sugerido como texto que nadie eligió de la lista: se resuelve
+    // solo si no hay duda (sin tildes/mayúsculas); si es ambiguo, se pide elegir.
+    const municGuardar = municIdActual
+    if (municGuardar == null && textoMunic && !municipioDescartado) errs.municipio = MENSAJE_ELEGIR_MUNICIPIO
     setErrores(errs)
     if (Object.keys(errs).length) {
       toast.error(Object.values(errs)[0])
@@ -185,7 +203,7 @@ function FormularioCliente({
           tel_cliente: oNull(tel),
           correo_cliente: oNull(correo),
           dir_cliente: oNull(dir),
-          munic_id: municId,
+          munic_id: municGuardar,
           notas_cliente: notas.trim() || null,
           contacto_cliente: oNull(contacto),
           cargocont_cliente: oNull(cargo),
@@ -260,10 +278,18 @@ function FormularioCliente({
             }}
           />
         </Campo>
-        <Campo etiqueta="Municipio">
+        <Campo
+          etiqueta="Municipio"
+          error={errores.municipio}
+          ayuda={!municipio && textoMunic && !municipioDescartado ? `El documento trae «${textoMunic}»; elíjalo de la lista.` : undefined}
+        >
           <Buscador<Municipio>
             valor={municipio}
-            onCambio={(m) => setMunicId(m?.id ?? null)}
+            onCambio={(m) => {
+              setMunicId(m?.id ?? null)
+              setMunicipioDescartado(m == null)
+              setErrores((x) => ({ ...x, municipio: undefined }))
+            }}
             opciones={municipios.data ?? []}
             etiqueta={(m) => m.nombre_munic}
             clave={(m) => m.id}

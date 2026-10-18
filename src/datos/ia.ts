@@ -51,6 +51,8 @@ async function invocar(funcion: string, archivo: File, extra?: Record<string, un
     })
     if (error) {
       const ctx = (error as { context?: Response }).context
+      // Sin respuesta del servidor: no hubo conexión con el servicio.
+      if (!ctx) throw new Error('No se pudo conectar con el servicio. Verifique su conexión a internet.')
       let mensaje: string | undefined
       if (ctx && typeof ctx.json === 'function') {
         try {

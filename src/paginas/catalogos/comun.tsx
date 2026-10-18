@@ -9,7 +9,7 @@ import { Dialogo, useConfirmar } from '@/components/ui/dialogo'
 import { Tabla, type Columna, type Orden } from '@/components/ui/tabla'
 import { eliminarDeCatalogo } from '@/datos/catalogos'
 import { normalizarTexto } from '@/lib/filtros'
-import { mensajeError } from '@/lib/utils'
+import { mensajeAmigable } from '@/lib/errores'
 
 // ── Texto ───────────────────────────────────────────────────────────────────
 
@@ -24,7 +24,7 @@ export function coincide(busqueda: string, ...textos: (string | number | null | 
 /** Mensaje de un error al guardar; un duplicado (23505) usa el texto propio del catálogo. */
 export function mensajeGuardar(e: unknown, duplicado?: string) {
   if (duplicado && typeof e === 'object' && e && (e as { code?: unknown }).code === '23505') return duplicado
-  return mensajeError(e)
+  return mensajeAmigable(e, 'No se pudo guardar')
 }
 
 // ── Estado de guardado (evita el doble clic) ────────────────────────────────
@@ -96,7 +96,7 @@ export function useEliminar() {
       await o.despues()
       return true
     } catch (e) {
-      toast.error(mensajeError(e))
+      toast.error(mensajeAmigable(e, 'No se pudo eliminar'))
       return false
     }
   }
@@ -239,7 +239,7 @@ export function PaginaLista<T>({
           <MensajeError
             error={
               <div className="flex items-center gap-3">
-                <span className="flex-1">No se pudieron cargar los datos: {mensajeError(error)}</span>
+                <span className="flex-1">{mensajeAmigable(error, 'No se pudieron cargar los datos')}</span>
                 <Boton tamano="sm" variante="secundario" onClick={() => onReintentar()}>
                   Reintentar
                 </Boton>
