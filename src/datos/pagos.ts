@@ -187,6 +187,23 @@ export async function actualizarAbono(id: number, datos: DatosAbono) {
   if (error) throw error
 }
 
+/**
+ * Pasa los abonos a estado Anulada (dejan de sumar, quedan como historial).
+ * Uno por uno: si alguno falla, los demás siguen. Devuelve cuántos se
+ * anularon y cuántos no.
+ */
+export async function anularAbonos(ids: readonly number[]): Promise<{ hechos: number; fallidos: number }> {
+  let fallidos = 0
+  for (const id of ids) {
+    try {
+      await actualizarAbono(id, { estado_pago: 'A' })
+    } catch {
+      fallidos++
+    }
+  }
+  return { hechos: ids.length - fallidos, fallidos }
+}
+
 export async function eliminarAbono(id: number) {
   const { error } = await db.from('abonos_poliza').delete().eq('id', id)
   if (error) throw error

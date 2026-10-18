@@ -6,7 +6,7 @@ import { Cargando } from '@/components/ui/basicos'
 import { Buscador } from '@/components/ui/buscador'
 import { Boton } from '@/components/ui/button'
 import { AreaTexto, Campo, Input, InputNumero, SelectorSimple } from '@/components/ui/campos'
-import { Dialogo } from '@/components/ui/dialogo'
+import { Dialogo, useConfirmar } from '@/components/ui/dialogo'
 import { InputFecha } from '@/components/ui/fecha'
 import { ESTADOS_PAGO, actualizarAbono, crearAbono, type AbonoPoliza, type DatosAbono } from '@/datos/pagos'
 import { obtenerPoliza } from '@/datos/polizas'
@@ -15,6 +15,7 @@ import { fmtDinero } from '@/lib/numeros'
 import type { PolizaLista } from '@/lib/tipos'
 import { mensajeError } from '@/lib/utils'
 import { a2Decimales, buscarPolizasParaAbono, etiquetaPoliza, trasCambiarAbonos } from './comun'
+import { textoMoverPago } from './moverPago'
 
 const OPCIONES_ESTADO = Object.entries(ESTADOS_PAGO).map(([valor, etiqueta]) => ({ valor, etiqueta }))
 
@@ -64,9 +65,12 @@ function FormularioAbono({
   onGuardado: () => void
 }) {
   const qc = useQueryClient()
+  const confirmar = useConfirmar()
   const esNuevo = abono == null
   const [poliza, setPoliza] = useState<PolizaLista | null>(null)
   const [cargandoPoliza, setCargandoPoliza] = useState(!esNuevo)
+  // Al editar, "Cambiar póliza" muestra el buscador para mover el pago a otra póliza.
+  const [cambiandoPoliza, setCambiandoPoliza] = useState(false)
   const [fechaPago, setFechaPago] = useState<Date | null>(abono ? aFecha(abono.fecha_pago) ?? hoy() : hoy())
   const [estadoPago, setEstadoPago] = useState<string>(abono?.estado_pago ?? 'R')
   const [prima, setPrima] = useState<number | null>(abono?.vlrprima_poliza ?? null)
@@ -114,6 +118,9 @@ function FormularioAbono({
   const alElegirPoliza = (p: PolizaLista | null) => {
     if (!p) return
     setPoliza(p)
+    // Al mover un abono existente solo cambia la póliza: los montos ya
+    // digitados no se tocan.
+    if (!esNuevo) return
     const primaP = p.prima_poliza ?? 0
     setPrima(a2Decimales(primaP))
     // Sugiere lo que falta por pagar, no la prima completa: con pagos
@@ -137,6 +144,23 @@ function FormularioAbono({
     if (!poliza) {
       toast.error('Seleccione una póliza')
       return
+    }
+    const cambiaDePoliza = abono != null && abono.id_poliza !== poliza.id
+    if (cambiaDePoliza) {
+      const ok = await confirmar({
+        titulo: 'Mover el pago a otra póliza',
+        mensaje: (
+          <span className="whitespace-pre-line">
+            {textoMoverPago({
+              valorAbono: valorAbono ?? 0,
+              desde: { id: abono.id_poliza, nro: abono.nro_poliza },
+              hacia: { id: poliza.id, nro: poliza.nro_poliza },
+            })}
+          </span>
+        ),
+        confirmar: 'Mover pago',
+      })
+      if (!ok) return
     }
     setGuardando(true)
     try {
@@ -169,7 +193,7 @@ function FormularioAbono({
 
   return (
     <div className="flex flex-col gap-3">
-      {esNuevo && (
+      {(esNuevo || cambiandoPoliza) && (
         <Campo etiqueta="Buscar y seleccionar póliza" obligatorio error={errorPoliza}>
           <Buscador<PolizaLista>
             valor={poliza}
@@ -193,6 +217,15 @@ function FormularioAbono({
             <div className="mb-1.5 flex items-center gap-1.5 text-[11.5px] font-semibold text-navy">
               <ReceiptText className="size-3.5" />
               Póliza seleccionada
+              {!esNuevo && !cambiandoPoliza && (
+                <button
+                  type="button"
+                  onClick={() => setCambiandoPoliza(true)}
+                  className="ml-auto rounded-md px-2 py-0.5 text-[12px] font-semibold text-navy hover:bg-navy-soft"
+                >
+                  Cambiar póliza
+                </button>
+              )}
             </div>
             <Dato etiqueta="Póliza" valor={poliza.nro_poliza ?? String(poliza.id)} />
             <Dato etiqueta="Cliente" valor={poliza.nombre_cliente} />
