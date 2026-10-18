@@ -1,9 +1,9 @@
-import { forwardRef, useEffect, useState, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react'
+import { forwardRef, useEffect, useRef, useState, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react'
 import { formatearMientrasEscribe, formatearNumCO, parseNumCO } from '@/lib/numeros'
 import { cn } from '@/lib/utils'
 
 export const claseCampo =
-  'h-10 w-full rounded-[10px] border border-line bg-surface px-3 text-ink placeholder:text-ink-soft/70 ' +
+  'h-10 w-full rounded-[10px] border border-line-strong bg-surface px-3 text-ink placeholder:text-ink-soft/70 ' +
   'focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/15 disabled:bg-muted disabled:text-ink-soft'
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input(
@@ -161,5 +161,33 @@ export function SelectorSimple<T extends string>({
         </option>
       ))}
     </select>
+  )
+}
+
+/**
+ * Casilla con área táctil de 44x44 (la casilla en sí es de 16 px). Con
+ * `indeterminada` se ve el guion de "algunas marcadas".
+ */
+export function CasillaTactil({
+  checked,
+  onChange,
+  indeterminada,
+  label,
+  className,
+}: {
+  checked: boolean
+  onChange: () => void
+  indeterminada?: boolean
+  label: string
+  className?: string
+}) {
+  const ref = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = !!indeterminada && !checked
+  }, [indeterminada, checked])
+  return (
+    <label className={cn('flex size-11 shrink-0 cursor-pointer items-center justify-center', className)}>
+      <input ref={ref} type="checkbox" className="size-4 accent-navy" aria-label={label} checked={checked} onChange={onChange} />
+    </label>
   )
 }

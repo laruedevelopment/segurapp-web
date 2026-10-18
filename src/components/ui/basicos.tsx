@@ -67,9 +67,10 @@ export function Chip({
   return (
     <button
       type="button"
+      aria-pressed={activo}
       onClick={onClick}
       className={cn(
-        'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-semibold transition-colors [&_svg]:size-3.5',
+        'inline-flex h-10 items-center md:h-8 gap-1.5 rounded-full border px-3 text-[12.5px] font-semibold transition-colors [&_svg]:size-3.5',
         activo ? 'border-green/30 bg-green-soft text-green-ink' : 'border-transparent bg-muted text-ink hover:bg-line',
       )}
     >
@@ -80,8 +81,8 @@ export function Chip({
 
 export function Cargando({ texto = 'Cargando…', className }: { texto?: ReactNode; className?: string }) {
   return (
-    <div className={cn('flex items-center justify-center gap-2 py-16 text-ink-soft', className)}>
-      <Loader2 className="size-5 animate-spin text-navy" />
+    <div role="status" className={cn('flex items-center justify-center gap-2 py-16 text-ink-soft', className)}>
+      <Loader2 className="size-5 animate-spin text-navy" aria-hidden="true" />
       <span>{texto}</span>
     </div>
   )
@@ -99,7 +100,7 @@ export function Vacio({ icono, titulo, detalle }: { icono?: ReactNode; titulo: R
 
 export function MensajeError({ error, className }: { error: ReactNode; className?: string }) {
   return (
-    <div className={cn('rounded-[10px] border border-danger/30 bg-danger-soft px-4 py-3 text-danger', className)}>
+    <div role="alert" className={cn('rounded-[10px] border border-danger/30 bg-danger-soft px-4 py-3 text-danger', className)}>
       {error}
     </div>
   )
