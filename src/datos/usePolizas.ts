@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import type { PolizaLista } from '@/lib/tipos'
+import { sinIdsEnCache } from './eliminacionLogica'
 import { listarPolizasPorIds, listarTodasPolizas } from './polizas'
 
 // "Todas las pólizas" (~33 mil) descargadas una sola vez y compartidas por
@@ -32,7 +33,8 @@ export function usePolizasTodas(activo = true) {
     queryKey: CLAVE_TODAS,
     queryFn: async ({ signal }) => {
       fijarProgreso(0)
-      const r = await listarTodasPolizas('', fijarProgreso, signal)
+      idsQuitados.clear()
+      const r = (await listarTodasPolizas('', fijarProgreso, signal)).filter((p) => !idsQuitados.has(p.id))
       return { polizas: r, cargadasEn: new Date() }
     },
     enabled: activo,
@@ -67,9 +69,24 @@ export function useRefrescarPolizas() {
   return (ids: number[]) => refrescarPolizas(qc, ids)
 }
 
+/**
+ * Ids marcados para eliminar mientras una descarga completa estaba en curso:
+ * esa descarga puede traerlos (empezó antes) y no deben volver a la caché.
+ */
+const idsQuitados = new Set<number>()
+
+/**
+ * Quita pólizas (marcadas para eliminar o borradas) de la copia en memoria sin
+ * volver a descargar las demás.
+ */
+export function quitarPolizasDeCache(qc: QueryClient, ids: Iterable<number>) {
+  const fuera = new Set(ids)
+  if (!fuera.size) return
+  for (const id of fuera) idsQuitados.add(id)
+  qc.setQueriesData({ queryKey: ['polizas'] }, (viejo: unknown) => sinIdsEnCache(viejo, fuera))
+}
+
 /** Quita una póliza eliminada de la copia en memoria. */
 export function quitarPolizaDeCache(qc: QueryClient, id: number) {
-  const actual = qc.getQueryData<{ polizas: PolizaLista[]; cargadasEn: Date }>(CLAVE_TODAS)
-  if (!actual) return
-  qc.setQueryData(CLAVE_TODAS, { ...actual, polizas: actual.polizas.filter((p) => p.id !== id) })
+  quitarPolizasDeCache(qc, [id])
 }
