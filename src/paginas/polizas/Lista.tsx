@@ -211,7 +211,7 @@ export default function ListaPolizas() {
                 onChange={alternarTodas}
               />
             ),
-            ancho: 60,
+            ancho: 50,
             alinear: 'centro' as const,
             celda: (p: PolizaLista) => (
               <CasillaTactil
@@ -223,11 +223,11 @@ export default function ListaPolizas() {
           },
         ]
       : []),
-    { id: 'id', titulo: 'Cód.', ancho: 70, alinear: 'der', celda: (p) => <span className="num">{p.id}</span>, ordenar: (p) => p.id },
+    { id: 'id', titulo: 'Cód.', ancho: 62, alinear: 'der', celda: (p) => <span className="num">{p.id}</span>, ordenar: (p) => p.id },
     {
       id: 'nro',
       titulo: 'Nro. póliza',
-      ancho: 180,
+      ancho: 150,
       celda: (p) => <span className="num font-semibold">{p.nro_poliza ?? '—'}</span>,
       ordenar: (p) => p.nro_poliza,
       titleDe: (p) => p.nro_poliza ?? undefined,
@@ -235,7 +235,7 @@ export default function ListaPolizas() {
     {
       id: 'bien',
       titulo: 'Bien asegurado',
-      ancho: 170,
+      ancho: 165,
       celda: (p) => (
         <div className="leading-tight">
           <div className="truncate">{p.bien_asegurado ?? '—'}</div>
@@ -248,7 +248,7 @@ export default function ListaPolizas() {
     {
       id: 'cliente',
       titulo: 'Cliente',
-      ancho: 230,
+      ancho: 210,
       celda: (p) => (
         <div className="leading-tight">
           <div className="truncate">
@@ -261,11 +261,11 @@ export default function ListaPolizas() {
       ordenar: (p) => p.nombre_cliente?.toLowerCase(),
       titleDe: (p) => [p.nombre_cliente, docCliente(p)].filter(Boolean).join('\n'),
     },
-    { id: 'aseg', titulo: 'Aseguradora', ancho: 150, celda: (p) => p.nombre_aseg ?? '—', ordenar: (p) => p.nombre_aseg?.toLowerCase(), titleDe: (p) => p.nombre_aseg ?? undefined },
+    { id: 'aseg', titulo: 'Aseguradora', ancho: 130, celda: (p) => p.nombre_aseg ?? '—', ordenar: (p) => p.nombre_aseg?.toLowerCase(), titleDe: (p) => p.nombre_aseg ?? undefined },
     {
       id: 'ramo',
       titulo: 'Ramo / Producto',
-      ancho: 170,
+      ancho: 150,
       celda: (p) => (
         <div className="leading-tight">
           <div className="truncate font-medium">{p.nombre_ramo ?? '—'}</div>
@@ -275,16 +275,16 @@ export default function ListaPolizas() {
       ordenar: (p) => p.nombre_ramo?.toLowerCase(),
       titleDe: (p) => [p.nombre_ramo, p.nombre_prod].filter(Boolean).join('\n'),
     },
-    { id: 'fini', titulo: 'F. inicio', ancho: 105, celda: (p) => <span className="num">{fmtFecha(aFecha(p.fini_poliza)) || '—'}</span>, ordenar: (p) => p.fini_poliza },
-    { id: 'ffin', titulo: 'F. vence', ancho: 105, celda: (p) => <span className="num">{fmtFecha(aFecha(p.ffin_poliza)) || '—'}</span>, ordenar: (p) => p.ffin_poliza },
-    { id: 'prima', titulo: 'V. prima', ancho: 125, alinear: 'der', celda: (p) => <span className="num">{dinero(p.prima_poliza)}</span>, ordenar: (p) => p.prima_poliza },
-    { id: 'valor', titulo: 'V. total', ancho: 125, alinear: 'der', celda: (p) => <span className="num">{dinero(p.valor_poliza)}</span>, ordenar: (p) => p.valor_poliza },
-    { id: 'fexp', titulo: 'F. exp.', ancho: 105, celda: (p) => <span className="num">{fmtFecha(aFecha(p.fexp_poliza)) || '—'}</span>, ordenar: (p) => p.fexp_poliza },
-    { id: 'asesor', titulo: 'Asesor', ancho: 130, celda: (p) => p.nombre_asesor ?? '—', ordenar: (p) => p.nombre_asesor?.toLowerCase(), titleDe: (p) => p.nombre_asesor ?? undefined },
+    { id: 'fini', titulo: 'F. inicio', ancho: 94, celda: (p) => <span className="num">{fmtFecha(aFecha(p.fini_poliza)) || '—'}</span>, ordenar: (p) => p.fini_poliza },
+    { id: 'ffin', titulo: 'F. vence', ancho: 94, celda: (p) => <span className="num">{fmtFecha(aFecha(p.ffin_poliza)) || '—'}</span>, ordenar: (p) => p.ffin_poliza },
+    { id: 'prima', titulo: 'V. prima', ancho: 110, alinear: 'der', celda: (p) => <span className="num">{dinero(p.prima_poliza)}</span>, ordenar: (p) => p.prima_poliza },
+    { id: 'valor', titulo: 'V. total', ancho: 110, alinear: 'der', celda: (p) => <span className="num">{dinero(p.valor_poliza)}</span>, ordenar: (p) => p.valor_poliza },
+    { id: 'fexp', titulo: 'F. exp.', ancho: 94, celda: (p) => <span className="num">{fmtFecha(aFecha(p.fexp_poliza)) || '—'}</span>, ordenar: (p) => p.fexp_poliza },
+    { id: 'asesor', titulo: 'Asesor', ancho: 110, celda: (p) => p.nombre_asesor ?? '—', ordenar: (p) => p.nombre_asesor?.toLowerCase(), titleDe: (p) => p.nombre_asesor ?? undefined },
     {
       id: 'fcreado',
       titulo: 'Registro / Últ. mod.',
-      ancho: 140,
+      ancho: 125,
       celda: (p) => (
         <div className="num leading-tight">
           <div className="text-[12px]">{fmtFechaHora(aFechaHora(p.fcreado)) || '—'}</div>
@@ -293,11 +293,11 @@ export default function ListaPolizas() {
       ),
       ordenar: (p) => p.fcreado,
     },
-    { id: 'usuario', titulo: 'Usuario', ancho: 90, celda: (p) => p.apodo_usuario ?? '—', ordenar: (p) => p.apodo_usuario?.toLowerCase() },
+    { id: 'usuario', titulo: 'Usuario', ancho: 78, celda: (p) => p.apodo_usuario ?? '—', ordenar: (p) => p.apodo_usuario?.toLowerCase() },
     {
       id: 'acciones',
       titulo: <span className="sr-only">Acciones</span>,
-      ancho: 160,
+      ancho: 140,
       celda: (p) => (
         <div className="flex">
           {!modoSeleccion && (
@@ -423,7 +423,7 @@ export default function ListaPolizas() {
           </>
         }
       />
-      <Contenido className="flex min-h-0 flex-1 flex-col gap-3">
+      <Contenido className="flex min-h-0 max-w-none flex-1 flex-col gap-3">
         <div className="relative">
           <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-soft" />
           <Input

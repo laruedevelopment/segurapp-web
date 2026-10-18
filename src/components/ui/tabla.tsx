@@ -88,7 +88,7 @@ export function Tabla<T>({
             // Sin orden: no es un botón (puede llevar una casilla u otro control adentro).
             if (!c.ordenar) {
               return (
-                <div key={c.id} style={{ width: c.ancho, flexGrow: c.ancho }} className={cn('flex shrink-0 items-center px-2.5 py-2.5 select-none', alinear(c.alinear))}>
+                <div key={c.id} style={{ width: c.ancho, flexGrow: c.ancho }} className={cn('flex shrink-0 items-center px-2 py-2.5 select-none', alinear(c.alinear))}>
                   <span className="min-w-0 truncate">{c.titulo}</span>
                 </div>
               )
@@ -100,7 +100,7 @@ export function Tabla<T>({
                 style={{ width: c.ancho, flexGrow: c.ancho }}
                 onClick={() => setOrden(activa ? { columna: c.id, asc: !orden!.asc } : { columna: c.id, asc: true })}
                 className={cn(
-                  'flex shrink-0 items-center gap-1 px-2.5 py-2.5 select-none',
+                  'flex shrink-0 items-center gap-1 px-2 py-2.5 select-none',
                   alinear(c.alinear),
                   'hover:text-ink',
                   activa && 'text-navy',
@@ -122,7 +122,7 @@ export function Tabla<T>({
                 <div
                   key={clave(fila)}
                   className={cn(
-                    'absolute left-0 flex w-full items-center border-b border-line/70 text-[13px]',
+                    'absolute left-0 flex w-full items-center border-b border-line/70 text-[12.5px]',
                     alHacerClic && 'cursor-pointer hover:bg-navy-soft/40',
                     claseFila?.(fila),
                   )}
@@ -139,7 +139,7 @@ export function Tabla<T>({
                       key={c.id}
                       style={{ width: c.ancho, flexGrow: c.ancho }}
                       title={c.titleDe?.(fila)}
-                      className={cn('flex min-w-0 shrink-0 items-center px-2.5', alinear(c.alinear))}
+                      className={cn('flex min-w-0 shrink-0 items-center px-2', alinear(c.alinear))}
                     >
                       <div className="min-w-0 truncate">{c.celda(fila)}</div>
                     </div>

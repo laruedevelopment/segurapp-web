@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { Dialog } from 'radix-ui'
-import { BarChart3, ClipboardCheck, FolderOpen, Home, LayoutDashboard, LogOut, Menu, ReceiptText, Trash2, WalletCards, X } from 'lucide-react'
+import { BarChart3, ClipboardCheck, FolderOpen, Home, LayoutDashboard, LogOut, Menu, PanelLeftClose, PanelLeftOpen, ReceiptText, Trash2, WalletCards, X } from 'lucide-react'
 import { useCasosPendientes } from '@/datos/casos'
 import { useConteoEliminaciones } from '@/datos/eliminacion'
 import { cerrarSesion, esAdmin, useSesion, veComisiones } from '@/lib/sesion'
@@ -19,10 +19,30 @@ interface ItemMenu {
   excluir?: string
 }
 
+const CLAVE_MENU = 'segurapp.menu.colapsado'
+
+function leerColapsado() {
+  try {
+    return localStorage.getItem(CLAVE_MENU) === '1'
+  } catch {
+    return false
+  }
+}
+
 export function AppShell() {
   const sesion = useSesion()
   const navigate = useNavigate()
   const [menuMovil, setMenuMovil] = useState(false)
+  const [colapsado, setColapsado] = useState(leerColapsado)
+  const alternarMenu = () =>
+    setColapsado((c) => {
+      try {
+        localStorage.setItem(CLAVE_MENU, c ? '0' : '1')
+      } catch {
+        /* sin almacenamiento: solo dura esta sesión */
+      }
+      return !c
+    })
   const usuario = sesion?.usuario
   const { pathname } = useLocation()
   const casos = useCasosPendientes()
@@ -50,8 +70,8 @@ export function AppShell() {
     navigate('/login', { replace: true })
   }
 
-  const menu = (
-    <nav aria-label="Menú principal" className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
+  const menuDe = (c: boolean) => (
+    <nav aria-label="Menú principal" className={cn('flex flex-1 flex-col gap-1 overflow-y-auto', c ? 'p-2' : 'p-3')}>
       {items
         .filter((i) => i.visible !== false)
         .map((i) => {
@@ -62,17 +82,25 @@ export function AppShell() {
               to={i.a}
               end={i.a === '/'}
               onClick={() => setMenuMovil(false)}
+              title={c ? i.texto : undefined}
+              aria-label={c ? i.texto : undefined}
               className={({ isActive }) =>
                 cn(
-                  'flex min-h-11 items-center gap-3 rounded-[10px] px-3 py-2.5 font-semibold transition-colors [&_svg]:size-[18px]',
+                  'relative flex min-h-11 items-center gap-3 rounded-[10px] px-3 py-2.5 font-semibold transition-colors [&_svg]:size-[18px]',
+                  c && 'justify-center px-0',
                   (activoManual ?? isActive) ? 'bg-navy text-white' : 'text-ink-soft hover:bg-muted hover:text-ink',
                 )
               }
             >
               {i.icono}
-              <span className="flex-1">{i.texto}</span>
+              {!c && <span className="flex-1">{i.texto}</span>}
               {!!i.contador && (
-                <span className="num rounded-full bg-warning-soft px-2 text-[12px] font-semibold text-warning-ink">
+                <span
+                  className={cn(
+                    'num rounded-full bg-warning-soft px-2 text-[12px] font-semibold text-warning-ink',
+                    c && 'absolute right-0.5 top-0.5 px-1.5 text-[10px] leading-4',
+                  )}
+                >
                   <span aria-hidden="true">{i.contador}</span>
                   <span className="sr-only">{i.contador === 1 ? '1 pendiente' : `${i.contador} pendientes`}</span>
                 </span>
@@ -83,17 +111,20 @@ export function AppShell() {
     </nav>
   )
 
-  const pieUsuario = usuario && (
-    <div className="flex items-center gap-3 border-t border-line p-3">
+  const pieDe = (c: boolean) =>
+    usuario && (
+    <div className={cn('flex border-t border-line p-3', c ? 'flex-col items-center gap-2' : 'items-center gap-3')}>
       <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-green-soft font-bold text-green-ink">
         {usuario.apodo_usuario.slice(0, 1)}
       </div>
+      {!c && (
       <div className="min-w-0 flex-1">
         <div className="truncate font-semibold">{usuario.apodo_usuario}</div>
         <div className="truncate text-[12px] text-ink-soft">
           {esAdmin(usuario) ? 'Administrador' : usuario.rol === 'S' ? 'Comisiones' : 'Digitador'}
         </div>
       </div>
+      )}
       <button
         type="button"
         onClick={salir}
@@ -106,23 +137,39 @@ export function AppShell() {
     </div>
   )
 
-  const marca = (
-    <div className="flex items-center gap-3 px-4 py-4">
-      <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" className="h-10 w-auto" />
-      <div className="min-w-0">
-        <div className="font-bold text-navy">SegurApp</div>
-        <div className="truncate text-[11px] font-semibold text-green">Rueda Serrano Asesores</div>
-      </div>
+  const marcaDe = (c: boolean) => (
+    <div className={cn('flex items-center gap-3 py-4', c ? 'justify-center px-2' : 'px-4')}>
+      <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" className={c ? 'h-8 w-auto' : 'h-10 w-auto'} />
+      {!c && (
+        <div className="min-w-0">
+          <div className="font-bold text-navy">SegurApp</div>
+          <div className="truncate text-[11px] font-semibold text-green">Rueda Serrano Asesores</div>
+        </div>
+      )}
     </div>
   )
 
   return (
     <div className="flex h-full">
       {/* Menú lateral (escritorio) */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-line bg-surface lg:flex">
-        {marca}
-        {menu}
-        {pieUsuario}
+      <aside className={cn('hidden shrink-0 flex-col border-r border-line bg-surface lg:flex', colapsado ? 'w-[68px]' : 'w-64')}>
+        {marcaDe(colapsado)}
+        {menuDe(colapsado)}
+        <button
+          type="button"
+          onClick={alternarMenu}
+          title={colapsado ? 'Mostrar menú' : 'Ocultar menú'}
+          aria-label={colapsado ? 'Mostrar menú' : 'Ocultar menú'}
+          aria-expanded={!colapsado}
+          className={cn(
+            'mx-2 mb-2 flex min-h-11 items-center gap-3 rounded-[10px] px-3 text-ink-soft hover:bg-muted hover:text-ink',
+            colapsado && 'justify-center px-0',
+          )}
+        >
+          {colapsado ? <PanelLeftOpen className="size-[18px]" /> : <PanelLeftClose className="size-[18px]" />}
+          {!colapsado && <span className="font-semibold">Ocultar menú</span>}
+        </button>
+        {pieDe(colapsado)}
       </aside>
 
       {/* Menú móvil: Radix da Escape, foco atrapado, role="dialog" y devuelve el foco al botón. */}
@@ -136,15 +183,15 @@ export function AppShell() {
           >
             <Dialog.Title className="sr-only">Menú de navegación</Dialog.Title>
             <div className="flex items-center">
-              <div className="flex-1">{marca}</div>
+              <div className="flex-1">{marcaDe(false)}</div>
               <Dialog.Close asChild>
                 <button type="button" aria-label="Cerrar menú" className="mr-3 flex size-11 items-center justify-center rounded-lg hover:bg-muted">
                   <X className="size-5" />
                 </button>
               </Dialog.Close>
             </div>
-            {menu}
-            {pieUsuario}
+            {menuDe(false)}
+            {pieDe(false)}
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
