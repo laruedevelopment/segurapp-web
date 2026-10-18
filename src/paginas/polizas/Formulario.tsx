@@ -53,17 +53,20 @@ import {
 } from '@/datos/pendientes'
 import {
   actualizarPoliza,
+  PolizaNoDisponibleError,
   crearPoliza,
-  eliminarPoliza,
   existeNroPoliza,
+  listarPolizasPorIds,
   obtenerPoliza,
 } from '@/datos/polizas'
-import { quitarPolizaDeCache, refrescarPolizas } from '@/datos/usePolizas'
+import { quitarPolizasDeCache, refrescarPolizas } from '@/datos/usePolizas'
 import { normalizarAlfanumerico } from '@/lib/filtros'
 import { fmtDoc, fmtNum } from '@/lib/numeros'
 import { usuarioId } from '@/lib/sesion'
-import type { Aseguradora, EstadoPoliza, FormaExpedicion, FormaPago, Intermediario, Producto, Ramo } from '@/lib/tipos'
+import type { Aseguradora, EstadoPoliza, FormaExpedicion, FormaPago, Intermediario, PolizaLista, Producto, Ramo } from '@/lib/tipos'
 import { mensajeError } from '@/lib/utils'
+import { mensajeAmigable } from '@/lib/errores'
+import DialogoEliminar from './DialogoEliminar'
 import { DialogoCliente, type PropsDialogoCliente } from '@/paginas/catalogos/DialogoCliente'
 import {
   aplicarExtraccion,
@@ -172,6 +175,7 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
   const [guardando, setGuardando] = useState(false)
   const [guardandoBorrador, setGuardandoBorrador] = useState(false)
   const [eliminando, setEliminando] = useState(false)
+  const [paraEliminar, setParaEliminar] = useState<PolizaLista | null>(null)
   const [importando, setImportando] = useState(false)
   const [nroRepetido, setNroRepetido] = useState<{ norm: string; asegId: number } | null>(null)
   const [dlgCliente, setDlgCliente] = useState<Pick<PropsDialogoCliente, 'clienteId' | 'inicial'> | null>(null)
@@ -469,7 +473,14 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
         volver()
       }
     } catch (e) {
-      toast.error('Error guardando: ' + mensajeError(e))
+      if (e instanceof PolizaNoDisponibleError) {
+        // La marcaron para eliminar mientras se editaba: sale de las listas.
+        quitarPolizasDeCache(qc, [e.polizaId])
+        invalidarListas()
+        toast.error(e.message)
+      } else {
+        toast.error('Error guardando: ' + mensajeError(e))
+      }
     } finally {
       if (vivoRef.current) setGuardando(false)
     }
@@ -501,32 +512,25 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
   // ── Eliminar ──────────────────────────────────────────────────────────────
   const eliminar = async () => {
     if (polizaId == null || eliminando) return
-    const ok = await confirmar({
-      titulo: '¿Eliminar esta póliza?',
-      mensaje: (
-        <>
-          Se eliminará la póliza <b className="num">{f.nro.trim() || 'sin número'}</b> (código{' '}
-          <b className="num">{polizaId}</b>)
-          {f.cliente ? ` de ${f.cliente.nombre_cliente}` : ''}. Esta acción no se puede deshacer.
-        </>
-      ),
-      confirmar: 'Eliminar',
-      peligro: true,
-    })
-    if (!ok) return
     setEliminando(true)
     try {
-      await eliminarPoliza(polizaId)
-      quitarPolizaDeCache(qc, polizaId)
-      invalidarListas()
-      toast.success('Póliza eliminada.')
-      permitirSalidaRef.current = true
-      navigate('/polizas', { replace: true })
+      // Se muestra con los datos de la lista (nro., cliente, aseguradora, prima).
+      const [fila] = await listarPolizasPorIds([polizaId])
+      if (!fila) throw new PolizaNoDisponibleError(polizaId)
+      setParaEliminar(fila)
     } catch (e) {
-      toast.error(mensajeError(e))
+      toast.error(mensajeAmigable(e, 'No se pudo preparar la eliminación'))
     } finally {
       if (vivoRef.current) setEliminando(false)
     }
+  }
+
+  /** Quedó marcada: ya no está en las listas, así que se sale del formulario. */
+  const alMarcarEliminada = () => {
+    setParaEliminar(null)
+    invalidarListas()
+    permitirSalidaRef.current = true
+    navigate('/polizas', { replace: true })
   }
 
   // ── Importar desde PDF/imagen con IA ──────────────────────────────────────
@@ -748,6 +752,12 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
                   {!eliminando && <Trash2 />}
                   Eliminar
                 </Boton>
+                <DialogoEliminar
+                  polizas={paraEliminar ? [paraEliminar] : []}
+                  abierto={!!paraEliminar}
+                  onCerrar={() => setParaEliminar(null)}
+                  onHecho={alMarcarEliminada}
+                />
               </>
             )}
             <Boton variante="verde" tamano="sm" cargando={guardando} disabled={ocupado} onClick={guardar} title="Guardar (Ctrl+S)">

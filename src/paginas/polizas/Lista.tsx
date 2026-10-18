@@ -1,20 +1,31 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertCircle, CopyCheck, Download, FilePlus2, Inbox, Pencil, RefreshCw, Search, Upload, Wallet, X } from 'lucide-react'
+import { toast } from 'sonner'
+import { AlertCircle, CopyCheck, Download, FilePlus2, Inbox, ListChecks, Pencil, RefreshCw, Search, Trash2, Upload, Wallet, X } from 'lucide-react'
 import { Contenido, EncabezadoPagina } from '@/components/layout/AppShell'
 import { Aviso, Cargando, MensajeError, Vacio } from '@/components/ui/basicos'
 import { Boton } from '@/components/ui/button'
 import { Input } from '@/components/ui/campos'
 import { FiltroOpciones } from '@/components/ui/filtro-opciones'
 import { Tabla, type Columna } from '@/components/ui/tabla'
+import { useConteoEliminaciones } from '@/datos/eliminacion'
+import {
+  MAX_SELECCION,
+  alternarSeleccion,
+  elegidasVisibles,
+  plural,
+  seleccionarVisibles,
+} from '@/datos/eliminacionLogica'
 import { contarPendientes } from '@/datos/pendientes'
 import { listarPolizasRecientes, listarTodasPolizas } from '@/datos/polizas'
 import { CLAVE_TODAS, usePolizasTodas, useProgresoPolizas } from '@/datos/usePolizas'
 import { aFecha, aFechaHora, fmtFecha, fmtFechaHora } from '@/lib/fechas'
 import { fmtDinero, fmtDoc, fmtNum } from '@/lib/numeros'
+import { esAdmin, useSesion } from '@/lib/sesion'
 import type { PolizaLista } from '@/lib/tipos'
 import { mensajeError } from '@/lib/utils'
+import DialogoEliminar from './DialogoEliminar'
 
 const LIMITE_RAPIDO = 500
 
@@ -35,6 +46,14 @@ export default function ListaPolizas() {
   const [fProd, setFProd] = useState<string | null>(null)
   const [fAsesor, setFAsesor] = useState<string | null>(null)
   const clienteDiferido = useDeferredValue(fCliente)
+
+  // Selección para eliminar (la autoriza un administrador).
+  const sesion = useSesion()
+  const admin = esAdmin(sesion?.usuario)
+  const conteoEliminaciones = useConteoEliminaciones()
+  const [modoSeleccion, setModoSeleccion] = useState(false)
+  const [sel, setSel] = useState<Set<number>>(new Set())
+  const [paraEliminar, setParaEliminar] = useState<{ polizas: PolizaLista[]; grupo: boolean } | null>(null)
 
   // Búsqueda en el servidor, 400 ms después de la última tecla.
   useEffect(() => {
@@ -105,6 +124,36 @@ export default function ListaPolizas() {
     }
   }, [polizas, cumple])
 
+  // Solo cuentan las seleccionadas que se ven con la búsqueda y los filtros de ahora.
+  const elegidas = useMemo(() => elegidasVisibles(filtradas, sel), [filtradas, sel])
+  const ocultasSel = sel.size - elegidas.length
+
+  const alternarFila = (id: number) => {
+    const r = alternarSeleccion(sel, id)
+    if (r.excedido) toast.error(`Máximo ${MAX_SELECCION} pólizas por vez.`)
+    setSel(r.sel)
+  }
+  const salirSeleccion = () => {
+    setModoSeleccion(false)
+    setSel(new Set())
+  }
+  const seleccionarTodasVisibles = () => {
+    const r = seleccionarVisibles(filtradas)
+    setSel(r.sel)
+    if (r.recortado) toast.info(`Se seleccionaron las primeras ${MAX_SELECCION} (máximo por vez).`)
+  }
+  const alMarcar = (marcadas: number[]) => {
+    const grupo = paraEliminar?.grupo ?? false
+    setParaEliminar(null)
+    if (grupo) {
+      // Eliminación del grupo seleccionado: se sale del modo selección.
+      salirSeleccion()
+    } else {
+      // Papelera de una fila: no se pierde el resto de la selección.
+      setSel((a) => new Set([...a].filter((id) => !marcadas.includes(id))))
+    }
+  }
+
   const limpiarFiltros = () => {
     setFCliente('')
     setFAseg(null)
@@ -132,6 +181,25 @@ export default function ListaPolizas() {
   }
 
   const columnas: Columna<PolizaLista>[] = [
+    ...(modoSeleccion
+      ? [
+          {
+            id: 'sel',
+            titulo: '',
+            ancho: 44,
+            alinear: 'centro' as const,
+            celda: (p: PolizaLista) => (
+              <input
+                type="checkbox"
+                className="size-4 accent-navy"
+                aria-label={`Seleccionar la póliza ${p.nro_poliza ?? p.id}`}
+                checked={sel.has(p.id)}
+                onChange={() => alternarFila(p.id)}
+              />
+            ),
+          },
+        ]
+      : []),
     { id: 'id', titulo: 'Cód.', ancho: 70, alinear: 'der', celda: (p) => <span className="num">{p.id}</span>, ordenar: (p) => p.id },
     {
       id: 'nro',
@@ -206,7 +274,7 @@ export default function ListaPolizas() {
     {
       id: 'acciones',
       titulo: '',
-      ancho: 84,
+      ancho: 120,
       celda: (p) => (
         <div className="flex gap-0.5">
           <Link to={`/polizas/${p.id}`} title="Editar" className="rounded-lg p-2 text-ink-soft hover:bg-muted hover:text-navy">
@@ -215,6 +283,17 @@ export default function ListaPolizas() {
           <Link to={`/polizas/${p.id}/pagos`} title="Ver pagos" className="rounded-lg p-2 text-ink-soft hover:bg-muted hover:text-green">
             <Wallet className="size-4" />
           </Link>
+          {!modoSeleccion && (
+            <button
+              type="button"
+              title="Eliminar (la autoriza un administrador)"
+              aria-label={`Eliminar la póliza ${p.nro_poliza ?? p.id}`}
+              onClick={() => setParaEliminar({ polizas: [p], grupo: false })}
+              className="rounded-lg p-2 text-ink-soft hover:bg-danger-soft hover:text-danger"
+            >
+              <Trash2 className="size-4" />
+            </button>
+          )}
         </div>
       ),
     },
@@ -254,6 +333,26 @@ export default function ListaPolizas() {
                 Repetidas
               </Boton>
             </Link>
+            <Boton
+              variante={modoSeleccion ? 'primario' : 'secundario'}
+              tamano="sm"
+              title={modoSeleccion ? 'Salir de la selección' : 'Seleccionar varias pólizas para eliminar'}
+              onClick={() => (modoSeleccion ? salirSeleccion() : setModoSeleccion(true))}
+            >
+              {modoSeleccion ? <X /> : <ListChecks />}
+              {modoSeleccion ? 'Salir de la selección' : 'Eliminar varias'}
+            </Boton>
+            {admin && (
+              <Link to="/polizas/eliminaciones">
+                <Boton variante="secundario" tamano="sm" title="Eliminaciones por autorizar">
+                  <Trash2 />
+                  Por autorizar
+                  {!!conteoEliminaciones.data && (
+                    <span className="num rounded-full bg-danger px-1.5 text-[11px] text-white">{conteoEliminaciones.data}</span>
+                  )}
+                </Boton>
+              </Link>
+            )}
             <Boton variante="fantasma" tamano="icono" title="Recargar" onClick={recargar} disabled={fuente.isFetching}>
               <RefreshCw className={fuente.isFetching ? 'animate-spin' : ''} />
             </Boton>
@@ -297,6 +396,40 @@ export default function ListaPolizas() {
           )}
         </div>
 
+        {modoSeleccion && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[10px] bg-navy-soft px-4 py-2">
+            <span className="font-semibold">
+              {elegidas.length === 0
+                ? 'Marque las pólizas que quiere eliminar'
+                : plural(elegidas.length, 'póliza seleccionada', 'pólizas seleccionadas')}
+              {ocultasSel > 0 &&
+                ` (${plural(ocultasSel, 'más quedó oculta', 'más quedaron ocultas')} por el filtro y no se ${ocultasSel === 1 ? 'incluye' : 'incluyen'})`}
+            </span>
+            <Boton variante="fantasma" tamano="sm" disabled={filtradas.length === 0} onClick={seleccionarTodasVisibles}>
+              {filtradas.length > MAX_SELECCION
+                ? `Seleccionar las primeras ${MAX_SELECCION} de ${fmtNum(filtradas.length)}`
+                : `Seleccionar todas las visibles (${fmtNum(filtradas.length)})`}
+            </Boton>
+            {sel.size > 0 && (
+              <Boton variante="fantasma" tamano="sm" onClick={() => setSel(new Set())}>
+                Quitar selección
+              </Boton>
+            )}
+            <Boton
+              variante="peligro"
+              tamano="sm"
+              disabled={elegidas.length === 0}
+              onClick={() => setParaEliminar({ polizas: elegidas, grupo: true })}
+            >
+              <Trash2 />
+              Eliminar ({elegidas.length})
+            </Boton>
+            <Boton variante="fantasma" tamano="sm" onClick={salirSeleccion}>
+              Cancelar
+            </Boton>
+          </div>
+        )}
+
         {cargandoTodas && (
           <Aviso tono="navy" icono={<Download />}>
             Cargando todas las pólizas… <b className="num">{fmtNum(progreso)}</b>
@@ -334,7 +467,7 @@ export default function ListaPolizas() {
             columnas={columnas}
             clave={(p) => p.id}
             ordenInicial={{ columna: 'id', asc: false }}
-            alHacerClic={(p) => navigate(`/polizas/${p.id}`)}
+            alHacerClic={(p) => (modoSeleccion ? alternarFila(p.id) : navigate(`/polizas/${p.id}`))}
             vacio={
               <Vacio
                 titulo={polizas.length ? 'Ninguna póliza coincide con los filtros' : 'No se encontraron pólizas'}
@@ -345,6 +478,12 @@ export default function ListaPolizas() {
         )}
         <p className="text-[12px] text-ink-soft">Atajo: Alt+N crea una póliza nueva.</p>
       </Contenido>
+      <DialogoEliminar
+        polizas={paraEliminar?.polizas ?? []}
+        abierto={!!paraEliminar}
+        onCerrar={() => setParaEliminar(null)}
+        onHecho={alMarcar}
+      />
     </div>
   )
 }

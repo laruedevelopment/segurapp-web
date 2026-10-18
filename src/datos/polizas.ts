@@ -178,15 +178,25 @@ export async function crearPoliza(datos: DatosPoliza): Promise<number> {
   return (data as { id: number }).id
 }
 
-export async function actualizarPoliza(id: number, datos: DatosPoliza) {
-  const { error } = await db.from(TABLA).update(limpiar(datos)).eq('id', id)
-  if (error) throw error
+/** La póliza ya no es visible: la marcaron para eliminar o la borró otra persona. */
+export class PolizaNoDisponibleError extends Error {
+  readonly polizaId: number
+  constructor(polizaId: number) {
+    super(
+      'La póliza ya no está disponible: fue marcada para eliminar o borrada por otra persona. Recargue la lista.',
+    )
+    this.name = 'PolizaNoDisponibleError'
+    this.polizaId = polizaId
+  }
 }
 
-export async function eliminarPoliza(id: number) {
-  const { error } = await db.from(TABLA).delete().eq('id', id)
-  if (error) {
-    if (error.code === '23503') throw new Error('No se puede eliminar: la póliza tiene abonos registrados.')
-    throw error
-  }
+/**
+ * Actualiza la póliza. Con cero filas afectadas (la base oculta las marcadas
+ * para eliminar) lanza [PolizaNoDisponibleError] en vez de dar por guardado un
+ * cambio que no se aplicó; quien llama debe quitarla de la caché.
+ */
+export async function actualizarPoliza(id: number, datos: DatosPoliza) {
+  const { data, error } = await db.from(TABLA).update(limpiar(datos)).eq('id', id).select('id')
+  if (error) throw error
+  if (!data || data.length === 0) throw new PolizaNoDisponibleError(id)
 }
