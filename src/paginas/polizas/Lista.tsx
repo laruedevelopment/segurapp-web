@@ -223,7 +223,7 @@ export default function ListaPolizas() {
           },
         ]
       : []),
-    { id: 'id', titulo: 'Cód.', ancho: 62, alinear: 'der', celda: (p) => <span className="num">{p.id}</span>, ordenar: (p) => p.id },
+    { id: 'id', titulo: 'Cód.', ancho: 72, alinear: 'der', celda: (p) => <span className="num">{p.id}</span>, ordenar: (p) => p.id },
     {
       id: 'nro',
       titulo: 'Nro. póliza',
@@ -284,7 +284,7 @@ export default function ListaPolizas() {
     {
       id: 'fcreado',
       titulo: 'Registro / Últ. mod.',
-      ancho: 125,
+      ancho: 145,
       celda: (p) => (
         <div className="num leading-tight">
           <div className="text-[12px]">{fmtFechaHora(aFechaHora(p.fcreado)) || '—'}</div>
@@ -526,6 +526,7 @@ export default function ListaPolizas() {
           ancha ? (
             <Tabla
               className="min-h-[320px] flex-1"
+              claveAnchos="polizas"
               filas={filtradas}
               columnas={columnas}
               clave={(p) => p.id}
