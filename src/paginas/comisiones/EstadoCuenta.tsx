@@ -125,6 +125,8 @@ export default function EstadoCuenta() {
   const saldo = calcularSaldo(prima, totales.totalAbonado)
   const porcPagado = calcularPorcPagado(prima, totales.totalAbonado)
   const hayAnulados = abonos.some(esAnulado)
+  // Póliza en estado ANULADA (A): el saldo pendiente no aplica.
+  const polizaAnulada = modoPoliza && (poliza ?? primero)?.estado_poliza_id === 'A'
 
   const fuenteInfoPoliza = poliza ?? primero
   const infoPoliza: FilaInfo[] | null = modoPoliza && fuenteInfoPoliza ? filasInfoPoliza(fuenteInfoPoliza, id, prima) : null
@@ -181,7 +183,14 @@ export default function EstadoCuenta() {
     <div className="flex h-full flex-col">
       <EncabezadoPagina
         titulo={titulo}
-        subtitulo={subtitulo || undefined}
+        subtitulo={
+          subtitulo || polizaAnulada ? (
+            <span className="inline-flex flex-wrap items-center gap-2">
+              {subtitulo}
+              {polizaAnulada && <Etiqueta tono="peligro">ANULADA</Etiqueta>}
+            </span>
+          ) : undefined
+        }
         volver={modoPoliza ? '/polizas' : '/comisiones'}
         acciones={
           <>
@@ -270,6 +279,7 @@ export default function EstadoCuenta() {
                   totalAbonado={totales.totalAbonado}
                   totalComision={totales.totalComision}
                   saldo={saldo}
+                  polizaAnulada={polizaAnulada}
                   porcPagado={porcPagado}
                   numAbonos={totales.numAbonos}
                 />
@@ -323,6 +333,7 @@ function Resumen({
   totalAbonado,
   totalComision,
   saldo,
+  polizaAnulada,
   porcPagado,
   numAbonos,
 }: {
@@ -331,6 +342,7 @@ function Resumen({
   totalAbonado: number
   totalComision: number
   saldo: number
+  polizaAnulada: boolean
   porcPagado: number
   numAbonos: number
 }) {
@@ -340,13 +352,16 @@ function Resumen({
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         {modoPoliza && <Cifra titulo="Prima total" valor={dinero(prima)} icono={icono(<Landmark />, 'text-navy')} />}
         <Cifra titulo="Total abonado" valor={dinero(totalAbonado)} icono={icono(<Wallet />, 'text-green')} />
-        {modoPoliza && (
-          <Cifra
-            titulo={etiquetaSaldo(saldo)}
-            valor={<span className={saldo > 0 ? 'text-warning-ink' : 'text-green-ink'}>{dinero(Math.abs(saldo))}</span>}
-            icono={icono(<WalletCards />, saldo > 0 ? 'text-warning' : 'text-green')}
-          />
-        )}
+        {modoPoliza &&
+          (polizaAnulada ? (
+            <Cifra titulo="Saldo pendiente" valor="—" icono={icono(<WalletCards />, 'text-ink-soft')} />
+          ) : (
+            <Cifra
+              titulo={etiquetaSaldo(saldo)}
+              valor={<span className={saldo > 0 ? 'text-warning-ink' : 'text-green-ink'}>{dinero(Math.abs(saldo))}</span>}
+              icono={icono(<WalletCards />, saldo > 0 ? 'text-warning' : 'text-green')}
+            />
+          ))}
         <Cifra titulo="Total comisión" valor={dinero(totalComision)} icono={icono(<Percent />, 'text-navy')} />
         {modoPoliza && (
           <Cifra
