@@ -1,6 +1,9 @@
 import { useState, type ReactNode } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router'
-import { BarChart3, ClipboardCheck, FolderOpen, Home, LayoutDashboard, LogOut, Menu, ReceiptText, WalletCards, X } from 'lucide-react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
+import { Dialog } from 'radix-ui'
+import { BarChart3, ClipboardCheck, FolderOpen, Home, LayoutDashboard, LogOut, Menu, ReceiptText, Trash2, WalletCards, X } from 'lucide-react'
+import { useCasosPendientes } from '@/datos/casos'
+import { useConteoEliminaciones } from '@/datos/eliminacion'
 import { cerrarSesion, esAdmin, useSesion, veComisiones } from '@/lib/sesion'
 import { ES_PRUEBAS } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
@@ -10,6 +13,10 @@ interface ItemMenu {
   texto: string
   icono: ReactNode
   visible?: boolean
+  /** Insignia de pendientes (no se muestra si es 0 o no hay dato). */
+  contador?: number
+  /** Rutas que no cuentan como "dentro" de este ítem (por ser otro ítem del menú). */
+  excluir?: string
 }
 
 export function AppShell() {
@@ -17,14 +24,24 @@ export function AppShell() {
   const navigate = useNavigate()
   const [menuMovil, setMenuMovil] = useState(false)
   const usuario = sesion?.usuario
+  const { pathname } = useLocation()
+  const casos = useCasosPendientes()
+  const eliminaciones = useConteoEliminaciones()
 
   const items: ItemMenu[] = [
     { a: '/', texto: 'Inicio', icono: <Home /> },
-    { a: '/polizas', texto: 'Pólizas', icono: <ReceiptText /> },
+    { a: '/polizas', texto: 'Pólizas', icono: <ReceiptText />, excluir: '/polizas/eliminaciones' },
     { a: '/catalogos', texto: 'Catálogos', icono: <FolderOpen /> },
     { a: '/reportes', texto: 'Reportes', icono: <BarChart3 /> },
     { a: '/comisiones', texto: 'Reportes de Comisiones', icono: <WalletCards />, visible: veComisiones(usuario) },
-    { a: '/casos', texto: 'Casos por revisar', icono: <ClipboardCheck /> },
+    { a: '/casos', texto: 'Casos por revisar', icono: <ClipboardCheck />, contador: casos.data },
+    {
+      a: '/polizas/eliminaciones',
+      texto: 'Eliminaciones por autorizar',
+      icono: <Trash2 />,
+      visible: esAdmin(usuario),
+      contador: eliminaciones.data,
+    },
     { a: '/dashboard', texto: 'Dashboard gerencial', icono: <LayoutDashboard />, visible: esAdmin(usuario) },
   ]
 
@@ -34,26 +51,35 @@ export function AppShell() {
   }
 
   const menu = (
-    <nav className="flex flex-1 flex-col gap-1 p-3">
+    <nav aria-label="Menú principal" className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
       {items
         .filter((i) => i.visible !== false)
-        .map((i) => (
-          <NavLink
-            key={i.a}
-            to={i.a}
-            end={i.a === '/'}
-            onClick={() => setMenuMovil(false)}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 rounded-[10px] px-3 py-2.5 font-semibold transition-colors [&_svg]:size-[18px]',
-                isActive ? 'bg-navy text-white' : 'text-ink-soft hover:bg-muted hover:text-ink',
-              )
-            }
-          >
-            {i.icono}
-            {i.texto}
-          </NavLink>
-        ))}
+        .map((i) => {
+          const activoManual = i.excluir ? pathname.startsWith(i.a) && !pathname.startsWith(i.excluir) : undefined
+          return (
+            <NavLink
+              key={i.a}
+              to={i.a}
+              end={i.a === '/'}
+              onClick={() => setMenuMovil(false)}
+              className={({ isActive }) =>
+                cn(
+                  'flex min-h-11 items-center gap-3 rounded-[10px] px-3 py-2.5 font-semibold transition-colors [&_svg]:size-[18px]',
+                  (activoManual ?? isActive) ? 'bg-navy text-white' : 'text-ink-soft hover:bg-muted hover:text-ink',
+                )
+              }
+            >
+              {i.icono}
+              <span className="flex-1">{i.texto}</span>
+              {!!i.contador && (
+                <span className="num rounded-full bg-warning-soft px-2 text-[12px] font-semibold text-warning-ink">
+                  <span aria-hidden="true">{i.contador}</span>
+                  <span className="sr-only">{i.contador === 1 ? '1 pendiente' : `${i.contador} pendientes`}</span>
+                </span>
+              )}
+            </NavLink>
+          )
+        })}
     </nav>
   )
 
@@ -72,7 +98,8 @@ export function AppShell() {
         type="button"
         onClick={salir}
         title="Cerrar sesión"
-        className="rounded-lg p-2 text-ink-soft hover:bg-muted hover:text-danger"
+        aria-label="Cerrar sesión"
+        className="flex size-11 items-center justify-center rounded-lg text-ink-soft hover:bg-muted hover:text-danger"
       >
         <LogOut className="size-4" />
       </button>
@@ -98,31 +125,43 @@ export function AppShell() {
         {pieUsuario}
       </aside>
 
-      {/* Menú móvil */}
-      {menuMovil && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-ink/40" onClick={() => setMenuMovil(false)} />
-          <aside className="absolute inset-y-0 left-0 flex w-72 flex-col bg-surface shadow-xl">
+      {/* Menú móvil: Radix da Escape, foco atrapado, role="dialog" y devuelve el foco al botón. */}
+      <Dialog.Root open={menuMovil} onOpenChange={setMenuMovil}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/40 lg:hidden" />
+          <Dialog.Content
+            aria-modal="true"
+            aria-describedby={undefined}
+            className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-surface shadow-xl focus:outline-none lg:hidden"
+          >
+            <Dialog.Title className="sr-only">Menú de navegación</Dialog.Title>
             <div className="flex items-center">
               <div className="flex-1">{marca}</div>
-              <button type="button" className="mr-3 rounded-lg p-2 hover:bg-muted" onClick={() => setMenuMovil(false)}>
-                <X className="size-5" />
-              </button>
+              <Dialog.Close asChild>
+                <button type="button" aria-label="Cerrar menú" className="mr-3 flex size-11 items-center justify-center rounded-lg hover:bg-muted">
+                  <X className="size-5" />
+                </button>
+              </Dialog.Close>
             </div>
             {menu}
             {pieUsuario}
-          </aside>
-        </div>
-      )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       <div className="flex min-w-0 flex-1 flex-col">
         {ES_PRUEBAS && (
-          <div className="bg-warning px-4 py-1 text-center text-[12px] font-bold tracking-wide text-white">
+          <div className="bg-warning-ink px-4 py-1 text-center text-[12px] font-bold tracking-wide text-white">
             AMBIENTE DE PRUEBAS — los datos no son reales
           </div>
         )}
         <header className="flex items-center gap-2 border-b border-line bg-surface px-3 py-2 lg:hidden">
-          <button type="button" className="rounded-lg p-2 hover:bg-muted" onClick={() => setMenuMovil(true)}>
+          <button
+            type="button"
+            aria-label="Abrir menú"
+            className="flex size-11 items-center justify-center rounded-lg hover:bg-muted"
+            onClick={() => setMenuMovil(true)}
+          >
             <Menu className="size-5" />
           </button>
           <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" className="h-7" />

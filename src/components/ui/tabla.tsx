@@ -85,17 +85,24 @@ export function Tabla<T>({
         <div className="sticky top-0 z-10 flex border-b border-line bg-muted text-[12px] font-semibold text-ink-soft">
           {columnas.map((c) => {
             const activa = orden?.columna === c.id
+            // Sin orden: no es un botón (puede llevar una casilla u otro control adentro).
+            if (!c.ordenar) {
+              return (
+                <div key={c.id} style={{ width: c.ancho }} className={cn('flex shrink-0 items-center px-2.5 py-2.5 select-none', alinear(c.alinear))}>
+                  <span className="min-w-0 truncate">{c.titulo}</span>
+                </div>
+              )
+            }
             return (
               <button
                 key={c.id}
                 type="button"
-                disabled={!c.ordenar}
                 style={{ width: c.ancho }}
                 onClick={() => setOrden(activa ? { columna: c.id, asc: !orden!.asc } : { columna: c.id, asc: true })}
                 className={cn(
                   'flex shrink-0 items-center gap-1 px-2.5 py-2.5 select-none',
                   alinear(c.alinear),
-                  c.ordenar && 'hover:text-ink',
+                  'hover:text-ink',
                   activa && 'text-navy',
                 )}
               >
@@ -123,7 +130,7 @@ export function Tabla<T>({
                   onClick={(e) => {
                     // Seleccionar texto para copiarlo no debe abrir la póliza.
                     if (window.getSelection()?.toString()) return
-                    if ((e.target as HTMLElement).closest('button,a,input')) return
+                    if ((e.target as HTMLElement).closest('button,a,input,label')) return
                     alHacerClic?.(fila)
                   }}
                 >

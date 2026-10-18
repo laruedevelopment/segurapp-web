@@ -1,14 +1,17 @@
-import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { toast } from 'sonner'
-import { AlertCircle, CopyCheck, Download, FilePlus2, Inbox, ListChecks, Pencil, RefreshCw, Search, Trash2, Upload, Wallet, X } from 'lucide-react'
+import { AlertCircle, CopyCheck, Download, FilePlus2, Inbox, ListChecks, Loader2, Pencil, RefreshCw, Search, Trash2, Upload, Wallet, X } from 'lucide-react'
 import { Contenido, EncabezadoPagina } from '@/components/layout/AppShell'
 import { Aviso, Cargando, MensajeError, Vacio } from '@/components/ui/basicos'
 import { Boton } from '@/components/ui/button'
-import { Input } from '@/components/ui/campos'
+import { CasillaTactil, Input } from '@/components/ui/campos'
 import { FiltroOpciones } from '@/components/ui/filtro-opciones'
+import { ItemMenu, MenuAcciones } from '@/components/ui/menu'
 import { Tabla, type Columna } from '@/components/ui/tabla'
+import { useCargaMasiva } from '@/datos/cargaMasiva'
 import { useConteoEliminaciones } from '@/datos/eliminacion'
 import {
   MAX_SELECCION,
@@ -22,15 +25,20 @@ import { listarPolizasRecientes, listarTodasPolizas } from '@/datos/polizas'
 import { CLAVE_TODAS, usePolizasTodas, useProgresoPolizas } from '@/datos/usePolizas'
 import { aFecha, aFechaHora, fmtFecha, fmtFechaHora } from '@/lib/fechas'
 import { fmtDinero, fmtDoc, fmtNum } from '@/lib/numeros'
-import { esAdmin, useSesion } from '@/lib/sesion'
+import { esAdmin, useSesion, veComisiones } from '@/lib/sesion'
 import type { PolizaLista } from '@/lib/tipos'
+import { useEsAncha } from '@/lib/useMediaQuery'
 import { mensajeError } from '@/lib/utils'
 import DialogoEliminar from './DialogoEliminar'
+import { alternarTodasVisibles, estadoSeleccionVisibles } from './seleccionLogica'
+import { TarjetaPoliza } from './TarjetaPoliza'
 
 const LIMITE_RAPIDO = 500
 
 const docCliente = (p: PolizaLista) =>
   p.doc_cliente ? `${p.tipodoc_cliente ? p.tipodoc_cliente + ' ' : ''}${fmtDoc(p.doc_cliente)}` : ''
+
+const boton40 = 'h-10 md:h-8'
 
 const dinero = (n: number | null) => (n ? fmtDinero(n) : '—')
 
@@ -50,6 +58,9 @@ export default function ListaPolizas() {
   // Selección para eliminar (la autoriza un administrador).
   const sesion = useSesion()
   const admin = esAdmin(sesion?.usuario)
+  const verPagos = veComisiones(sesion?.usuario)
+  const ancha = useEsAncha()
+  const carga = useCargaMasiva()
   const conteoEliminaciones = useConteoEliminaciones()
   const [modoSeleccion, setModoSeleccion] = useState(false)
   const [sel, setSel] = useState<Set<number>>(new Set())
@@ -142,6 +153,12 @@ export default function ListaPolizas() {
     setSel(r.sel)
     if (r.recortado) toast.info(`Se seleccionaron las primeras ${MAX_SELECCION} (máximo por vez).`)
   }
+  const alternarTodas = () => {
+    const r = alternarTodasVisibles(filtradas, sel)
+    setSel(r.sel)
+    if (r.recortado) toast.info(`Se seleccionaron las primeras ${MAX_SELECCION} (máximo por vez).`)
+  }
+  const estadoTodas = estadoSeleccionVisibles(filtradas, sel)
   const alMarcar = (marcadas: number[]) => {
     const grupo = paraEliminar?.grupo ?? false
     setParaEliminar(null)
@@ -185,14 +202,20 @@ export default function ListaPolizas() {
       ? [
           {
             id: 'sel',
-            titulo: '',
-            ancho: 44,
+            titulo: (
+              <CasillaTactil
+                className="-my-2.5"
+                label="Seleccionar todas las visibles"
+                checked={estadoTodas === 'todas'}
+                indeterminada={estadoTodas === 'algunas'}
+                onChange={alternarTodas}
+              />
+            ),
+            ancho: 60,
             alinear: 'centro' as const,
             celda: (p: PolizaLista) => (
-              <input
-                type="checkbox"
-                className="size-4 accent-navy"
-                aria-label={`Seleccionar la póliza ${p.nro_poliza ?? p.id}`}
+              <CasillaTactil
+                label={`Seleccionar la póliza ${p.nro_poliza ?? p.id}`}
                 checked={sel.has(p.id)}
                 onChange={() => alternarFila(p.id)}
               />
@@ -273,31 +296,54 @@ export default function ListaPolizas() {
     { id: 'usuario', titulo: 'Usuario', ancho: 90, celda: (p) => p.apodo_usuario ?? '—', ordenar: (p) => p.apodo_usuario?.toLowerCase() },
     {
       id: 'acciones',
-      titulo: '',
-      ancho: 120,
+      titulo: <span className="sr-only">Acciones</span>,
+      ancho: 160,
       celda: (p) => (
-        <div className="flex gap-0.5">
-          <Link to={`/polizas/${p.id}`} title="Editar" className="rounded-lg p-2 text-ink-soft hover:bg-muted hover:text-navy">
-            <Pencil className="size-4" />
-          </Link>
-          <Link to={`/polizas/${p.id}/pagos`} title="Ver pagos" className="rounded-lg p-2 text-ink-soft hover:bg-muted hover:text-green">
-            <Wallet className="size-4" />
-          </Link>
+        <div className="flex">
           {!modoSeleccion && (
-            <button
-              type="button"
-              title="Eliminar (la autoriza un administrador)"
-              aria-label={`Eliminar la póliza ${p.nro_poliza ?? p.id}`}
-              onClick={() => setParaEliminar({ polizas: [p], grupo: false })}
-              className="rounded-lg p-2 text-ink-soft hover:bg-danger-soft hover:text-danger"
-            >
-              <Trash2 className="size-4" />
-            </button>
+            <>
+              <Link
+                to={`/polizas/${p.id}`}
+                title="Editar"
+                aria-label={`Editar la póliza ${p.nro_poliza ?? p.id}`}
+                className="flex size-11 items-center justify-center rounded-lg text-ink-soft hover:bg-muted hover:text-navy"
+              >
+                <Pencil className="size-4" />
+              </Link>
+              {verPagos && (
+                <Link
+                  to={`/polizas/${p.id}/pagos`}
+                  title="Ver pagos"
+                  aria-label={`Ver pagos de la póliza ${p.nro_poliza ?? p.id}`}
+                  className="flex size-11 items-center justify-center rounded-lg text-ink-soft hover:bg-muted hover:text-green"
+                >
+                  <Wallet className="size-4" />
+                </Link>
+              )}
+              <button
+                type="button"
+                title="Eliminar (la autoriza un administrador)"
+                aria-label={`Eliminar la póliza ${p.nro_poliza ?? p.id}`}
+                onClick={() => setParaEliminar({ polizas: [p], grupo: false })}
+                className="flex size-11 items-center justify-center rounded-lg text-ink-soft hover:bg-danger-soft hover:text-danger"
+              >
+                <Trash2 className="size-4" />
+              </button>
+            </>
           )}
         </div>
       ),
     },
   ]
+
+  const vacio = (
+    <Vacio
+      titulo={polizas.length ? 'Ninguna póliza coincide con los filtros' : 'No se encontraron pólizas'}
+      detalle={hayFiltros ? 'Pruebe quitando algún filtro.' : undefined}
+    />
+  )
+  // Mismo orden que la tabla al abrirla: código de mayor a menor.
+  const tarjetas = useMemo(() => (ancha ? [] : [...filtradas].sort((a, b) => b.id - a.id)), [ancha, filtradas])
 
   const cargandoTodas = todas.isFetching && !busqueda
 
@@ -312,52 +358,64 @@ export default function ListaPolizas() {
         }
         acciones={
           <>
+            {carga.procesando && (
+              <Link
+                to="/polizas/carga-masiva"
+                role="status"
+                title="Ver el detalle de la carga masiva"
+                className="num inline-flex h-10 items-center gap-1.5 rounded-full bg-navy-soft px-3 text-[12.5px] font-semibold text-navy-dark md:h-8"
+              >
+                <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                Cargando {carga.procesados}/{carga.total}
+              </Link>
+            )}
             <Link to="/polizas/pendientes">
-              <Boton variante="secundario" tamano="sm">
+              <Boton variante="secundario" tamano="sm" className={boton40}>
                 <Inbox />
                 Pendientes
                 {!!pendientes.data && (
-                  <span className="num rounded-full bg-warning px-1.5 text-[11px] text-white">{pendientes.data}</span>
+                  <span className="num rounded-full bg-warning-soft px-1.5 text-[11px] font-semibold text-warning-ink">
+                    <span aria-hidden="true">{pendientes.data}</span>
+                    <span className="sr-only">{pendientes.data === 1 ? '1 pendiente' : `${pendientes.data} pendientes`}</span>
+                  </span>
                 )}
               </Boton>
             </Link>
-            <Link to="/polizas/carga-masiva">
-              <Boton variante="secundario" tamano="sm" title="Carga masiva de pólizas (PDF/imagen con IA)">
-                <Upload />
+            <MenuAcciones>
+              <ItemMenu icono={<Upload />} onSelect={() => navigate('/polizas/carga-masiva')}>
                 Carga masiva
-              </Boton>
-            </Link>
-            <Link to="/polizas/duplicadas">
-              <Boton variante="secundario" tamano="sm" title="Pólizas con número repetido">
-                <CopyCheck />
+              </ItemMenu>
+              <ItemMenu icono={<CopyCheck />} onSelect={() => navigate('/polizas/duplicadas')}>
                 Repetidas
-              </Boton>
-            </Link>
-            <Boton
-              variante={modoSeleccion ? 'primario' : 'secundario'}
-              tamano="sm"
-              title={modoSeleccion ? 'Salir de la selección' : 'Seleccionar varias pólizas para eliminar'}
-              onClick={() => (modoSeleccion ? salirSeleccion() : setModoSeleccion(true))}
-            >
-              {modoSeleccion ? <X /> : <ListChecks />}
-              {modoSeleccion ? 'Salir de la selección' : 'Eliminar varias'}
-            </Boton>
-            {admin && (
-              <Link to="/polizas/eliminaciones">
-                <Boton variante="secundario" tamano="sm" title="Eliminaciones por autorizar">
-                  <Trash2 />
+              </ItemMenu>
+              <ItemMenu
+                icono={modoSeleccion ? <X /> : <ListChecks />}
+                onSelect={() => (modoSeleccion ? salirSeleccion() : setModoSeleccion(true))}
+              >
+                {modoSeleccion ? 'Salir de la selección' : 'Eliminar varias'}
+              </ItemMenu>
+              {admin && (
+                <ItemMenu
+                  icono={<Trash2 />}
+                  onSelect={() => navigate('/polizas/eliminaciones')}
+                  insignia={
+                    !!conteoEliminaciones.data && (
+                      <span className="num rounded-full bg-danger px-1.5 text-[11px] text-white">
+                        <span aria-hidden="true">{conteoEliminaciones.data}</span>
+                        <span className="sr-only"> por autorizar</span>
+                      </span>
+                    )
+                  }
+                >
                   Por autorizar
-                  {!!conteoEliminaciones.data && (
-                    <span className="num rounded-full bg-danger px-1.5 text-[11px] text-white">{conteoEliminaciones.data}</span>
-                  )}
-                </Boton>
-              </Link>
-            )}
-            <Boton variante="fantasma" tamano="icono" title="Recargar" onClick={recargar} disabled={fuente.isFetching}>
-              <RefreshCw className={fuente.isFetching ? 'animate-spin' : ''} />
-            </Boton>
+                </ItemMenu>
+              )}
+              <ItemMenu icono={<RefreshCw className={fuente.isFetching ? 'animate-spin' : ''} />} disabled={fuente.isFetching} onSelect={recargar}>
+                Recargar
+              </ItemMenu>
+            </MenuAcciones>
             <Link to="/polizas/nueva">
-              <Boton variante="verde" tamano="sm" title="Nueva póliza (Alt+N)">
+              <Boton variante="verde" tamano="sm" className={boton40} title="Nueva póliza (Alt+N)">
                 <FilePlus2 />
                 Nueva póliza
               </Boton>
@@ -367,9 +425,10 @@ export default function ListaPolizas() {
       />
       <Contenido className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="relative">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-soft" />
+          <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-soft" />
           <Input
             className="pl-9"
+            aria-label="Buscar pólizas"
             placeholder="Buscar por código, nro. póliza, cliente, documento, aseguradora, ramo, asesor…"
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
@@ -377,9 +436,9 @@ export default function ListaPolizas() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative w-56">
-            <Input className="h-10 pr-8" placeholder="Cliente o documento" value={fCliente} onChange={(e) => setFCliente(e.target.value)} />
+            <Input className="h-10 pr-8" aria-label="Filtrar por cliente o documento" placeholder="Cliente o documento" value={fCliente} onChange={(e) => setFCliente(e.target.value)} />
             {fCliente && (
-              <button type="button" className="absolute top-1/2 right-2 -translate-y-1/2 text-ink-soft" onClick={() => setFCliente('')}>
+              <button type="button" aria-label="Borrar el filtro de cliente" className="absolute top-1/2 right-2 -translate-y-1/2 p-1 text-ink-soft" onClick={() => setFCliente('')}>
                 <X className="size-4" />
               </button>
             )}
@@ -397,36 +456,39 @@ export default function ListaPolizas() {
         </div>
 
         {modoSeleccion && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[10px] bg-navy-soft px-4 py-2">
-            <span className="font-semibold">
+          <div className="sticky bottom-0 z-20 order-last -mx-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line bg-navy-soft px-4 py-2 shadow-[0_-2px_8px_rgba(0,0,0,0.06)] md:static md:order-none md:mx-0 md:rounded-[10px] md:border-t-0 md:shadow-none">
+            <span className="font-semibold" aria-live="polite">
               {elegidas.length === 0
-                ? 'Marque las pólizas que quiere eliminar'
+                ? 'Toque las pólizas que quiere eliminar'
                 : plural(elegidas.length, 'póliza seleccionada', 'pólizas seleccionadas')}
               {ocultasSel > 0 &&
                 ` (${plural(ocultasSel, 'más quedó oculta', 'más quedaron ocultas')} por el filtro y no se ${ocultasSel === 1 ? 'incluye' : 'incluyen'})`}
             </span>
-            <Boton variante="fantasma" tamano="sm" disabled={filtradas.length === 0} onClick={seleccionarTodasVisibles}>
+            <Boton variante="fantasma" tamano="sm" className={boton40} disabled={filtradas.length === 0} onClick={seleccionarTodasVisibles}>
               {filtradas.length > MAX_SELECCION
                 ? `Seleccionar las primeras ${MAX_SELECCION} de ${fmtNum(filtradas.length)}`
                 : `Seleccionar todas las visibles (${fmtNum(filtradas.length)})`}
             </Boton>
             {sel.size > 0 && (
-              <Boton variante="fantasma" tamano="sm" onClick={() => setSel(new Set())}>
+              <Boton variante="fantasma" tamano="sm" className={boton40} onClick={() => setSel(new Set())}>
                 Quitar selección
               </Boton>
             )}
-            <Boton
-              variante="peligro"
-              tamano="sm"
-              disabled={elegidas.length === 0}
-              onClick={() => setParaEliminar({ polizas: elegidas, grupo: true })}
-            >
-              <Trash2 />
-              Eliminar ({elegidas.length})
-            </Boton>
-            <Boton variante="fantasma" tamano="sm" onClick={salirSeleccion}>
-              Cancelar
-            </Boton>
+            <div className="flex w-full items-center justify-between gap-3 md:ml-auto md:w-auto">
+              <Boton
+                variante="peligro"
+                tamano="sm"
+                className={boton40}
+                disabled={elegidas.length === 0}
+                onClick={() => setParaEliminar({ polizas: elegidas, grupo: true })}
+              >
+                <Trash2 />
+                Eliminar ({elegidas.length})
+              </Boton>
+              <Boton variante="secundario" tamano="sm" className={boton40} onClick={salirSeleccion}>
+                Cancelar
+              </Boton>
+            </div>
           </div>
         )}
 
@@ -461,22 +523,34 @@ export default function ListaPolizas() {
         ) : fuente.isPending && !polizas.length ? (
           <Cargando texto="Cargando pólizas…" />
         ) : (
-          <Tabla
-            className="min-h-[320px] flex-1"
-            filas={filtradas}
-            columnas={columnas}
-            clave={(p) => p.id}
-            ordenInicial={{ columna: 'id', asc: false }}
-            alHacerClic={(p) => (modoSeleccion ? alternarFila(p.id) : navigate(`/polizas/${p.id}`))}
-            vacio={
-              <Vacio
-                titulo={polizas.length ? 'Ninguna póliza coincide con los filtros' : 'No se encontraron pólizas'}
-                detalle={hayFiltros ? 'Pruebe quitando algún filtro.' : undefined}
-              />
-            }
-          />
+          ancha ? (
+            <Tabla
+              className="min-h-[320px] flex-1"
+              filas={filtradas}
+              columnas={columnas}
+              clave={(p) => p.id}
+              ordenInicial={{ columna: 'id', asc: false }}
+              alHacerClic={(p) => (modoSeleccion ? alternarFila(p.id) : navigate(`/polizas/${p.id}`))}
+              claseFila={(p) => (sel.has(p.id) ? 'bg-navy-soft' : undefined)}
+              vacio={vacio}
+            />
+          ) : (
+            <ListaTarjetas
+              filas={tarjetas}
+              vacio={vacio}
+              modoSeleccion={modoSeleccion}
+              sel={sel}
+              onAbrir={(p) => navigate(`/polizas/${p.id}`)}
+              onAlternar={(p) => alternarFila(p.id)}
+              onEntrarSeleccion={(p) => {
+                setModoSeleccion(true)
+                setSel(new Set([p.id]))
+              }}
+              onEliminar={(p) => setParaEliminar({ polizas: [p], grupo: false })}
+            />
+          )
         )}
-        <p className="text-[12px] text-ink-soft">Atajo: Alt+N crea una póliza nueva.</p>
+        <p className="hidden text-[12px] text-ink-soft md:block">Atajo: Alt+N crea una póliza nueva.</p>
       </Contenido>
       <DialogoEliminar
         polizas={paraEliminar?.polizas ?? []}
@@ -484,6 +558,67 @@ export default function ListaPolizas() {
         onCerrar={() => setParaEliminar(null)}
         onHecho={alMarcar}
       />
+    </div>
+  )
+}
+
+/** Lista de tarjetas con scroll virtual (pantallas angostas). */
+function ListaTarjetas({
+  filas,
+  vacio,
+  modoSeleccion,
+  sel,
+  onAbrir,
+  onAlternar,
+  onEntrarSeleccion,
+  onEliminar,
+}: {
+  filas: PolizaLista[]
+  vacio: ReactNode
+  modoSeleccion: boolean
+  sel: ReadonlySet<number>
+  onAbrir: (p: PolizaLista) => void
+  onAlternar: (p: PolizaLista) => void
+  onEntrarSeleccion: (p: PolizaLista) => void
+  onEliminar: (p: PolizaLista) => void
+}) {
+  const contenedor = useRef<HTMLDivElement>(null)
+  const virtual = useVirtualizer({
+    count: filas.length,
+    getScrollElement: () => contenedor.current,
+    estimateSize: () => 210,
+    overscan: 6,
+  })
+  return (
+    <div ref={contenedor} className="min-h-[320px] flex-1 overflow-auto">
+      {filas.length === 0 ? (
+        vacio
+      ) : (
+        <div style={{ height: virtual.getTotalSize(), position: 'relative' }}>
+          {virtual.getVirtualItems().map((v) => {
+            const p = filas[v.index]
+            return (
+              <div
+                key={p.id}
+                data-index={v.index}
+                ref={virtual.measureElement}
+                className="absolute top-0 left-0 w-full pb-2"
+                style={{ transform: `translateY(${v.start}px)` }}
+              >
+                <TarjetaPoliza
+                  p={p}
+                  modoSeleccion={modoSeleccion}
+                  marcada={sel.has(p.id)}
+                  onAbrir={() => onAbrir(p)}
+                  onAlternar={() => onAlternar(p)}
+                  onEntrarSeleccion={() => onEntrarSeleccion(p)}
+                  onEliminar={() => onEliminar(p)}
+                />
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

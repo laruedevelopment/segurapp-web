@@ -19,7 +19,10 @@ function Acceso({ a, icono, titulo, detalle, color, contador }: { a: string; ico
         <div className="text-[13px] text-ink-soft">{detalle}</div>
       </div>
       {(contador ?? 0) > 0 && (
-        <span className="rounded-full bg-warning px-2.5 py-0.5 text-xs font-semibold text-white">{contador}</span>
+        <span className="rounded-full bg-warning-soft px-2.5 py-0.5 text-xs font-semibold text-warning-ink">
+          <span aria-hidden="true">{contador}</span>
+          <span className="sr-only">{contador === 1 ? '1 pendiente' : `${contador} pendientes`}</span>
+        </span>
       )}
       <ChevronRight className="size-5 text-ink-soft transition-transform group-hover:translate-x-0.5" />
     </Link>
