@@ -290,7 +290,7 @@ function Editor({ reporte }: { reporte: ReportePago | null }) {
         // Reporte nuevo, todavía sin id: las líneas esperan a que se guarde.
         setLineasPendientes(extraido.lineas)
         toast.info(
-          `Se completó la cabecera y se detectaron ${extraido.lineas.length} línea(s). Guarde el reporte para revisarlas y crear los abonos.`,
+          `Se completó la cabecera y se ${extraido.lineas.length === 1 ? 'detectó 1 línea. Guarde el reporte para revisarla y crear el abono' : `detectaron ${extraido.lineas.length} líneas. Guarde el reporte para revisarlas y crear los abonos`}.`,
         )
       }
     } catch (e) {
@@ -381,8 +381,7 @@ function Editor({ reporte }: { reporte: ReportePago | null }) {
       <Contenido className="flex flex-col gap-4">
         {lineasPendientes.length > 0 && esNuevo && (
           <Aviso tono="navy" icono={<Sparkles />}>
-            Se detectaron {lineasPendientes.length} línea(s) en el documento. Guarde el reporte para revisarlas y crear
-            los abonos.
+            {lineasPendientes.length === 1 ? 'Se detectó 1 línea' : `Se detectaron ${lineasPendientes.length} líneas`} en el documento. Guarde el reporte para {lineasPendientes.length === 1 ? 'revisarla y crear el abono' : 'revisarlas y crear los abonos'}.
           </Aviso>
         )}
 

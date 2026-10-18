@@ -280,8 +280,8 @@ export function DialogoRevision({
     if (nSinPoliza > 0 || nSinValor > 0) {
       toast.error(
         [
-          nSinPoliza > 0 ? `${nSinPoliza} línea(s) incluida(s) sin póliza asignada.` : null,
-          nSinValor > 0 ? `${nSinValor} línea(s) incluida(s) sin valor de abono.` : null,
+          nSinPoliza > 0 ? `${nSinPoliza === 1 ? '1 línea incluida sin póliza asignada' : `${nSinPoliza} líneas incluidas sin póliza asignada`}.` : null,
+          nSinValor > 0 ? `${nSinValor === 1 ? '1 línea incluida sin valor de abono' : `${nSinValor} líneas incluidas sin valor de abono`}.` : null,
           'Corríjalas o quítelas de la importación.',
         ]
           .filter(Boolean)
@@ -337,11 +337,11 @@ export function DialogoRevision({
     )
     setGuardando(false)
     if (fallidas === 0) {
-      toast.success(`Se crearon ${guardadas.size} abono(s).`)
+      toast.success(guardadas.size === 1 ? 'Se creó 1 abono.' : `Se crearon ${guardadas.size} abonos.`)
       onCerrar(creoAlgo.current)
     } else {
       toast.warning(
-        `Se crearon ${guardadas.size} abono(s). ${fallidas} no se pudieron guardar: siguen en la lista para reintentar.`,
+        `${guardadas.size === 1 ? 'Se creó 1 abono' : `Se crearon ${guardadas.size} abonos`}. ${fallidas === 1 ? '1 no se pudo guardar: sigue' : `${fallidas} no se pudieron guardar: siguen`} en la lista para reintentar.`,
       )
     }
   }
@@ -365,7 +365,7 @@ export function DialogoRevision({
       abierto
       onCerrar={cerrar}
       ancho="full"
-      titulo={`Revisar importación (${filas.length} línea(s))`}
+      titulo={`Revisar importación (${filas.length} ${filas.length === 1 ? 'línea' : 'líneas'})`}
       descripcion="Revise cada línea antes de guardar. Solo quedan incluidas de entrada las que coinciden exacto (número de póliza + anexo). Las demás necesitan que elija la póliza o las deje por fuera."
       pie={
         <>
@@ -374,7 +374,7 @@ export function DialogoRevision({
           </Boton>
           <Boton onClick={guardar} cargando={guardando} disabled={cargando}>
             {!guardando && <Save />}
-            Guardar {incluidas.length} abono(s)
+            Guardar {incluidas.length} {incluidas.length === 1 ? 'abono' : 'abonos'}
           </Boton>
         </>
       }
@@ -385,7 +385,7 @@ export function DialogoRevision({
         <div className="flex flex-col gap-3">
           {abonosPrevios > 0 && (
             <Aviso icono={<AlertTriangle />}>
-              Este reporte ya tiene {abonosPrevios} abono(s) cargados. Si ya había importado este archivo, guardar de
+              Este reporte ya tiene {abonosPrevios === 1 ? '1 abono cargado' : `${abonosPrevios} abonos cargados`}. Si ya había importado este archivo, guardar de
               nuevo duplicaría los pagos.
             </Aviso>
           )}

@@ -56,7 +56,7 @@ export default function ListaReportes() {
   const eliminar = async (r: ReportePago) => {
     const ok = await confirmar({
       titulo: 'Eliminar reporte',
-      mensaje: `Se eliminará el Reporte #${r.id} (${fmtFecha(aFecha(r.fecha_rep))}) y sus ${r.num_abonos ?? 0} abono(s). Esta acción no se puede deshacer.`,
+      mensaje: `Se eliminará el Reporte #${r.id} (${fmtFecha(aFecha(r.fecha_rep))}) y ${(r.num_abonos ?? 0) === 1 ? 'su abono' : `sus ${r.num_abonos ?? 0} abonos`}. Esta acción no se puede deshacer.`,
       confirmar: 'Eliminar',
       peligro: true,
     })
@@ -187,7 +187,7 @@ export default function ListaReportes() {
     <div className="flex h-full flex-col">
       <EncabezadoPagina
         titulo="Reportes de Comisiones"
-        subtitulo={reportes.isSuccess ? `${fmtNum(lista.length)} reporte(s)` : undefined}
+        subtitulo={reportes.isSuccess ? `${fmtNum(lista.length)} ${lista.length === 1 ? 'reporte' : 'reportes'}` : undefined}
         acciones={
           <>
             <Boton
