@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
-import { BarChart3, FolderOpen, Home, LogOut, Menu, ReceiptText, WalletCards, X } from 'lucide-react'
+import { BarChart3, ClipboardCheck, FolderOpen, Home, LayoutDashboard, LogOut, Menu, ReceiptText, WalletCards, X } from 'lucide-react'
 import { cerrarSesion, esAdmin, useSesion, veComisiones } from '@/lib/sesion'
 import { ES_PRUEBAS } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
@@ -24,6 +24,8 @@ export function AppShell() {
     { a: '/catalogos', texto: 'Catálogos', icono: <FolderOpen /> },
     { a: '/reportes', texto: 'Reportes', icono: <BarChart3 /> },
     { a: '/comisiones', texto: 'Reportes de Comisiones', icono: <WalletCards />, visible: veComisiones(usuario) },
+    { a: '/casos', texto: 'Casos por revisar', icono: <ClipboardCheck /> },
+    { a: '/dashboard', texto: 'Dashboard gerencial', icono: <LayoutDashboard />, visible: esAdmin(usuario) },
   ]
 
   const salir = () => {

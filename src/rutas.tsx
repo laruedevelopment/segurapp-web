@@ -4,8 +4,10 @@ import { RequiereSesion } from '@/components/layout/guardas'
 import { configurarAlVencer } from '@/lib/sesion'
 import Inicio from '@/paginas/Inicio'
 import Login from '@/paginas/Login'
+import { rutasCasos } from '@/paginas/casos/rutas'
 import { rutasCatalogos } from '@/paginas/catalogos/rutas'
 import { rutasComisiones } from '@/paginas/comisiones/rutas'
+import { rutasDashboard } from '@/paginas/dashboard/rutas'
 import { rutasPolizas } from '@/paginas/polizas/rutas'
 import { rutasReportes } from '@/paginas/reportes/rutas'
 
@@ -23,6 +25,8 @@ export const router = createBrowserRouter(
             ...rutasCatalogos,
             ...rutasReportes,
             ...rutasComisiones,
+            ...rutasCasos,
+            ...rutasDashboard,
             { path: '*', element: <Navigate to="/" replace /> },
           ],
         },

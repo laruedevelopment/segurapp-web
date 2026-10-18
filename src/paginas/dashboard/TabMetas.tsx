@@ -9,7 +9,7 @@ import { MESES_12, fmtEntero, fmtPct, fmtPesosCompacto, mesCorto } from './forma
 import { DashColors } from './colores'
 import { BarraMeta, DashCard, GraficoColumnas, Rejilla } from './graficos'
 import { DialogoMetas } from './DialogoMetas'
-import { mensajeAmigable } from './mensajes'
+import { mensajeAmigable } from '@/lib/errores'
 import { INDICADORES_META, fraccionesMeta, metaDe, type Meta } from './motor'
 
 export function TabMetas({ c }: { c: CtxDash }) {

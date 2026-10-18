@@ -27,3 +27,7 @@ dist-ssr
 .env.development
 .env.production
 .env.local
+
+# Copias de trabajo de agentes
+.claude/
+.codex/

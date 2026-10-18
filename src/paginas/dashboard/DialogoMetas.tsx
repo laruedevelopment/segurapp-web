@@ -5,7 +5,7 @@ import { Dialogo } from '@/components/ui/dialogo'
 import { Campo, InputNumero, claseCampo } from '@/components/ui/campos'
 import { MENSAJE_TABLA_METAS, claveMetas, esTablaMetasFaltante, guardarMetas } from '@/datos/dashboard'
 import { MESES_12, fmtEntero, fmtMonto } from './formato'
-import { mensajeAmigable } from './mensajes'
+import { mensajeAmigable } from '@/lib/errores'
 import { INDICADORES_META, repartirEnMeses, type IndicadorClave, type Meta } from './motor'
 
 type Valores = Array<number | null>
