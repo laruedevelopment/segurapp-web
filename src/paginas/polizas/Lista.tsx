@@ -280,7 +280,7 @@ export default function ListaPolizas() {
     { id: 'prima', titulo: 'V. prima', ancho: 110, alinear: 'der', celda: (p) => <span className="num">{dinero(p.prima_poliza)}</span>, ordenar: (p) => p.prima_poliza },
     { id: 'valor', titulo: 'V. total', ancho: 110, alinear: 'der', celda: (p) => <span className="num">{dinero(p.valor_poliza)}</span>, ordenar: (p) => p.valor_poliza },
     { id: 'fexp', titulo: 'F. exp.', ancho: 94, celda: (p) => <span className="num">{fmtFecha(aFecha(p.fexp_poliza)) || '—'}</span>, ordenar: (p) => p.fexp_poliza },
-    { id: 'asesor', titulo: 'Asesor', ancho: 110, celda: (p) => p.nombre_asesor ?? '—', ordenar: (p) => p.nombre_asesor?.toLowerCase(), titleDe: (p) => p.nombre_asesor ?? undefined },
+    { id: 'asesor', titulo: 'Asesor', ancho: 62, celda: (p) => p.nombre_asesor ?? '—', ordenar: (p) => p.nombre_asesor?.toLowerCase(), titleDe: (p) => p.nombre_asesor ?? undefined },
     {
       id: 'fcreado',
       titulo: 'Registro / Últ. mod.',
