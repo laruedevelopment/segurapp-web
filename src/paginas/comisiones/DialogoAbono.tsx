@@ -13,7 +13,7 @@ import { obtenerPoliza } from '@/datos/polizas'
 import { aFecha, aISO, hoy } from '@/lib/fechas'
 import { fmtDinero } from '@/lib/numeros'
 import type { PolizaLista } from '@/lib/tipos'
-import { mensajeError } from '@/lib/utils'
+import { mensajeAmigable } from '@/lib/errores'
 import { a2Decimales, buscarPolizasParaAbono, etiquetaPoliza, trasCambiarAbonos } from './comun'
 import { textoMoverPago } from './moverPago'
 
@@ -185,7 +185,7 @@ function FormularioAbono({
       await trasCambiarAbonos(qc, abono ? [poliza.id, abono.id_poliza] : [poliza.id])
       onGuardado()
     } catch (e) {
-      toast.error(`Error: ${mensajeError(e)}`)
+      toast.error(mensajeAmigable(e, 'No se pudo guardar el pago'))
     } finally {
       setGuardando(false)
     }

@@ -19,13 +19,16 @@ import {
   Printer,
   ReceiptText,
   RefreshCw,
+  Search,
   Sigma,
   Wallet,
   WalletCards,
+  X,
 } from 'lucide-react'
 import { Contenido, EncabezadoPagina } from '@/components/layout/AppShell'
 import { Aviso, Cargando, Cifra, Etiqueta, MensajeError, SeccionTarjeta, Vacio } from '@/components/ui/basicos'
 import { Boton } from '@/components/ui/button'
+import { Input } from '@/components/ui/campos'
 import { Dialogo } from '@/components/ui/dialogo'
 import {
   etiquetaEstadoPago,
@@ -40,12 +43,14 @@ import { aFecha, aFechaHora, fmtFecha, fmtFechaHora } from '@/lib/fechas'
 import { fmtDinero, fmtNum } from '@/lib/numeros'
 import { useSesion, veComisiones } from '@/lib/sesion'
 import type { Poliza } from '@/lib/tipos'
-import { cn, mensajeError } from '@/lib/utils'
+import { mensajeAmigable } from '@/lib/errores'
+import { cn } from '@/lib/utils'
 import {
   calcularPorcPagado,
   calcularSaldo,
   calcularTotales,
   esAnulado,
+  filtrarAbonos,
   etiquetaSaldo,
   fmtPct1,
 } from './estado-cuenta-calculos'
@@ -118,6 +123,9 @@ export default function EstadoCuenta() {
   const reporte = consulta.data?.reporte ?? null
   const poliza = consulta.data?.poliza ?? null
   const primero = abonos[0] ?? null
+  // Buscador de la tabla (solo en el estado de cuenta de un reporte). Los totales siguen sobre todos los abonos.
+  const [filtro, setFiltro] = useState('')
+  const abonosVisibles = useMemo(() => (modoPoliza ? abonos : filtrarAbonos(abonos, filtro)), [abonos, filtro, modoPoliza])
 
   const totales = useMemo(() => calcularTotales(abonos), [abonos])
   // Prima de la póliza (misma columna prima_poliza en la póliza y en cada abono).
@@ -156,7 +164,7 @@ export default function EstadoCuenta() {
       descargarPdf(generarPdf(await obtenerLogo()), nombreBase)
       toast.success('PDF generado y descargado.')
     } catch (e) {
-      toast.error(`No se pudo generar el PDF: ${mensajeError(e)}`)
+      toast.error(mensajeAmigable(e, 'No se pudo generar el PDF'))
     } finally {
       setExportando(null)
     }
@@ -171,7 +179,7 @@ export default function EstadoCuenta() {
       if (!ok) toast.info('El navegador bloqueó la ventana emergente; el PDF se descargó para que lo imprima.')
     } catch (e) {
       ventana?.close()
-      toast.error(`No se pudo generar el PDF: ${mensajeError(e)}`)
+      toast.error(mensajeAmigable(e, 'No se pudo generar el PDF'))
     } finally {
       setExportando(null)
     }
@@ -250,7 +258,7 @@ export default function EstadoCuenta() {
         ) : consulta.isPending ? (
           <Cargando />
         ) : consulta.isError ? (
-          <MensajeError error={`Error al cargar: ${mensajeError(consulta.error)}`} />
+          <MensajeError error={mensajeAmigable(consulta.error, 'No se pudo cargar el estado de cuenta')} />
         ) : (
           <>
             {modoPoliza && !poliza && sinAbonos && <Aviso>No se encontró la póliza #{id}.</Aviso>}
@@ -289,8 +297,36 @@ export default function EstadoCuenta() {
                       Los abonos anulados se muestran en gris y no suman en los totales.
                     </Aviso>
                   )}
+                  {!modoPoliza && (
+                    <div className="mb-3">
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-soft" />
+                        <Input
+                          className="pr-9 pl-9"
+                          placeholder="Buscar por código de póliza, número de póliza o cliente…"
+                          value={filtro}
+                          onChange={(e) => setFiltro(e.target.value)}
+                        />
+                        {filtro && (
+                          <button
+                            type="button"
+                            aria-label="Limpiar búsqueda"
+                            className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-ink-soft hover:bg-muted"
+                            onClick={() => setFiltro('')}
+                          >
+                            <X className="size-4" />
+                          </button>
+                        )}
+                      </div>
+                      {filtro.trim() && (
+                        <p className="mt-1 text-[12px] text-ink-soft">
+                          Mostrando {abonosVisibles.length} de {abonos.length} pagos
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <TablaHistorial
-                    abonos={abonos}
+                    abonos={abonosVisibles}
                     modoPoliza={modoPoliza}
                     enlazarReportes={puedeVerComisiones}
                     totalAbonado={totales.totalAbonado}
@@ -535,7 +571,7 @@ function DialogoComprobante({
       descargarPdf(pdfComprobante({ abono: a, logo: await obtenerLogo() }), `factura_${a.num_factura ?? a.id}`)
       toast.success('Comprobante descargado como PDF.')
     } catch (e) {
-      toast.error(`No se pudo generar el PDF: ${mensajeError(e)}`)
+      toast.error(mensajeAmigable(e, 'No se pudo generar el PDF'))
     } finally {
       setDescargando(false)
     }

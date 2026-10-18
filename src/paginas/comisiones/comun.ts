@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query'
+import { CLAVE_ABONOS } from '@/datos/dashboard'
 import { COLS_LISTA } from '@/datos/polizas'
 import { refrescarPolizas } from '@/datos/usePolizas'
 import { ilikeContiene } from '@/lib/filtros'
@@ -20,6 +21,8 @@ export async function trasCambiarAbonos(qc: QueryClient, idsPolizas: number[]) {
     refrescarPolizas(qc, [...new Set(idsPolizas)]),
     qc.invalidateQueries({ queryKey: CLAVE_REPORTES }),
     qc.invalidateQueries({ queryKey: ['estado-cuenta'] }),
+    // Recaudo y comisión del dashboard salen de los abonos (caché de 15 min).
+    qc.invalidateQueries({ queryKey: CLAVE_ABONOS }),
     // Las listas cortas (recientes, búsquedas, pólizas del cliente) muestran
     // la prima pagada y el estado que la base acaba de recalcular.
     qc.invalidateQueries({ queryKey: ['polizas'], predicate: (q) => q.queryKey[1] !== 'todas' }),
