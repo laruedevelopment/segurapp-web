@@ -14,7 +14,8 @@ import { listarPolizasDeCliente, listarPolizasPorNroContiene } from '@/datos/pol
 import { aFecha, aISO, fmtFecha } from '@/lib/fechas'
 import { fmtDinero, formatearNumCO, parseNumCO, sumarDinero } from '@/lib/numeros'
 import type { PolizaLista } from '@/lib/tipos'
-import { cn, mensajeError } from '@/lib/utils'
+import { mensajeAmigable } from '@/lib/errores'
+import { cn } from '@/lib/utils'
 import {
   a2Decimales,
   buscarPolizasParaAbono,
@@ -317,7 +318,7 @@ export function DialogoRevision({
         guardadas.add(f.clave)
         idsPolizas.push(f.poliza!.id)
       } catch (e) {
-        errores.set(f.clave, `No se guardó: ${mensajeError(e)}`)
+        errores.set(f.clave, mensajeAmigable(e, 'No se guardó'))
       }
     }
 

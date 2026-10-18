@@ -7,12 +7,13 @@ import { Contenido, EncabezadoPagina } from '@/components/layout/AppShell'
 import { Cargando, Chip, MensajeError, Vacio } from '@/components/ui/basicos'
 import { Boton } from '@/components/ui/button'
 import { Input } from '@/components/ui/campos'
+import { SelectorRango, type Rango } from '@/components/ui/fecha'
 import { useConfirmar } from '@/components/ui/dialogo'
 import { Tabla, type Columna } from '@/components/ui/tabla'
-import { ESTADOS_PAGO, eliminarReporte, listarAbonosDeReporte, listarReportes, type ReportePago } from '@/datos/pagos'
+import { ESTADOS_PAGO, LIMITE_REPORTES, eliminarReporte, listarAbonosDeReporte, listarReportes, type ReportePago } from '@/datos/pagos'
 import { aFecha, fmtFecha } from '@/lib/fechas'
 import { fmtDinero, fmtNum } from '@/lib/numeros'
-import { mensajeError } from '@/lib/utils'
+import { mensajeAmigable } from '@/lib/errores'
 import { CLAVE_REPORTES, trasCambiarAbonos } from './comun'
 import { EstadoPago } from './EstadoPago'
 import { useApodos } from './UsuariosReporte'
@@ -35,17 +36,22 @@ export default function ListaReportes() {
     return () => clearTimeout(t)
   }, [texto])
 
+  const [rango, setRango] = useState<Rango>({ desde: null, hasta: null })
+  const estado = filtroEstado === 'TODOS' ? null : filtroEstado
+  // Con un solo extremo elegido, el rango es ese único día (como en el dashboard).
+  const desde = rango.desde ?? rango.hasta
+  const hasta = rango.hasta ?? rango.desde
+
+  // Búsqueda, estado y fechas se filtran en el servidor.
   const reportes = useQuery({
-    queryKey: [...CLAVE_REPORTES, 'lista', busqueda],
-    queryFn: () => listarReportes(busqueda),
+    queryKey: [...CLAVE_REPORTES, 'lista', busqueda, estado, desde?.getTime() ?? null, hasta?.getTime() ?? null],
+    queryFn: () => listarReportes({ busqueda, estado, desde, hasta }),
     // Siempre fresca: al volver de un reporte los totales pudieron cambiar.
     staleTime: 0,
+    placeholderData: (previa) => previa,
   })
 
-  const lista = useMemo(() => {
-    const todos = reportes.data ?? []
-    return filtroEstado === 'TODOS' ? todos : todos.filter((r) => r.estado_rep === filtroEstado)
-  }, [reportes.data, filtroEstado])
+  const lista = useMemo(() => reportes.data ?? [], [reportes.data])
 
   const eliminar = async (r: ReportePago) => {
     const ok = await confirmar({
@@ -62,7 +68,7 @@ export default function ListaReportes() {
       await trasCambiarAbonos(qc, ids)
       toast.success(`Reporte #${r.id} eliminado`)
     } catch (e) {
-      toast.error(`Error: ${mensajeError(e)}`)
+      toast.error(mensajeAmigable(e, 'No se pudo eliminar el reporte'))
     }
   }
 
@@ -207,7 +213,7 @@ export default function ListaReportes() {
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-soft" />
           <Input
             className="pr-9 pl-9"
-            placeholder="Buscar por aseguradora o intermediario…"
+            placeholder="Buscar por aseguradora, intermediario o código del reporte…"
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
           />
@@ -228,13 +234,19 @@ export default function ListaReportes() {
               {e === 'TODOS' ? 'Todos' : ESTADOS_PAGO[e]}
             </Chip>
           ))}
+          <SelectorRango etiqueta="Fecha del reporte" valor={rango} onCambio={setRango} />
         </div>
+        {lista.length >= LIMITE_REPORTES && (
+          <p className="text-[12px] text-ink-soft">
+            Se muestran los {LIMITE_REPORTES} reportes más recientes. Afine la búsqueda, el estado o las fechas para ver otros.
+          </p>
+        )}
 
         {reportes.isError && !reportes.data ? (
           <MensajeError
             error={
               <div className="flex items-center gap-3">
-                <span className="flex-1">No se pudieron cargar los reportes: {mensajeError(reportes.error)}</span>
+                <span className="flex-1">{mensajeAmigable(reportes.error, 'No se pudieron cargar los reportes')}</span>
                 <Boton tamano="sm" variante="secundario" onClick={() => reportes.refetch()}>
                   Reintentar
                 </Boton>

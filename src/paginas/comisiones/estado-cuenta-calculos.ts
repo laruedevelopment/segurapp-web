@@ -2,7 +2,35 @@
 // lib/ui/pagina_estado_cuenta.dart y lib/utils/generador_pdf.dart de la app
 // Flutter. Es plata: sumas exactas en centavos y los abonos anulados no suman.
 
+import { normalizarAlfanumerico } from '@/lib/filtros'
 import { fmtNum, sumarDinero } from '@/lib/numeros'
+
+/** Campos de un abono que usa el buscador del estado de cuenta. */
+export interface AbonoBuscable {
+  id_poliza: number
+  nro_poliza: string | null
+  nombre_cliente: string | null
+}
+
+/**
+ * Buscador del estado de cuenta de un reporte: por código de póliza ("57" o
+ * "#57"), número de póliza (sin símbolos ni mayúsculas) o nombre del cliente.
+ * Solo filtra la tabla; los totales se calculan sobre todos los abonos.
+ */
+export function filtrarAbonos<T extends AbonoBuscable>(abonos: T[], busqueda: string): T[] {
+  const q = busqueda.trim()
+  if (!q) return abonos
+  const sinNumeral = q.replace(/^#/, '').trim()
+  const codigo = /^\d+$/.test(sinNumeral) ? Number(sinNumeral) : null
+  const norm = normalizarAlfanumerico(q)
+  const texto = q.toUpperCase()
+  return abonos.filter(
+    (a) =>
+      a.id_poliza === codigo ||
+      (norm !== '' && normalizarAlfanumerico(a.nro_poliza ?? '').includes(norm)) ||
+      (a.nombre_cliente ?? '').toUpperCase().includes(texto),
+  )
+}
 
 /** Campos de un abono que intervienen en los totales. */
 export interface AbonoMontos {

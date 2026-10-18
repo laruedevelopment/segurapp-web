@@ -1,4 +1,4 @@
-import { ilikeContiene } from '@/lib/filtros'
+import { filtroBusquedaReportes, limitesRangoFechas } from '@/datos/pagos-filtros'
 import { usuarioId } from '@/lib/sesion'
 import { db } from '@/lib/supabase'
 
@@ -108,10 +108,32 @@ const COLS_ABONO =
 
 // ── Reportes ────────────────────────────────────────────────────────────────
 
-export async function listarReportes(busqueda = '', limite = 300): Promise<ReportePago[]> {
-  const q = busqueda.trim()
+export interface FiltrosReportes {
+  busqueda?: string
+  /** Código de estado (I, C, R, V, A); se filtra en el servidor. */
+  estado?: string | null
+  /** Rango de fecha_rep, ambos días incluidos. */
+  desde?: Date | null
+  hasta?: Date | null
+  limite?: number
+}
+
+export const LIMITE_REPORTES = 300
+
+export async function listarReportes({
+  busqueda = '',
+  estado = null,
+  desde = null,
+  hasta = null,
+  limite = LIMITE_REPORTES,
+}: FiltrosReportes = {}): Promise<ReportePago[]> {
   let req = db.from(VISTA_REPORTES).select(COLS_REPORTE)
-  if (q) req = req.or(`${ilikeContiene('nombre_aseg', q)},${ilikeContiene('nombre_interm', q)}`)
+  const filtro = filtroBusquedaReportes(busqueda)
+  if (filtro) req = req.or(filtro)
+  if (estado) req = req.eq('estado_rep', estado)
+  const { gte, lte } = limitesRangoFechas(desde, hasta)
+  if (gte) req = req.gte('fecha_rep', gte)
+  if (lte) req = req.lte('fecha_rep', lte)
   const { data, error } = await req.order('fecha_rep', { ascending: false }).limit(limite)
   if (error) throw error
   return (data ?? []) as unknown as ReportePago[]

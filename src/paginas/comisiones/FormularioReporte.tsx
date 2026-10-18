@@ -41,7 +41,7 @@ import {
 import { aFecha, aISO, hoy } from '@/lib/fechas'
 import { fmtDinero, fmtDoc, fmtNum, fmtPct, sumarDinero } from '@/lib/numeros'
 import type { Aseguradora, Intermediario } from '@/lib/tipos'
-import { mensajeError } from '@/lib/utils'
+import { mensajeAmigable } from '@/lib/errores'
 import {
   CLAVE_REPORTES,
   a2Decimales,
@@ -83,7 +83,7 @@ export default function FormularioReporte() {
         <MensajeError
           error={
             <div className="flex items-center gap-3">
-              <span className="flex-1">No se pudo cargar el reporte: {mensajeError(reporte.error)}</span>
+              <span className="flex-1">{mensajeAmigable(reporte.error, 'No se pudo cargar el reporte')}</span>
               <Boton tamano="sm" variante="secundario" onClick={() => reporte.refetch()}>
                 Reintentar
               </Boton>
@@ -219,7 +219,7 @@ function Editor({ reporte }: { reporte: ReportePago | null }) {
         navigate('/comisiones')
       }
     } catch (e) {
-      toast.error(`Error: ${mensajeError(e)}`)
+      toast.error(mensajeAmigable(e, 'No se pudo guardar el reporte'))
     } finally {
       setGuardando(false)
     }
@@ -294,7 +294,7 @@ function Editor({ reporte }: { reporte: ReportePago | null }) {
         )
       }
     } catch (e) {
-      toast.error(`Error al importar: ${mensajeError(e)}`)
+      toast.error(mensajeAmigable(e, 'No se pudo importar el archivo'))
     } finally {
       setImportando(false)
     }
@@ -321,7 +321,7 @@ function Editor({ reporte }: { reporte: ReportePago | null }) {
       await eliminarAbono(a.id)
       await trasCambiarAbonos(qc, [a.id_poliza])
     } catch (e) {
-      toast.error(`Error: ${mensajeError(e)}`)
+      toast.error(mensajeAmigable(e, 'No se pudo eliminar el pago'))
     }
   }
 
@@ -469,7 +469,7 @@ function Editor({ reporte }: { reporte: ReportePago | null }) {
               {abonos.isPending ? (
                 <Cargando className="py-8" texto="Cargando abonos…" />
               ) : abonos.isError ? (
-                <MensajeError error={`No se pudieron cargar los abonos: ${mensajeError(abonos.error)}`} />
+                <MensajeError error={mensajeAmigable(abonos.error, 'No se pudieron cargar los abonos')} />
               ) : abonos.data.length === 0 ? (
                 <Vacio titulo="Sin pólizas en este reporte" detalle='Presione "Añadir póliza" para comenzar o importe el documento.' />
               ) : (
