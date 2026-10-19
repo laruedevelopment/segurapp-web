@@ -29,6 +29,10 @@ jobs:
       - run: npm run build
         env:
           VITE_BASE: /SegurAppRSAS/
+          # Valores públicos (la clave anon va dentro de la app por diseño; la seguridad la dan las reglas RLS).
+          VITE_SUPABASE_URL: https://tmuapctazakdecyddelw.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtdWFwY3RhemFrZGVjeWRkZWx3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2Mzk3ODgsImV4cCI6MjA4NTIxNTc4OH0.dC28gXPut6VqkYswXlToWoFTJ2LISZBQYHAmyapKlWI
+          VITE_APP_ENV: prod
       # GitHub Pages no conoce las rutas internas: 404.html = index.html.
       - run: cp dist/index.html dist/404.html
 
