@@ -27,7 +27,7 @@ import { aFecha, aFechaHora, fmtFecha, fmtFechaHora } from '@/lib/fechas'
 import { fmtDinero, fmtDoc, fmtNum } from '@/lib/numeros'
 import { esAdmin, useSesion, veComisiones } from '@/lib/sesion'
 import type { PolizaLista } from '@/lib/tipos'
-import { useEsAncha } from '@/lib/useMediaQuery'
+import { useEsAncha, useMediaQuery } from '@/lib/useMediaQuery'
 import { mensajeError } from '@/lib/utils'
 import DialogoEliminar from './DialogoEliminar'
 import { alternarTodasVisibles, estadoSeleccionVisibles } from './seleccionLogica'
@@ -41,6 +41,15 @@ const docCliente = (p: PolizaLista) =>
 const boton40 = 'h-10 md:h-8'
 
 const dinero = (n: number | null) => (n ? fmtDinero(n) : '—')
+
+interface AccionLista {
+  clave: string
+  icono: ReactNode
+  texto: string
+  onClick: () => void
+  disabled?: boolean
+  insignia?: ReactNode
+}
 
 export default function ListaPolizas() {
   const navigate = useNavigate()
@@ -196,6 +205,51 @@ export default function ListaPolizas() {
     if (busqueda) resultadoBusqueda.refetch()
     else if (todas.data) todas.refetch()
     else recientes.refetch()
+  }
+
+  // En pantallas anchas los botones van a la vista; en las angostas se agrupan en "Más acciones".
+  const anchoCompleto = useMediaQuery('(min-width: 1024px)')
+  const accionesSecundarias: AccionLista[] = [
+    { clave: 'carga', icono: <Upload />, texto: 'Carga masiva', onClick: () => navigate('/polizas/carga-masiva') },
+    { clave: 'repetidas', icono: <CopyCheck />, texto: 'Repetidas', onClick: () => navigate('/polizas/duplicadas') },
+    {
+      clave: 'seleccion',
+      icono: modoSeleccion ? <X /> : <ListChecks />,
+      texto: modoSeleccion ? 'Salir de la selección' : 'Eliminar varias',
+      onClick: () => (modoSeleccion ? salirSeleccion() : setModoSeleccion(true)),
+    },
+    ...(admin
+      ? [
+          {
+            clave: 'autorizar',
+            icono: <Trash2 />,
+            texto: 'Por autorizar',
+            onClick: () => navigate('/polizas/eliminaciones'),
+            insignia: !!conteoEliminaciones.data && (
+              <span className="num rounded-full bg-danger px-1.5 text-[11px] text-white">
+                <span aria-hidden="true">{conteoEliminaciones.data}</span>
+                <span className="sr-only"> por autorizar</span>
+              </span>
+            ),
+          },
+        ]
+      : []),
+    {
+      clave: 'recargar',
+      icono: <RefreshCw className={fuente.isFetching ? 'animate-spin' : ''} />,
+      texto: 'Recargar',
+      disabled: fuente.isFetching,
+      onClick: recargar,
+    },
+  ]
+  const restablecer: AccionLista = {
+    clave: 'columnas',
+    icono: <Columns3 />,
+    texto: 'Restablecer columnas',
+    onClick: () => {
+      restablecerColumnas('polizas')
+      setVersionColumnas((v) => v + 1)
+    },
   }
 
   const columnas: Columna<PolizaLista>[] = [
@@ -382,48 +436,30 @@ export default function ListaPolizas() {
                 )}
               </Boton>
             </Link>
-            <MenuAcciones>
-              <ItemMenu icono={<Upload />} onSelect={() => navigate('/polizas/carga-masiva')}>
-                Carga masiva
-              </ItemMenu>
-              <ItemMenu icono={<CopyCheck />} onSelect={() => navigate('/polizas/duplicadas')}>
-                Repetidas
-              </ItemMenu>
-              <ItemMenu
-                icono={modoSeleccion ? <X /> : <ListChecks />}
-                onSelect={() => (modoSeleccion ? salirSeleccion() : setModoSeleccion(true))}
-              >
-                {modoSeleccion ? 'Salir de la selección' : 'Eliminar varias'}
-              </ItemMenu>
-              {admin && (
-                <ItemMenu
-                  icono={<Trash2 />}
-                  onSelect={() => navigate('/polizas/eliminaciones')}
-                  insignia={
-                    !!conteoEliminaciones.data && (
-                      <span className="num rounded-full bg-danger px-1.5 text-[11px] text-white">
-                        <span aria-hidden="true">{conteoEliminaciones.data}</span>
-                        <span className="sr-only"> por autorizar</span>
-                      </span>
-                    )
-                  }
-                >
-                  Por autorizar
-                </ItemMenu>
-              )}
-              <ItemMenu
-                icono={<Columns3 />}
-                onSelect={() => {
-                  restablecerColumnas('polizas')
-                  setVersionColumnas((v) => v + 1)
-                }}
-              >
-                Restablecer columnas
-              </ItemMenu>
-              <ItemMenu icono={<RefreshCw className={fuente.isFetching ? 'animate-spin' : ''} />} disabled={fuente.isFetching} onSelect={recargar}>
-                Recargar
-              </ItemMenu>
-            </MenuAcciones>
+            {anchoCompleto ? (
+              <>
+                {accionesSecundarias.map((x) => (
+                  <Boton key={x.clave} variante="secundario" tamano="sm" className={boton40} disabled={x.disabled} onClick={x.onClick}>
+                    {x.icono}
+                    {x.texto}
+                    {x.insignia}
+                  </Boton>
+                ))}
+                <MenuAcciones etiqueta="Más">
+                  <ItemMenu icono={restablecer.icono} onSelect={restablecer.onClick}>
+                    {restablecer.texto}
+                  </ItemMenu>
+                </MenuAcciones>
+              </>
+            ) : (
+              <MenuAcciones>
+                {[...accionesSecundarias, restablecer].map((x) => (
+                  <ItemMenu key={x.clave} icono={x.icono} disabled={x.disabled} onSelect={x.onClick} insignia={x.insignia}>
+                    {x.texto}
+                  </ItemMenu>
+                ))}
+              </MenuAcciones>
+            )}
             <Link to="/polizas/nueva">
               <Boton variante="verde" tamano="sm" className={boton40} title="Nueva póliza (Alt+N)">
                 <FilePlus2 />
