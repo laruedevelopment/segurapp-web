@@ -209,8 +209,8 @@ export default function ListaPolizas() {
 
   // En pantallas anchas los botones van a la vista; en las angostas se agrupan en "Más acciones".
   const anchoCompleto = useMediaQuery('(min-width: 1024px)')
+  const cargaMasiva: AccionLista = { clave: 'carga', icono: <Upload />, texto: 'Carga masiva', onClick: () => navigate('/polizas/carga-masiva') }
   const accionesSecundarias: AccionLista[] = [
-    { clave: 'carga', icono: <Upload />, texto: 'Carga masiva', onClick: () => navigate('/polizas/carga-masiva') },
     { clave: 'repetidas', icono: <CopyCheck />, texto: 'Repetidas', onClick: () => navigate('/polizas/duplicadas') },
     {
       clave: 'seleccion',
@@ -436,6 +436,11 @@ export default function ListaPolizas() {
                 )}
               </Boton>
             </Link>
+            {/* Carga masiva se usa todo el tiempo: siempre a la vista, también en pantallas angostas. */}
+            <Boton variante="secundario" tamano="sm" className={boton40} onClick={cargaMasiva.onClick}>
+              {cargaMasiva.icono}
+              {cargaMasiva.texto}
+            </Boton>
             {anchoCompleto ? (
               <>
                 {accionesSecundarias.map((x) => (
