@@ -1,22 +1,22 @@
-name: Desplegar a GitHub Pages
+name: Desplegar a SegurAppRSAS
 
-# Cada push a main prueba, compila (con la base de producción) y publica.
+# Publica la app en https://laruedevelopment.github.io/SegurAppRSAS/ (repositorio
+# laruedevelopment/SegurAppRSAS, rama principal). La copia de respaldo de la app
+# Flutter vive en la subcarpeta /flutter/ de ese mismo sitio y NO se toca aquí.
+#
+# Requiere el secreto DEPLOY_TOKEN: un token con permiso de escritura (Contents)
+# sobre el repositorio laruedevelopment/SegurAppRSAS.
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: despliegue
+  cancel-in-progress: false
 
 jobs:
-  construir:
+  construir-y-publicar:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,19 +28,21 @@ jobs:
       - run: npx vitest run
       - run: npm run build
         env:
-          VITE_BASE: /${{ github.event.repository.name }}/
+          VITE_BASE: /SegurAppRSAS/
       # GitHub Pages no conoce las rutas internas: 404.html = index.html.
       - run: cp dist/index.html dist/404.html
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
 
-  publicar:
-    needs: construir
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.despliegue.outputs.page_url }}
-    steps:
-      - id: despliegue
-        uses: actions/deploy-pages@v4
+      - name: Publicar en SegurAppRSAS
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+        run: |
+          git clone --depth 1 "https://x-access-token:${DEPLOY_TOKEN}@github.com/laruedevelopment/SegurAppRSAS.git" deploy_repo
+          cd deploy_repo
+          # Se limpia la raíz (la versión anterior) pero se conserva el respaldo /flutter/.
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name flutter ! -name CNAME -exec rm -rf {} +
+          cp -r ../dist/. .
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "Deploy React: ${GITHUB_SHA}"
+          git push
