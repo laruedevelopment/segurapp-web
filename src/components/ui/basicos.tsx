@@ -59,10 +59,13 @@ export function Chip({
   activo,
   onClick,
   children,
+  fuerte = false,
 }: {
   activo: boolean
   onClick: () => void
   children: ReactNode
+  /** Seleccionado con verde sólido y texto blanco (más notorio), para opciones únicas como el estado. */
+  fuerte?: boolean
 }) {
   return (
     <button
@@ -71,7 +74,11 @@ export function Chip({
       onClick={onClick}
       className={cn(
         'inline-flex h-10 items-center md:h-8 gap-1.5 rounded-full border px-3 text-[12.5px] font-semibold transition-colors [&_svg]:size-3.5',
-        activo ? 'border-green/30 bg-green-soft text-green-ink' : 'border-transparent bg-muted text-ink hover:bg-line',
+        activo
+          ? fuerte
+            ? 'border-[#167a3c] bg-[#167a3c] text-white shadow-sm'
+            : 'border-green/30 bg-green-soft text-green-ink'
+          : 'border-transparent bg-muted text-ink hover:bg-line',
       )}
     >
       {children}

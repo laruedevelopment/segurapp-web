@@ -1149,7 +1149,7 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
               <div className="mb-1 text-[12px] font-semibold text-ink-soft">Estado de la póliza</div>
               <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Estado de la póliza">
                 {listas.estados.map((e) => (
-                  <Chip key={e.id} activo={f.estadoId === e.id} onClick={() => set('estadoId', e.id)}>
+                  <Chip key={e.id} fuerte activo={f.estadoId === e.id} onClick={() => set('estadoId', e.id)}>
                     {e.nombre_estado}
                   </Chip>
                 ))}
