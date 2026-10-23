@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { Dialog } from 'radix-ui'
-import { BarChart3, ClipboardCheck, FolderOpen, Home, LayoutDashboard, LogOut, Menu, PanelLeftClose, PanelLeftOpen, ReceiptText, Trash2, WalletCards, X } from 'lucide-react'
+import { BarChart3, ClipboardCheck, FolderOpen, Home, LayoutDashboard, LogOut, Target, Menu, PanelLeftClose, PanelLeftOpen, ReceiptText, Trash2, WalletCards, X } from 'lucide-react'
 import { useCasosPendientes } from '@/datos/casos'
 import { useConteoEliminaciones } from '@/datos/eliminacion'
 import { cerrarSesion, esAdmin, useSesion, veComisiones } from '@/lib/sesion'
@@ -62,6 +62,7 @@ export function AppShell() {
       visible: esAdmin(usuario),
       contador: eliminaciones.data,
     },
+    { a: '/oportunidades', texto: 'Oportunidades SECOP', icono: <Target />, visible: ES_PRUEBAS },
     { a: '/dashboard', texto: 'Dashboard gerencial', icono: <LayoutDashboard />, visible: esAdmin(usuario) },
   ]
 
