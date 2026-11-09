@@ -152,5 +152,6 @@ export function cerrarSesion() {
 /** Roles: A = Administrador, S = acceso a comisiones, D = Digitador. */
 export const rolDe = (u: Usuario | null | undefined) => (u?.rol ?? '').toUpperCase()
 export const esAdmin = (u: Usuario | null | undefined) => rolDe(u) === 'A'
-export const veComisiones = (u: Usuario | null | undefined) => ['A', 'S'].includes(rolDe(u))
+/** Reportes de comisiones y pagos: todos los roles con sesión (el Digitador también). */
+export const veComisiones = (u: Usuario | null | undefined) => ['A', 'S', 'D'].includes(rolDe(u))
 export const usuarioId = () => sesion?.usuario.id ?? null
