@@ -21,7 +21,6 @@ import {
 import { Contenido, EncabezadoPagina } from '@/components/layout/AppShell'
 import { CreadoEditado } from './UsuariosReporte'
 import { DialogoCrearFactura } from '@/paginas/facturas/DialogoCrearFactura'
-import { ES_PRUEBAS } from '@/lib/supabase'
 import { Aviso, Cargando, Cifra, MensajeError, SeccionTarjeta, Vacio } from '@/components/ui/basicos'
 import { Buscador } from '@/components/ui/buscador'
 import { Boton } from '@/components/ui/button'
@@ -367,7 +366,7 @@ function Editor({ reporte }: { reporte: ReportePago | null }) {
               {importando ? <Loader2 className="animate-spin" /> : <Sparkles />}
               {importando ? 'Leyendo documento…' : 'Importar desde PDF/imagen'}
             </Boton>
-            {ES_PRUEBAS && !esNuevo && asegId != null && (
+            {!esNuevo && asegId != null && (
               <Boton variante="secundario" tamano="sm" onClick={() => setCreandoFactura(true)} title="Hacer la factura (cuenta de cobro) de las líneas de este reporte">
                 <FileSpreadsheet />
                 Crear factura

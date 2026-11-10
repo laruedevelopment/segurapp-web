@@ -54,7 +54,7 @@ export function AppShell() {
     { a: '/catalogos', texto: 'Catálogos', icono: <FolderOpen /> },
     { a: '/reportes', texto: 'Reportes', icono: <BarChart3 /> },
     { a: '/comisiones', texto: 'Reportes de Comisiones', icono: <WalletCards />, visible: veComisiones(usuario) },
-    { a: '/facturas', texto: 'Facturas', icono: <FileSpreadsheet />, visible: ES_PRUEBAS && veComisiones(usuario) },
+    { a: '/facturas', texto: 'Facturas', icono: <FileSpreadsheet />, visible: veComisiones(usuario) },
     { a: '/casos', texto: 'Casos por revisar', icono: <ClipboardCheck />, contador: casos.data },
     {
       a: '/polizas/eliminaciones',

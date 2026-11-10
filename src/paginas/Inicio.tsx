@@ -67,7 +67,7 @@ export default function Inicio() {
         {veComisiones(u) && (
           <Acceso a="/comisiones" icono={<WalletCards />} titulo="Reportes de Comisiones" detalle="Registrar abonos y pagos de comisiones" color="bg-warning-soft text-warning" />
         )}
-        {ES_PRUEBAS && veComisiones(u) && (
+        {veComisiones(u) && (
           <Acceso a="/facturas" icono={<FileSpreadsheet />} titulo="Facturas" detalle="Cuentas de cobro de los reportes de comisiones" color="bg-warning-soft text-warning" />
         )}
         {esAdmin(u) && (
