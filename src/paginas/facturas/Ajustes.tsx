@@ -143,7 +143,7 @@ function Empresas() {
               <div className="min-w-0 flex-1">
                 <div className="text-[13.5px] font-semibold">{e.nombre}</div>
                 <div className="text-[12px] text-ink-soft">
-                  NIT <span className="num">{e.nit}</span> · {nombreAseg(e.asegId)}
+                  NIT <span className="num">{e.nit}</span> · {nombreAseg(e.asegId)} · IVA {e.ivaPct} %
                 </div>
               </div>
               {!e.activa && <Etiqueta>Inactiva</Etiqueta>}
@@ -188,19 +188,21 @@ function DialogoEmpresa({
   const [nit, setNit] = useState(empresa?.nit ?? '')
   const [aseg, setAseg] = useState<Aseguradora | null>(aseguradoras.find((a) => a.id === empresa?.asegId) ?? null)
   const [activa, setActiva] = useState(empresa?.activa ?? true)
+  const [ivaPct, setIvaPct] = useState<number | null>(empresa?.ivaPct ?? 16)
   const [intento, setIntento] = useState(false)
   const [guardando, setGuardando] = useState(false)
 
   const digitosNit = nit.replace(/\D/g, '')
   const errorNombre = nombre.trim() === '' ? 'Requerido' : null
-  const errorNit = digitosNit.length < 6 ? 'Escriba el NIT completo' : null
+  const errorNit = digitosNit.length < 1 ? 'Escriba el NIT' : null
+  const errorIva = !porcentajeValido(ivaPct) ? 'Entre 0 y 100' : null
 
   const guardar = async () => {
     setIntento(true)
-    if (errorNombre || errorNit) return
+    if (errorNombre || errorNit || errorIva) return
     setGuardando(true)
     try {
-      await guardarEmpresa({ id: empresa?.id, asegId: aseg?.id ?? null, nombre, nit, activa })
+      await guardarEmpresa({ id: empresa?.id, asegId: aseg?.id ?? null, nombre, nit, ivaPct: ivaPct ?? 0, activa })
       toast.success('Empresa guardada.')
       await onGuardada()
     } catch (e) {
@@ -231,6 +233,9 @@ function DialogoEmpresa({
         </Campo>
         <Campo etiqueta="NIT" obligatorio error={intento ? errorNit : null}>
           <Input value={nit} onChange={(e) => setNit(e.target.value)} placeholder="860.009.578-6" />
+        </Campo>
+        <Campo etiqueta="IVA que lleva esta empresa (%)" ayuda="Generales suele ser 16 %; Vida, 0 %. Se usa como punto de partida en cada factura." error={intento ? errorIva : null}>
+          <InputNumero valor={ivaPct} onCambio={setIvaPct} permitirNegativos={false} sufijo="%" />
         </Campo>
         <Campo etiqueta="Aseguradora">
           <Buscador<Aseguradora>

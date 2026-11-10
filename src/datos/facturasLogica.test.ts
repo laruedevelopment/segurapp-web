@@ -25,8 +25,15 @@ describe('calcularMontos', () => {
     expect(m.total).toBe(780339.01)
     expect(m.neto).toBeCloseTo(780339.01 - 67270.6 - 6727.06, 2)
   })
+  it('con retención de IVA 50 %: reproduce el valor a consignar de la factura 1413 del software anterior', () => {
+    const m = calcularMontos(672706.04, 16, 11, 0, 50)
+    expect(m.iva).toBe(107632.97)
+    expect(m.retefuente).toBe(73997.66)
+    expect(m.reteiva).toBe(53816.49)
+    expect(m.neto).toBeCloseTo(652524.86, 2)
+  })
   it('subtotal en cero da todo en cero', () => {
-    expect(calcularMontos(0, 19, 10, 1)).toEqual({ iva: 0, total: 0, retefuente: 0, ica: 0, neto: 0 })
+    expect(calcularMontos(0, 19, 10, 1)).toEqual({ iva: 0, total: 0, retefuente: 0, ica: 0, reteiva: 0, neto: 0 })
   })
 })
 
@@ -74,10 +81,10 @@ describe('empresas, parseo y validación', () => {
   it('ofrece primero las empresas de la aseguradora y deja fuera las inactivas', () => {
     const lista = empresasParaAseguradora(
       [
-        { id: 1, asegId: 2, nombre: 'Zeta', nit: '1', activa: true },
-        { id: 2, asegId: 1, nombre: 'Beta', nit: '2', activa: true },
-        { id: 3, asegId: 1, nombre: 'Alfa', nit: '3', activa: true },
-        { id: 4, asegId: 1, nombre: 'Vieja', nit: '4', activa: false },
+        { id: 1, asegId: 2, nombre: 'Zeta', nit: '1', ivaPct: 16, activa: true },
+        { id: 2, asegId: 1, nombre: 'Beta', nit: '2', ivaPct: 16, activa: true },
+        { id: 3, asegId: 1, nombre: 'Alfa', nit: '3', ivaPct: 0, activa: true },
+        { id: 4, asegId: 1, nombre: 'Vieja', nit: '4', ivaPct: 0, activa: false },
       ],
       1,
     )
@@ -103,5 +110,10 @@ describe('empresas, parseo y validación', () => {
     expect(e.fecha).toBeTruthy()
     expect(e.porcentajes).toBeTruthy()
     expect(e.lineas).toBeTruthy()
+  })
+  it('rechaza un subtotal negativo o en cero', () => {
+    const base = { fecha: new Date(), ivaPct: 0, retePct: 10, icaPct: 0, lineasElegidas: 1 }
+    expect(validarFactura({ ...base, subtotal: -93750 }).lineas).toMatch(/más de cero/)
+    expect(validarFactura({ ...base, subtotal: 100 })).toEqual({})
   })
 })

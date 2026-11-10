@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -89,6 +89,7 @@ function Editor({ factura }: { factura: Factura }) {
   const [iva, setIva] = useState<number | null>(factura.ivaPct)
   const [rete, setRete] = useState<number | null>(factura.retefuentePct)
   const [ica, setIca] = useState<number | null>(factura.icaPct)
+  const [reteiva, setReteiva] = useState<number | null>(factura.reteivaPct)
   const [estado, setEstado] = useState<EstadoFactura>(factura.estado)
   const [intento, setIntento] = useState(false)
   const [guardando, setGuardando] = useState(false)
@@ -102,8 +103,8 @@ function Editor({ factura }: { factura: Factura }) {
   }, [factura.estado])
 
   const bloqueada = facturaCerradaParaEditar(factura.estado)
-  const m = calcularMontos(factura.subtotal, iva ?? 0, rete ?? 0, ica ?? 0)
-  const errores = validarFactura({ fecha, ivaPct: iva, retePct: rete, icaPct: ica, lineasElegidas: 1 })
+  const m = calcularMontos(factura.subtotal, iva ?? 0, rete ?? 0, ica ?? 0, reteiva ?? 0)
+  const errores = validarFactura({ fecha, ivaPct: iva, retePct: rete, icaPct: ica, reteivaPct: reteiva, lineasElegidas: 1 })
   const opciones = useMemo(() => empresasParaAseguradora(empresas.data ?? [], factura.asegId), [empresas.data, factura.asegId])
   const empresa = (empresas.data ?? []).find((e) => e.id === empresaId) ?? null
   const sinCambios =
@@ -113,6 +114,7 @@ function Editor({ factura }: { factura: Factura }) {
     iva === factura.ivaPct &&
     rete === factura.retefuentePct &&
     ica === factura.icaPct &&
+    reteiva === factura.reteivaPct &&
     estado === factura.estado
 
   const refrescar = async () => {
@@ -131,6 +133,7 @@ function Editor({ factura }: { factura: Factura }) {
         ivaPct: iva ?? 0,
         retePct: rete ?? 0,
         icaPct: ica ?? 0,
+        reteivaPct: reteiva ?? 0,
         estado,
       })
       toast.success('Factura guardada.')
@@ -285,7 +288,7 @@ function Editor({ factura }: { factura: Factura }) {
         </SeccionTarjeta>
 
         <SeccionTarjeta titulo="Montos" icono={<Save />}>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-4">
             <Campo etiqueta="IVA (%)" error={intento ? errores.porcentajes : null}>
               <InputNumero valor={iva} onCambio={setIva} permitirNegativos={false} sufijo="%" disabled={bloqueada} />
             </Campo>
@@ -295,13 +298,17 @@ function Editor({ factura }: { factura: Factura }) {
             <Campo etiqueta="ICA (%)">
               <InputNumero valor={ica} onCambio={setIca} permitirNegativos={false} sufijo="%" disabled={bloqueada} />
             </Campo>
+            <Campo etiqueta="Retención de IVA (%)">
+              <InputNumero valor={reteiva} onCambio={setReteiva} permitirNegativos={false} sufijo="%" disabled={bloqueada} />
+            </Campo>
           </div>
-          <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 rounded-xl bg-muted px-4 py-3 text-[13px] sm:grid-cols-6">
+          <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 rounded-xl bg-muted px-4 py-3 text-[13px] sm:grid-cols-7">
             <Monto etiqueta="Subtotal" valor={factura.subtotal} />
             <Monto etiqueta="IVA" valor={m.iva} />
             <Monto etiqueta="Total" valor={m.total} />
             <Monto etiqueta="Retención" valor={m.retefuente} />
             <Monto etiqueta="ICA" valor={m.ica} />
+            <Monto etiqueta="Ret. IVA" valor={m.reteiva} />
             <Monto etiqueta="A consignar" valor={m.neto} fuerte />
           </dl>
           {!sinCambios && <p className="mt-2 text-[12px] text-ink-soft">Los montos se guardan al pulsar Guardar.</p>}

@@ -35,6 +35,8 @@ export interface Factura {
   retefuente: number
   icaPct: number
   ica: number
+  reteivaPct: number
+  reteiva: number
   total: number
   neto: number
   estado: EstadoFactura
@@ -50,6 +52,8 @@ export interface EmpresaAseguradora {
   asegId: number | null
   nombre: string
   nit: string
+  /** IVA que lleva esta empresa (16 % las de Generales, 0 % las de Vida). */
+  ivaPct: number
   activa: boolean
 }
 
@@ -82,6 +86,8 @@ export function facturaDesdeFila(raw: unknown): Factura {
     retefuente: num(m.retefuente),
     icaPct: num(m.ica_pct),
     ica: num(m.ica),
+    reteivaPct: num(m.reteiva_pct),
+    reteiva: num(m.reteiva),
     total: num(m.total),
     neto: num(m.neto),
     estado: ESTADOS_FACTURA.includes(estado) ? estado : 'A',
@@ -100,6 +106,7 @@ export function empresaDesdeFila(raw: unknown): EmpresaAseguradora {
     asegId: numONull(m.aseg_id),
     nombre: String(m.nombre ?? ''),
     nit: String(m.nit ?? ''),
+    ivaPct: num(m.iva_pct),
     activa: m.activa !== false,
   }
 }
@@ -114,19 +121,21 @@ export interface Montos {
   total: number
   retefuente: number
   ica: number
+  reteiva: number
   neto: number
 }
 
 /**
- * total = subtotal + IVA;  neto (valor a consignar) = total − retención − ICA.
+ * total = subtotal + IVA;  neto (valor a consignar) = total − retención − ICA − retención de IVA.
  * Igual que factura_montos() en la base.
  */
-export function calcularMontos(subtotal: number, ivaPct: number, retePct: number, icaPct: number): Montos {
+export function calcularMontos(subtotal: number, ivaPct: number, retePct: number, icaPct: number, reteivaPct = 0): Montos {
   const iva = redondear2((subtotal * ivaPct) / 100)
   const retefuente = redondear2((subtotal * retePct) / 100)
   const ica = redondear2((subtotal * icaPct) / 100)
+  const reteiva = redondear2((iva * reteivaPct) / 100)
   const total = redondear2(subtotal + iva)
-  return { iva, total, retefuente, ica, neto: redondear2(total - retefuente - ica) }
+  return { iva, total, retefuente, ica, reteiva, neto: redondear2(total - retefuente - ica - reteiva) }
 }
 
 /** Un porcentaje válido es un número entre 0 y 100. */
@@ -211,11 +220,15 @@ export function validarFactura(f: {
   ivaPct: number | null
   retePct: number | null
   icaPct: number | null
+  reteivaPct?: number | null
   lineasElegidas: number
+  /** Suma de las líneas elegidas; debe ser mayor que cero. */
+  subtotal?: number
 }): ErroresFactura {
   const e: ErroresFactura = {}
   if (!f.fecha) e.fecha = 'Requerida'
-  if (![f.ivaPct, f.retePct, f.icaPct].every(porcentajeValido)) e.porcentajes = 'Los porcentajes deben estar entre 0 y 100.'
+  if (![f.ivaPct, f.retePct, f.icaPct, f.reteivaPct ?? 0].every(porcentajeValido)) e.porcentajes = 'Los porcentajes deben estar entre 0 y 100.'
   if (f.lineasElegidas <= 0) e.lineas = 'Elija al menos una línea.'
+  else if (f.subtotal != null && f.subtotal <= 0) e.lineas = 'Las líneas elegidas deben sumar más de cero. Incluya también líneas positivas.'
   return e
 }

@@ -52,6 +52,7 @@ export function DialogoCrearFactura({
   const [iva, setIva] = useState<number | null>(null)
   const [rete, setRete] = useState<number | null>(null)
   const [ica, setIca] = useState<number | null>(null)
+  const [reteiva, setReteiva] = useState<number | null>(0)
   const [intento, setIntento] = useState(false)
   const [guardando, setGuardando] = useState(false)
 
@@ -66,8 +67,8 @@ export function DialogoCrearFactura({
 
   const lineas = libres.filter((a) => sel.has(a.id))
   const subtotal = Math.round(lineas.reduce((s, a) => s + comisionDeLinea(a), 0) * 100) / 100
-  const m = calcularMontos(subtotal, iva ?? 0, rete ?? 0, ica ?? 0)
-  const errores = validarFactura({ fecha, ivaPct: iva, retePct: rete, icaPct: ica, lineasElegidas: lineas.length })
+  const m = calcularMontos(subtotal, iva ?? 0, rete ?? 0, ica ?? 0, reteiva ?? 0)
+  const errores = validarFactura({ fecha, ivaPct: iva, retePct: rete, icaPct: ica, reteivaPct: reteiva, lineasElegidas: lineas.length, subtotal })
   const opciones = useMemo(() => empresasParaAseguradora(empresas.data ?? [], asegId), [empresas.data, asegId])
 
   const alternar = (id: number) => {
@@ -92,6 +93,7 @@ export function DialogoCrearFactura({
         ivaPct: iva ?? 0,
         retePct: rete ?? 0,
         icaPct: ica ?? 0,
+        reteivaPct: reteiva ?? 0,
       })
       toast.success('Factura creada.')
       onCreada(id)
@@ -149,7 +151,11 @@ export function DialogoCrearFactura({
             <Campo etiqueta="Empresa aseguradora" ayuda="Se identifica por el NIT.">
               <Buscador<EmpresaAseguradora>
                 valor={empresa}
-                onCambio={setEmpresa}
+                onCambio={(e) => {
+                  setEmpresa(e)
+                  // El IVA parte del que lleva la empresa; se puede cambiar después.
+                  if (e) setIva(e.ivaPct)
+                }}
                 opciones={opciones}
                 etiqueta={(e) => e.nombre}
                 detalle={(e) => `NIT ${e.nit}`}
@@ -176,7 +182,7 @@ export function DialogoCrearFactura({
           </div>
           {intento && errores.lineas && <p className="text-[12px] text-danger">{errores.lineas}</p>}
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Campo etiqueta="IVA (%)">
               <InputNumero valor={iva} onCambio={setIva} permitirNegativos={false} sufijo="%" />
             </Campo>
@@ -185,6 +191,9 @@ export function DialogoCrearFactura({
             </Campo>
             <Campo etiqueta="ICA (%)">
               <InputNumero valor={ica} onCambio={setIca} permitirNegativos={false} sufijo="%" />
+            </Campo>
+            <Campo etiqueta="Retención de IVA (%)">
+              <InputNumero valor={reteiva} onCambio={setReteiva} permitirNegativos={false} sufijo="%" />
             </Campo>
           </div>
           {intento && errores.porcentajes && <p className="text-[12px] text-danger">{errores.porcentajes}</p>}
@@ -197,7 +206,7 @@ export function DialogoCrearFactura({
             <Total etiqueta="Subtotal" valor={subtotal} />
             <Total etiqueta="IVA" valor={m.iva} />
             <Total etiqueta="Total" valor={m.total} />
-            <Total etiqueta="Retención + ICA" valor={m.retefuente + m.ica} />
+            <Total etiqueta="Retenciones" valor={m.retefuente + m.ica + m.reteiva} />
             <Total etiqueta="A consignar" valor={m.neto} fuerte />
           </dl>
         </div>

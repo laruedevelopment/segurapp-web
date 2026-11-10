@@ -96,6 +96,7 @@ export interface DatosNuevaFactura {
   ivaPct: number
   retePct: number
   icaPct: number
+  reteivaPct: number
 }
 
 /** Crea la factura con las líneas elegidas (todo o nada) y devuelve su id. */
@@ -110,13 +111,14 @@ export async function crearFactura(d: DatosNuevaFactura): Promise<number> {
     p_iva_pct: d.ivaPct,
     p_rete_pct: d.retePct,
     p_ica_pct: d.icaPct,
+    p_reteiva_pct: d.reteivaPct,
   })
   if (error) throw error
   return Number(data)
 }
 
 export async function siguienteNumeroFactura(): Promise<number | null> {
-  const { data, error } = await db.rpc('factura_siguiente_numero', { p_prefijo: 1 })
+  const { data, error } = await db.rpc('factura_siguiente_numero')
   if (error) throw error
   return data == null ? null : Number(data)
 }
@@ -128,12 +130,13 @@ export interface CambiosFactura {
   ivaPct: number
   retePct: number
   icaPct: number
+  reteivaPct: number
   estado: EstadoFactura
 }
 
 /** Guarda la cabecera y vuelve a calcular los montos con el subtotal vigente. */
 export async function actualizarFactura(f: Factura, c: CambiosFactura) {
-  const m = calcularMontos(f.subtotal, c.ivaPct, c.retePct, c.icaPct)
+  const m = calcularMontos(f.subtotal, c.ivaPct, c.retePct, c.icaPct, c.reteivaPct)
   const { data, error } = await db
     .from('facturas')
     .update({
@@ -143,9 +146,11 @@ export async function actualizarFactura(f: Factura, c: CambiosFactura) {
       iva_pct: c.ivaPct,
       retefuente_pct: c.retePct,
       ica_pct: c.icaPct,
+      reteiva_pct: c.reteivaPct,
       iva: m.iva,
       retefuente: m.retefuente,
       ica: m.ica,
+      reteiva: m.reteiva,
       total: m.total,
       neto: m.neto,
       estado: c.estado,
@@ -223,8 +228,8 @@ export async function listarEmpresas(): Promise<EmpresaAseguradora[]> {
 
 export const useEmpresas = () => useQuery({ queryKey: [...CLAVE_FACTURAS, 'empresas'], queryFn: listarEmpresas, staleTime: 5 * 60_000 })
 
-export async function guardarEmpresa(e: { id?: number; asegId: number | null; nombre: string; nit: string; activa: boolean }) {
-  const fila = { aseg_id: e.asegId, nombre: e.nombre.trim(), nit: e.nit.trim(), activa: e.activa }
+export async function guardarEmpresa(e: { id?: number; asegId: number | null; nombre: string; nit: string; ivaPct: number; activa: boolean }) {
+  const fila = { aseg_id: e.asegId, nombre: e.nombre.trim(), nit: e.nit.trim(), iva_pct: e.ivaPct, activa: e.activa }
   const { error } = e.id == null ? await db.from('facturas_empresas').insert(fila) : await db.from('facturas_empresas').update(fila).eq('id', e.id)
   if (error) throw error
 }
