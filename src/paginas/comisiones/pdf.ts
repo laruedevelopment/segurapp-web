@@ -20,21 +20,21 @@ import {
 
 // ── Colores corporativos (mismos de Flutter) ────────────────────────────────
 type RGB = [number, number, number]
-const AZUL: RGB = [0x1c, 0x48, 0x70]
-const AZUL_CLARO: RGB = [0x2e, 0x5f, 0x8c]
+export const AZUL: RGB = [0x1c, 0x48, 0x70]
+export const AZUL_CLARO: RGB = [0x2e, 0x5f, 0x8c]
 const VERDE: RGB = [0x1e, 0x9b, 0x4e]
-const GRIS: RGB = [0x61, 0x61, 0x61]
-const GRIS_CLARO: RGB = [0xf5, 0xf5, 0xf5]
-const BORDE: RGB = [0xdd, 0xdd, 0xdd]
-const TINTA: RGB = [0x1b, 0x24, 0x30]
-const BLANCO: RGB = [255, 255, 255]
+export const GRIS: RGB = [0x61, 0x61, 0x61]
+export const GRIS_CLARO: RGB = [0xf5, 0xf5, 0xf5]
+export const BORDE: RGB = [0xdd, 0xdd, 0xdd]
+export const TINTA: RGB = [0x1b, 0x24, 0x30]
+export const BLANCO: RGB = [255, 255, 255]
 const ANULADO: RGB = [0x9e, 0x9e, 0x9e]
 
 // ── Página A4 en puntos, márgenes de 36 como en Flutter ─────────────────────
-const MARGEN = 36
+export const MARGEN = 36
 const ALTO_ENCABEZADO = 48
-const Y_CONTENIDO = MARGEN + ALTO_ENCABEZADO
-const MARGEN_INFERIOR = MARGEN + 16
+export const Y_CONTENIDO = MARGEN + ALTO_ENCABEZADO
+export const MARGEN_INFERIOR = MARGEN + 16
 const LADO_MAX_LOGO = 320
 
 export type FilaInfo = [etiqueta: string, valor: string]
@@ -45,8 +45,8 @@ export interface LogoPdf {
   alto: number
 }
 
-const dinero = (n: number | null | undefined) => fmtDinero(n ?? 0)
-const fecha = (v: string | null | undefined) => fmtFecha(aFecha(v))
+export const dinero = (n: number | null | undefined) => fmtDinero(n ?? 0)
+export const fecha = (v: string | null | undefined) => fmtFecha(aFecha(v))
 
 /**
  * Carga public/logo.png como data URL (con su tamaño para no deformarlo).
@@ -86,20 +86,20 @@ export async function cargarLogoPdf(): Promise<LogoPdf | null> {
 
 // ── Piezas comunes ──────────────────────────────────────────────────────────
 
-function nuevoDocumento() {
+export function nuevoDocumento() {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...TINTA)
   return doc
 }
 
-const anchoPagina = (doc: jsPDF) => doc.internal.pageSize.getWidth()
-const altoPagina = (doc: jsPDF) => doc.internal.pageSize.getHeight()
-const anchoUtil = (doc: jsPDF) => anchoPagina(doc) - 2 * MARGEN
-const finalY = (doc: jsPDF) => (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? Y_CONTENIDO
+export const anchoPagina = (doc: jsPDF) => doc.internal.pageSize.getWidth()
+export const altoPagina = (doc: jsPDF) => doc.internal.pageSize.getHeight()
+export const anchoUtil = (doc: jsPDF) => anchoPagina(doc) - 2 * MARGEN
+export const finalY = (doc: jsPDF) => (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? Y_CONTENIDO
 
 /** Encabezado de empresa (logo + nombre) y pie "Página X de N" en todas las páginas. */
-function encabezadosYPies(doc: jsPDF, logo: LogoPdf | null) {
+export function encabezadosYPies(doc: jsPDF, logo: LogoPdf | null) {
   const total = doc.getNumberOfPages()
   for (let i = 1; i <= total; i++) {
     doc.setPage(i)
@@ -128,14 +128,14 @@ function encabezadosYPies(doc: jsPDF, logo: LogoPdf | null) {
   doc.setTextColor(...TINTA)
 }
 
-function divisor(doc: jsPDF, y: number) {
+export function divisor(doc: jsPDF, y: number) {
   doc.setDrawColor(...AZUL_CLARO)
   doc.setLineWidth(1)
   doc.line(MARGEN, y, anchoPagina(doc) - MARGEN, y)
 }
 
 /** Texto que salta de página si no cabe. Devuelve la nueva Y. */
-function texto(doc: jsPDF, t: string, y: number, estilo: 'h1' | 'h2' | 'negrita' | 'cuerpo' | 'pequeno') {
+export function texto(doc: jsPDF, t: string, y: number, estilo: 'h1' | 'h2' | 'negrita' | 'cuerpo' | 'pequeno') {
   const e = {
     h1: { tam: 16, negrita: true, color: AZUL },
     h2: { tam: 12, negrita: true, color: AZUL },
@@ -188,7 +188,7 @@ const baseTabla = (doc: jsPDF, y: number): UserOptions => ({
 })
 
 /** Bloque con título en barra azul y filas "Etiqueta: valor". Devuelve la Y final. */
-function bloqueInfo(
+export function bloqueInfo(
   doc: jsPDF,
   y: number,
   titulo: string,
@@ -213,7 +213,7 @@ function bloqueInfo(
   return finalY(doc)
 }
 
-function tabla(doc: jsPDF, y: number, opciones: Omit<UserOptions, 'startY'>) {
+export function tabla(doc: jsPDF, y: number, opciones: Omit<UserOptions, 'startY'>) {
   autoTable(doc, { ...baseTabla(doc, y), didParseCell: estiloCifras, ...opciones })
   return finalY(doc)
 }

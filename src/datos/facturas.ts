@@ -17,7 +17,7 @@ import type { AbonoPoliza } from './pagos'
 
 export const CLAVE_FACTURAS = ['facturas'] as const
 
-const COLS_FACTURA = '*, aseg:aseguradoras(nombre_aseg), interm:intermediarios(nombre_interm), empresa:facturas_empresas(nombre, nit)'
+const COLS_FACTURA = '*, aseg:aseguradoras(nombre_aseg, nit_aseg, clave), interm:intermediarios(nombre_interm), empresa:facturas_empresas(nombre, nit)'
 const VISTA_ABONOS = 'vw_abonos_detalle'
 
 export const LIMITE_FACTURAS = 2000

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { FilePlus2, Save, Trash2, Unlink } from 'lucide-react'
+import { FilePlus2, FileText, Save, Trash2, Unlink } from 'lucide-react'
 import { Contenido, EncabezadoPagina } from '@/components/layout/AppShell'
 import { Aviso, Cargando, Chip, MensajeError, SeccionTarjeta, Vacio } from '@/components/ui/basicos'
 import { Boton } from '@/components/ui/button'
@@ -43,6 +43,8 @@ import { fmtDinero } from '@/lib/numeros'
 import { esAdmin, useSesion } from '@/lib/sesion'
 import { trasCambiarAbonos } from '@/paginas/comisiones/comun'
 import { EstadoFacturaEtiqueta } from './ListaFacturas'
+import { cargarLogoPdf, descargarPdf } from '@/paginas/comisiones/pdf'
+import { nombreArchivoCuentaCobro, pdfCuentaCobro } from './pdfCuentaCobro'
 
 /** Una factura: cabecera editable, sus líneas y los montos calculados. */
 export default function FormularioFactura() {
@@ -96,6 +98,7 @@ function Editor({ factura }: { factura: Factura }) {
   const [marcadas, setMarcadas] = useState<Set<number>>(new Set())
   const [agregando, setAgregando] = useState(false)
   const [trabajando, setTrabajando] = useState(false)
+  const [generandoPdf, setGenerandoPdf] = useState(false)
 
   // Si la factura se recarga (se agregaron o quitaron líneas) la pantalla refleja los montos nuevos.
   useEffect(() => {
@@ -163,6 +166,20 @@ function Editor({ factura }: { factura: Factura }) {
       toast.error(mensajeAmigable(e, 'No se pudieron quitar las líneas'))
     } finally {
       setTrabajando(false)
+    }
+  }
+
+  const descargarCuentaCobro = async () => {
+    setGenerandoPdf(true)
+    try {
+      // Se piden las líneas al momento: el PDF siempre sale con lo último guardado.
+      const [lineasPdf, logo] = await Promise.all([listarAbonosDeFactura(factura.id), qc.ensureQueryData({ queryKey: ['estado-cuenta', 'logo-pdf'], queryFn: cargarLogoPdf, staleTime: Infinity })])
+      descargarPdf(pdfCuentaCobro({ factura, lineas: lineasPdf, logo }), nombreArchivoCuentaCobro(factura))
+      toast.success('Cuenta de cobro generada.')
+    } catch (e) {
+      toast.error(mensajeAmigable(e, 'No se pudo generar la cuenta de cobro'))
+    } finally {
+      setGenerandoPdf(false)
     }
   }
 
@@ -236,6 +253,10 @@ function Editor({ factura }: { factura: Factura }) {
         volver="/facturas"
         acciones={
           <>
+            <Boton variante="fantasma" tamano="sm" onClick={() => void descargarCuentaCobro()} cargando={generandoPdf}>
+              {!generandoPdf && <FileText />}
+              Cuenta de cobro (PDF)
+            </Boton>
             {admin && (
               <Boton variante="fantasma" tamano="sm" onClick={() => void eliminar()}>
                 <Trash2 className="text-danger" />

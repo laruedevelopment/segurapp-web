@@ -42,6 +42,9 @@ export interface Factura {
   estado: EstadoFactura
   usuarioId: number | null
   nombreAseg: string | null
+  /** NIT de la aseguradora y clave con la que Rueda Serrano está inscrita ante ella. */
+  asegNit: string | null
+  asegClave: string | null
   nombreInterm: string | null
   empresaNombre: string | null
   empresaNit: string | null
@@ -93,6 +96,8 @@ export function facturaDesdeFila(raw: unknown): Factura {
     estado: ESTADOS_FACTURA.includes(estado) ? estado : 'A',
     usuarioId: numONull(m.usuario_id),
     nombreAseg: txt(aseg?.nombre_aseg),
+    asegNit: txt(aseg?.nit_aseg)?.trim() ?? null,
+    asegClave: txt(aseg?.clave)?.trim() ?? null,
     nombreInterm: txt(interm?.nombre_interm),
     empresaNombre: txt(empresa?.nombre),
     empresaNit: txt(empresa?.nit),
