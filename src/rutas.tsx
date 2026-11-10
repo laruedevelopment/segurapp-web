@@ -5,6 +5,7 @@ import { configurarAlVencer } from '@/lib/sesion'
 import Inicio from '@/paginas/Inicio'
 import Login from '@/paginas/Login'
 import { rutasCasos } from '@/paginas/casos/rutas'
+import { rutasConsumo } from '@/paginas/consumo/rutas'
 import { rutasOportunidades } from '@/paginas/oportunidades/rutas'
 import { rutasCatalogos } from '@/paginas/catalogos/rutas'
 import { rutasComisiones } from '@/paginas/comisiones/rutas'
@@ -39,6 +40,7 @@ export const router = createBrowserRouter(
             ...rutasReportes,
             ...rutasComisiones,
             ...rutasCasos,
+            ...rutasConsumo,
             ...rutasOportunidades,
             ...rutasDashboard,
             { path: '*', element: <NoEncontrada /> },
