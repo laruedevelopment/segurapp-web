@@ -37,11 +37,7 @@ import {
 
 // Datos fijos de quien cobra (los mismos del software anterior).
 export const NIT_AGENCIA = '63.362.817-2'
-export const CONTACTO_AGENCIA = [
-  'Luz Stella Serrano Mantilla - 3153729644 - lstellaserranom@yahoo.com',
-  'Oficina: Calle 51 No. 27A - 71, Tel (7) 6575622',
-  'Bucaramanga - Colombia',
-]
+export const CONTACTO_AGENCIA = ['Celular: 3153729644', 'Correo: lstellaserranom@yahoo.com', 'Bucaramanga - Colombia']
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
 
@@ -212,7 +208,7 @@ export function pdfCuentaCobro({ factura: f, lineas, logo }: { factura: Factura;
   y = texto(doc, `Son: ${pesosEnLetras(f.neto)} a consignar.`, y, 'pequeno')
 
   // Firma y datos de contacto (juntos, sin partirse entre páginas)
-  y = espacio(doc, y + 30, 110)
+  y = espacio(doc, y + 30, 100)
   const xFirma = MARGEN
   doc.setDrawColor(...TINTA)
   doc.setLineWidth(0.7)
@@ -224,8 +220,8 @@ export function pdfCuentaCobro({ factura: f, lineas, logo }: { factura: Factura;
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...GRIS)
   doc.setFontSize(8)
-  doc.text(`Clave intermediario: ${f.asegClave ?? '—'}   ·   NIT ${NIT_AGENCIA}`, xFirma, y + 59)
-  doc.text(CONTACTO_AGENCIA, xFirma, y + 79, { lineHeightFactor: 1.35 })
+  doc.text(`NIT ${NIT_AGENCIA}`, xFirma, y + 59)
+  doc.text(CONTACTO_AGENCIA, xFirma, y + 72, { lineHeightFactor: 1.35 })
 
   encabezadosYPies(doc, logo)
   return doc
