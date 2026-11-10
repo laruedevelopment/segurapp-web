@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import {
   Calculator,
   DollarSign,
+  FileSpreadsheet,
   FileText,
   ListChecks,
   Loader2,
@@ -19,6 +20,8 @@ import {
 } from 'lucide-react'
 import { Contenido, EncabezadoPagina } from '@/components/layout/AppShell'
 import { CreadoEditado } from './UsuariosReporte'
+import { DialogoCrearFactura } from '@/paginas/facturas/DialogoCrearFactura'
+import { ES_PRUEBAS } from '@/lib/supabase'
 import { Aviso, Cargando, Cifra, MensajeError, SeccionTarjeta, Vacio } from '@/components/ui/basicos'
 import { Buscador } from '@/components/ui/buscador'
 import { Boton } from '@/components/ui/button'
@@ -126,6 +129,7 @@ function Editor({ reporte }: { reporte: ReportePago | null }) {
   const [estadoRep, setEstadoRep] = useState<string>(reporte?.estado_rep ?? 'I')
   const [asegId, setAsegId] = useState<number | null>(reporte?.aseg_id ?? null)
   const [intermId, setIntermId] = useState<number | null>(reporte?.interm_id ?? null)
+  const [creandoFactura, setCreandoFactura] = useState(false)
   const [vlrPrima, setVlrPrima] = useState<number | null>(reporte ? reporte.vlrprima_rep ?? 0 : null)
   const [vlrCom, setVlrCom] = useState<number | null>(reporte ? reporte.vlrcom_rep ?? 0 : null)
   const [obs, setObs] = useState(reporte?.obs_rep ?? '')
@@ -363,6 +367,12 @@ function Editor({ reporte }: { reporte: ReportePago | null }) {
               {importando ? <Loader2 className="animate-spin" /> : <Sparkles />}
               {importando ? 'Leyendo documento…' : 'Importar desde PDF/imagen'}
             </Boton>
+            {ES_PRUEBAS && !esNuevo && asegId != null && (
+              <Boton variante="secundario" tamano="sm" onClick={() => setCreandoFactura(true)} title="Hacer la factura (cuenta de cobro) de las líneas de este reporte">
+                <FileSpreadsheet />
+                Crear factura
+              </Boton>
+            )}
             {!esNuevo && (
               <Link to={`/comisiones/${idReporte}/estado-cuenta`}>
                 <Boton variante="secundario" tamano="sm" title="Estado de cuenta del reporte">
@@ -378,6 +388,19 @@ function Editor({ reporte }: { reporte: ReportePago | null }) {
           </>
         }
       />
+      {creandoFactura && idReporte != null && asegId != null && (
+        <DialogoCrearFactura
+          reporteId={idReporte}
+          asegId={asegId}
+          intermId={intermId}
+          onCerrar={() => setCreandoFactura(false)}
+          onCreada={(idFactura) => {
+            setCreandoFactura(false)
+            void qc.invalidateQueries({ queryKey: ['facturas'] })
+            navigate(`/facturas/${idFactura}`)
+          }}
+        />
+      )}
       <Contenido className="flex flex-col gap-4">
         {lineasPendientes.length > 0 && esNuevo && (
           <Aviso tono="navy" icono={<Sparkles />}>

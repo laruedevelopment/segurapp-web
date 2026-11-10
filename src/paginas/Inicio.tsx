@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
-import { BarChart3, ChevronRight, ClipboardCheck, FilePlus2, Gauge, Target, FolderOpen, LayoutDashboard, ReceiptText, Trash2, WalletCards } from 'lucide-react'
+import { BarChart3, ChevronRight, ClipboardCheck, FilePlus2, FileSpreadsheet, Gauge, Target, FolderOpen, LayoutDashboard, ReceiptText, Trash2, WalletCards } from 'lucide-react'
 import { Contenido } from '@/components/layout/AppShell'
 import { useCasosPendientes } from '@/datos/casos'
 import { useConteoEliminaciones } from '@/datos/eliminacion'
@@ -66,6 +66,9 @@ export default function Inicio() {
         />
         {veComisiones(u) && (
           <Acceso a="/comisiones" icono={<WalletCards />} titulo="Reportes de Comisiones" detalle="Registrar abonos y pagos de comisiones" color="bg-warning-soft text-warning" />
+        )}
+        {ES_PRUEBAS && veComisiones(u) && (
+          <Acceso a="/facturas" icono={<FileSpreadsheet />} titulo="Facturas" detalle="Cuentas de cobro de los reportes de comisiones" color="bg-warning-soft text-warning" />
         )}
         {esAdmin(u) && (
           <Acceso a="/consumo" icono={<Gauge />} titulo="Consumo de IA" detalle="Cuánto se lee con IA y cuánto cuesta, por día y por mes" color="bg-navy-soft text-navy" />

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { Dialog } from 'radix-ui'
-import { BarChart3, ClipboardCheck, FolderOpen, Home, Gauge, LayoutDashboard, LogOut, Target, Menu, PanelLeftClose, PanelLeftOpen, ReceiptText, Trash2, WalletCards, X } from 'lucide-react'
+import { BarChart3, ClipboardCheck, FileSpreadsheet, FolderOpen, Home, Gauge, LayoutDashboard, LogOut, Target, Menu, PanelLeftClose, PanelLeftOpen, ReceiptText, Trash2, WalletCards, X } from 'lucide-react'
 import { useCasosPendientes } from '@/datos/casos'
 import { useConteoEliminaciones } from '@/datos/eliminacion'
 import { cerrarSesion, esAdmin, useSesion, veComisiones } from '@/lib/sesion'
@@ -54,6 +54,7 @@ export function AppShell() {
     { a: '/catalogos', texto: 'Catálogos', icono: <FolderOpen /> },
     { a: '/reportes', texto: 'Reportes', icono: <BarChart3 /> },
     { a: '/comisiones', texto: 'Reportes de Comisiones', icono: <WalletCards />, visible: veComisiones(usuario) },
+    { a: '/facturas', texto: 'Facturas', icono: <FileSpreadsheet />, visible: ES_PRUEBAS && veComisiones(usuario) },
     { a: '/casos', texto: 'Casos por revisar', icono: <ClipboardCheck />, contador: casos.data },
     {
       a: '/polizas/eliminaciones',
