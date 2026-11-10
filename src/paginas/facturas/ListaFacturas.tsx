@@ -22,7 +22,6 @@ import {
 import { aFecha, fmtFecha } from '@/lib/fechas'
 import { mensajeAmigable } from '@/lib/errores'
 import { fmtDinero, fmtNum } from '@/lib/numeros'
-import { esAdmin, useSesion } from '@/lib/sesion'
 import { normalizarTexto } from '@/lib/filtros'
 import { DialogoCrearFactura } from './DialogoCrearFactura'
 
@@ -47,7 +46,6 @@ type Vista = 'facturas' | 'porfacturar'
 export default function ListaFacturas() {
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const admin = esAdmin(useSesion()?.usuario)
   const [vista, setVista] = useState<Vista>('facturas')
   const [texto, setTexto] = useState('')
   const [estado, setEstado] = useState<EstadoFactura | null>(null)
@@ -115,12 +113,10 @@ export default function ListaFacturas() {
         volver="/"
         acciones={
           <>
-            {admin && (
-              <Boton variante="secundario" tamano="sm" onClick={() => navigate('/facturas/ajustes')}>
-                <Settings2 />
-                Ajustes
-              </Boton>
-            )}
+            <Boton variante="secundario" tamano="sm" onClick={() => navigate('/facturas/ajustes')}>
+              <Settings2 />
+              Ajustes
+            </Boton>
             <Boton variante="fantasma" tamano="icono" title="Actualizar" onClick={refrescar} disabled={facturas.isFetching || lineas.isFetching}>
               <RefreshCw className={facturas.isFetching || lineas.isFetching ? 'animate-spin' : ''} />
             </Boton>

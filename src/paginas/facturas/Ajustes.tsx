@@ -9,12 +9,13 @@ import { Buscador } from '@/components/ui/buscador'
 import { Campo, Casilla, Input, InputNumero } from '@/components/ui/campos'
 import { Dialogo, useConfirmar } from '@/components/ui/dialogo'
 import { useCatalogo } from '@/datos/catalogos'
+import { esAdmin, useSesion } from '@/lib/sesion'
 import { CLAVE_FACTURAS, eliminarEmpresa, guardarConfigFacturacion, guardarEmpresa, useConfigFacturacion, useEmpresas } from '@/datos/facturas'
 import { porcentajeValido, type EmpresaAseguradora } from '@/datos/facturasLogica'
 import { mensajeAmigable } from '@/lib/errores'
 import type { Aseguradora } from '@/lib/tipos'
 
-/** Ajustes de facturación (solo Administrador): porcentajes por defecto y empresas aseguradoras. */
+/** Ajustes de facturación (Administrador, Supervisor y Digitador): porcentajes por defecto y empresas aseguradoras. */
 export default function AjustesFacturas() {
   return (
     <div className="flex h-full flex-col">
@@ -91,6 +92,7 @@ function Porcentajes() {
 }
 
 function Empresas() {
+  const admin = esAdmin(useSesion()?.usuario) // borrar empresas solo el Administrador; los demás las desactivan
   const qc = useQueryClient()
   const confirmar = useConfirmar()
   const empresas = useEmpresas()
@@ -150,9 +152,11 @@ function Empresas() {
               <Boton variante="fantasma" tamano="icono" title="Editar" aria-label={`Editar ${e.nombre}`} onClick={() => setEditando(e)}>
                 <Pencil />
               </Boton>
-              <Boton variante="fantasma" tamano="icono" title="Eliminar" aria-label={`Eliminar ${e.nombre}`} onClick={() => void eliminar(e)}>
-                <Trash2 className="text-danger" />
-              </Boton>
+              {admin && (
+                <Boton variante="fantasma" tamano="icono" title="Eliminar" aria-label={`Eliminar ${e.nombre}`} onClick={() => void eliminar(e)}>
+                  <Trash2 className="text-danger" />
+                </Boton>
+              )}
             </li>
           ))}
         </ul>

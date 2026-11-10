@@ -12,14 +12,13 @@ const conComisiones = (el: React.ReactNode) => (
   </SoloRol>
 )
 
-// Las facturas las ven y crean A, S y Digitador; los ajustes solo el Administrador
-// (la base también lo exige).
+// Las facturas las ven y crean A, S y Digitador; los ajustes también (la base lo exige igual).
 export const rutasFacturas: RouteObject[] = [
   { path: 'facturas', element: conComisiones(<ListaFacturas />) },
   {
     path: 'facturas/ajustes',
     element: (
-      <SoloRol rol="admin">
+      <SoloRol rol="comisiones">
         <Diferida>
           <AjustesFacturas />
         </Diferida>
