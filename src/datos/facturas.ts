@@ -166,26 +166,18 @@ export async function recalcularFactura(id: number) {
   if (error) throw error
 }
 
-/** Saca líneas de la factura (quedan libres para otra) y vuelve a sumar. */
+/** Saca líneas de la factura (quedan libres para otra) y vuelve a sumar. Todo en la base. */
 export async function quitarLineasDeFactura(idFactura: number, abonoIds: number[]) {
   if (abonoIds.length === 0) return
-  const { data, error } = await db.from('abonos_poliza').update({ idfactura: null }).in('id', abonoIds).eq('idfactura', idFactura).select('id')
+  const { error } = await db.rpc('factura_quitar_lineas', { p_factura: idFactura, p_abono_ids: abonoIds })
   if (error) throw error
-  if (!data?.length) throw new Error('Esas líneas ya no están en la factura. Recargue.')
-  await recalcularFactura(idFactura)
 }
 
-/** Agrega líneas libres a una factura y vuelve a sumar. */
+/** Agrega líneas libres de la misma aseguradora (todo o nada) y vuelve a sumar. */
 export async function agregarLineasAFactura(idFactura: number, abonoIds: number[]) {
   if (abonoIds.length === 0) return
-  const { data, error } = await db.from('abonos_poliza').update({ idfactura: idFactura }).in('id', abonoIds).is('idfactura', null).select('id')
+  const { error } = await db.rpc('factura_agregar_lineas', { p_factura: idFactura, p_abono_ids: abonoIds })
   if (error) throw error
-  if (!data?.length || data.length < abonoIds.length) {
-    // Alguien más se llevó alguna: se deshace para no dejar la factura a medias.
-    if (data?.length) await db.from('abonos_poliza').update({ idfactura: null }).in('id', data.map((x) => x.id))
-    throw new Error('Alguna de las líneas ya está en otra factura. Recargue e intente de nuevo.')
-  }
-  await recalcularFactura(idFactura)
 }
 
 /** Solo Administrador (la base lo exige). Las líneas quedan libres. */
