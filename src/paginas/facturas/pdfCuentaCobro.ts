@@ -8,7 +8,7 @@ import { comisionDeLinea, numeroFactura, type Factura } from '@/datos/facturasLo
 import type { AbonoPoliza } from '@/datos/pagos'
 import { aFecha } from '@/lib/fechas'
 import { pesosEnLetras } from '@/lib/letras'
-import { fmtPct } from '@/lib/numeros'
+import { fmtDinero, fmtPct } from '@/lib/numeros'
 import {
   AZUL,
   BLANCO,
@@ -38,6 +38,9 @@ import {
 // Datos fijos de quien cobra (los mismos del software anterior).
 export const NIT_AGENCIA = '63.362.817-2'
 export const CONTACTO_AGENCIA = ['Celular: 3153729644', 'Correo: lstellaserranom@yahoo.com', 'Bucaramanga - Colombia']
+
+/** Pesos sin centavos, salvo que el valor los tenga (así lo escrito en letras coincide con la cifra). */
+const din = (n: number) => fmtDinero(n, Number.isInteger(Math.round(n * 100) / 100) ? 0 : 2)
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
 
@@ -126,7 +129,7 @@ export function pdfCuentaCobro({ factura: f, lineas, logo }: { factura: Factura;
   const letras = pesosEnLetras(f.total)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(10)
-  const lineasLetras = doc.splitTextToSize(`LA SUMA DE: ${letras}  (${dinero(f.total)})`, ancho - 20) as string[]
+  const lineasLetras = doc.splitTextToSize(`LA SUMA DE: ${letras}  (${din(f.total)})`, ancho - 20) as string[]
   const altoCaja = lineasLetras.length * 13 + 14
   doc.setFillColor(...GRIS_CLARO)
   doc.setDrawColor(...BORDE)
@@ -173,13 +176,13 @@ export function pdfCuentaCobro({ factura: f, lineas, logo }: { factura: Factura;
   }) + 14
 
   // Totales (a la derecha)
-  const filas: string[][] = [['Subtotal comisiones', dinero(f.subtotal)]]
-  if (f.iva || f.ivaPct) filas.push([`IVA (${fmtPct(f.ivaPct)})`, dinero(f.iva)])
-  filas.push(['TOTAL CUENTA DE COBRO', dinero(f.total)])
-  if (f.retefuente) filas.push([`(-) Retención en la fuente (${fmtPct(f.retefuentePct)})`, dinero(f.retefuente)])
-  if (f.ica) filas.push([`(-) Retención de ICA (${fmtPct(f.icaPct, 3)})`, dinero(f.ica)])
-  if (f.reteiva) filas.push([`(-) Retención de IVA (${fmtPct(f.reteivaPct)} del IVA)`, dinero(f.reteiva)])
-  filas.push(['VALOR A CONSIGNAR', dinero(f.neto)])
+  const filas: string[][] = [['Subtotal comisiones', din(f.subtotal)]]
+  if (f.iva || f.ivaPct) filas.push([`IVA (${fmtPct(f.ivaPct)})`, din(f.iva)])
+  filas.push(['TOTAL CUENTA DE COBRO', din(f.total)])
+  if (f.retefuente) filas.push([`(-) Retención en la fuente (${fmtPct(f.retefuentePct)})`, din(f.retefuente)])
+  if (f.ica) filas.push([`(-) Retención de ICA (${fmtPct(f.icaPct, 3)})`, din(f.ica)])
+  if (f.reteiva) filas.push([`(-) Retención de IVA (${fmtPct(f.reteivaPct)} del IVA)`, din(f.reteiva)])
+  filas.push(['VALOR A CONSIGNAR', din(f.neto)])
   const anchoTot = 300
   y = espacio(doc, y, filas.length * 18 + 10)
   const indiceTotal = filas.findIndex((x) => x[0].startsWith('TOTAL'))
