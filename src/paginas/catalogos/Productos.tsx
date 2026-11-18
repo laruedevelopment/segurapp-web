@@ -91,7 +91,7 @@ export default function Productos() {
     { id: 'ramo', titulo: 'Ramo', ancho: 170, celda: ramoDe, ordenar: (p) => ramoDe(p).toLowerCase(), titleDe: ramoDe },
     { id: 'aseg', titulo: 'Aseguradora', ancho: 170, celda: asegDe, ordenar: (p) => asegDe(p).toLowerCase(), titleDe: asegDe },
     { id: 'fija', titulo: 'Com. fija', ancho: 110, alinear: 'der', celda: (p) => <span className="num">{fmtDinero(p.vlrfijocom_prod)}</span>, ordenar: (p) => p.vlrfijocom_prod },
-    { id: 'porc', titulo: '% Com.', ancho: 85, alinear: 'der', celda: (p) => <span className="num">{fmtPct(p.porccom_prod)}</span>, ordenar: (p) => p.porccom_prod },
+    { id: 'porc', titulo: '% Com.', ancho: 85, alinear: 'der', celda: (p) => (p.porccom_prod ?? 0) > 100 ? <span className="num font-bold text-danger" title="Una comisión no puede pasar de 100 %: revise este valor">⚠ {fmtPct(p.porccom_prod)}</span> : <span className="num">{fmtPct(p.porccom_prod)}</span>, ordenar: (p) => p.porccom_prod },
     { id: 'porcad', titulo: '% Adic.', ancho: 85, alinear: 'der', celda: (p) => <span className="num">{fmtPct(p.porcad_prod)}</span>, ordenar: (p) => p.porcad_prod },
     { id: 'desc', titulo: 'Descripción', ancho: 200, celda: (p) => p.desc_prod ?? '', ordenar: (p) => p.desc_prod?.toLowerCase(), titleDe: (p) => p.desc_prod ?? undefined },
     { id: 'obs', titulo: 'Observaciones', ancho: 200, celda: (p) => p.obs_prod ?? '', ordenar: (p) => p.obs_prod?.toLowerCase(), titleDe: (p) => p.obs_prod ?? undefined },

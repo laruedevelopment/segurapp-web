@@ -44,6 +44,7 @@ import {
   useCatalogo,
 } from '@/datos/catalogos'
 import { extraerPoliza } from '@/datos/ia'
+import { advertenciaComision } from '@/datos/comisionesRevisionLogica'
 import {
   actualizarPendiente,
   crearPendiente,
@@ -378,6 +379,7 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
 
   // ── Validación ────────────────────────────────────────────────────────────
   const errores = useMemo(() => (intento && form ? validar(form) : []), [intento, form])
+  const advComision = advertenciaComision({ porcCom: f.porcCom, vlrCom: f.vlrCom, prima: f.prima })
   const errorDe = (c: CampoForm) => errores.find((e) => e.campo === c)?.mensaje ?? null
 
   const irACampo = (campo: CampoForm) => {
@@ -1102,6 +1104,7 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
 
         {/* ── Comisiones ────────────────────────────────────────────── */}
         <SeccionTarjeta titulo="Comisiones" icono={<Wallet />}>
+          {advComision && <Aviso className="mb-3">{advComision}</Aviso>}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <Campo etiqueta="% Com." ayuda="Desde el producto">
               <InputNumero

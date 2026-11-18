@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
-import { BarChart3, ChevronRight, ClipboardCheck, FilePlus2, FileSpreadsheet, Gauge, Target, FolderOpen, LayoutDashboard, ReceiptText, Trash2, WalletCards } from 'lucide-react'
+import { AlertTriangle, BarChart3, ChevronRight, ClipboardCheck, FilePlus2, FileSpreadsheet, Gauge, Target, FolderOpen, LayoutDashboard, ReceiptText, Trash2, WalletCards } from 'lucide-react'
 import { Contenido } from '@/components/layout/AppShell'
 import { useCasosPendientes } from '@/datos/casos'
+import { useConteoComisionesSospechosas } from '@/datos/comisionesRevision'
 import { useConteoEliminaciones } from '@/datos/eliminacion'
 import { ES_PRUEBAS } from '@/lib/supabase'
 import { esAdmin, useSesion, veComisiones } from '@/lib/sesion'
@@ -36,6 +37,7 @@ export default function Inicio() {
   const hora = new Date().getHours()
   const casos = useCasosPendientes()
   const eliminaciones = useConteoEliminaciones()
+  const comisionesRevisar = useConteoComisionesSospechosas()
   const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches'
 
   return (
@@ -78,6 +80,16 @@ export default function Inicio() {
         )}
         {esAdmin(u) && (
           <Acceso a="/dashboard" icono={<LayoutDashboard />} titulo="Dashboard gerencial" detalle="Producción, cartera, renovaciones y metas" color="bg-green-soft text-green" />
+        )}
+        {veComisiones(u) && (comisionesRevisar.data ?? 0) > 0 && (
+          <Acceso
+            a="/polizas/comisiones-revisar"
+            icono={<AlertTriangle />}
+            titulo="Comisiones por revisar"
+            detalle="Pólizas con un % de comisión mayor a 100 %: revíselas y corríjalas si hace falta"
+            color="bg-warning-soft text-warning"
+            contador={comisionesRevisar.data}
+          />
         )}
         {esAdmin(u) && (
           <Acceso
