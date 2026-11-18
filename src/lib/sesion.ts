@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import { db, fijarToken } from './supabase'
+import { APP_ENV, db, fijarToken } from './supabase'
 import type { Usuario } from './tipos'
 
 interface EstadoSesion {
@@ -9,7 +9,9 @@ interface EstadoSesion {
   expira: number
 }
 
-const CLAVE = 'segurapp.sesion'
+// La copia de pruebas se publica en el mismo sitio (/pruebas/): su sesión se guarda aparte para que
+// iniciar sesión en una no cierre ni pise la de la otra. Producción conserva su clave de siempre.
+const CLAVE = APP_ENV === 'prod' ? 'segurapp.sesion' : 'segurapp.sesion.pruebas'
 
 let sesion: EstadoSesion | null = leerGuardada()
 let timer: ReturnType<typeof setTimeout> | null = null

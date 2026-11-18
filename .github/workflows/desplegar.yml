@@ -4,6 +4,10 @@ name: Desplegar a SegurAppRSAS
 # laruedevelopment/SegurAppRSAS, rama principal). La copia de respaldo de la app
 # Flutter vive en la subcarpeta /flutter/ de ese mismo sitio y NO se toca aquí.
 #
+# Además publica una SEGUNDA copia en /pruebas/, conectada a la base de PRUEBAS (franja roja
+# "AMBIENTE DE PRUEBAS"). Su URL y su clave anon vienen de las variables del repositorio
+# PRUEBAS_SUPABASE_URL y PRUEBAS_SUPABASE_ANON_KEY (la clave anon es pública por diseño).
+#
 # Requiere el secreto DEPLOY_TOKEN: un token con permiso de escritura (Contents)
 # sobre el repositorio laruedevelopment/SegurAppRSAS.
 on:
@@ -34,7 +38,18 @@ jobs:
           VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtdWFwY3RhemFrZGVjeWRkZWx3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2Mzk3ODgsImV4cCI6MjA4NTIxNTc4OH0.dC28gXPut6VqkYswXlToWoFTJ2LISZBQYHAmyapKlWI
           VITE_APP_ENV: prod
       # GitHub Pages no conoce las rutas internas: 404.html = index.html.
-      - run: cp dist/index.html dist/404.html
+      # Si alguien recarga una ruta interna de /pruebas/, vuelve al inicio de esa copia (el 404 es único del sitio).
+      - run: |
+          cp dist/index.html dist/404.html
+          node -e "const fs=require('fs');const f='dist/404.html';const s=fs.readFileSync(f,'utf8');fs.writeFileSync(f,s.replace('<head>','<head>'+process.argv[1]))" "<script>var p=location.pathname;if(p.indexOf('/SegurAppRSAS/pruebas/')===0&&p!=='/SegurAppRSAS/pruebas/'&&p!=='/SegurAppRSAS/pruebas/index.html'){location.replace('/SegurAppRSAS/pruebas/')}</script>"
+
+      # Segunda copia: misma app, base de pruebas.
+      - run: npm run build -- --outDir dist-pruebas
+        env:
+          VITE_BASE: /SegurAppRSAS/pruebas/
+          VITE_SUPABASE_URL: ${{ vars.PRUEBAS_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.PRUEBAS_SUPABASE_ANON_KEY }}
+          VITE_APP_ENV: dev
 
       - name: Publicar en SegurAppRSAS
         env:
@@ -42,9 +57,10 @@ jobs:
         run: |
           git clone --depth 1 "https://x-access-token:${DEPLOY_TOKEN}@github.com/laruedevelopment/SegurAppRSAS.git" deploy_repo
           cd deploy_repo
-          # Se limpia la raíz (la versión anterior) pero se conserva el respaldo /flutter/.
-          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name flutter ! -name CNAME -exec rm -rf {} +
+          # Se limpia la raíz (la versión anterior) pero se conservan el respaldo /flutter/ y la copia /pruebas/.
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name flutter ! -name pruebas ! -name CNAME -exec rm -rf {} +
           cp -r ../dist/. .
+          rm -rf pruebas && mkdir pruebas && cp -r ../dist-pruebas/. pruebas/
           # Sin este archivo GitHub Pages (Jekyll) no sirve los archivos que empiezan con punto,
           # como flutter/assets/.env.prod: el respaldo de Flutter quedaría en blanco.
           touch .nojekyll
