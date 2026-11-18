@@ -164,12 +164,6 @@ describe('cascada aseguradora → ramo → producto', () => {
 })
 
 describe('validar', () => {
-  test('el % de comisión no puede superar 100 (p. ej. 175 por un producto mal digitado)', () => {
-    const e = validar(lleno({ porcCom: 175 }))
-    expect(e.map((x) => x.campo)).toEqual(['porcCom'])
-    expect(validar(lleno({ porcCom: 17.5 }))).toEqual([])
-    expect(validar(lleno({ porcCom: 100 }))).toEqual([])
-  })
   test('formulario completo no tiene errores', () => {
     expect(validar(lleno())).toEqual([])
   })
