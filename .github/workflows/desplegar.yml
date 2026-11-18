@@ -45,6 +45,9 @@ jobs:
           # Se limpia la raíz (la versión anterior) pero se conserva el respaldo /flutter/.
           find . -mindepth 1 -maxdepth 1 ! -name .git ! -name flutter ! -name CNAME -exec rm -rf {} +
           cp -r ../dist/. .
+          # Sin este archivo GitHub Pages (Jekyll) no sirve los archivos que empiezan con punto,
+          # como flutter/assets/.env.prod: el respaldo de Flutter quedaría en blanco.
+          touch .nojekyll
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add -A
