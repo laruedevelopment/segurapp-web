@@ -73,6 +73,7 @@ import {
   aprendizajeAlGuardar,
   avisoExtraccion,
   clienteExtraidoPorRol,
+  clienteParecidoPorNit,
   requiereConfirmarSeriedad,
   sugerenciaVacia,
   type CatalogosExtraccion,
@@ -593,9 +594,10 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
       let aviso = ''
       if (!r.form.cliente) {
         const c = await avisarClienteNoEncontrado(datos, r.form.asegId, r.esGarantia)
+        const parecido = r.esGarantia ? await clienteParecidoPorNit(c, depsIA) : null
         aviso = r.esGarantia
           ? // Garantía: el cliente es el tomador/afianzado/garantizado y solo se busca por su NIT.
-            ` No existe en la base el cliente con NIT "${c.doc ?? '—'}" (${c.nombre ?? '—'}), que es el tomador/afianzado/garantizado: selecciónelo o créelo antes de guardar.`
+            ` No existe en la base el cliente con NIT "${c.doc ?? '—'}" (${c.nombre ?? '—'}), que es el tomador/afianzado/garantizado: selecciónelo o créelo antes de guardar.${parecido ? ` ¿Será "${parecido.nombre_cliente}" (NIT ${parecido.doc_cliente ?? '—'})? La IA pudo leer mal un dígito: búsquelo y selecciónelo solo si es el mismo.` : ''}`
           : ` Cliente extraído: "${c.nombre ?? '—'}" (doc. "${c.doc ?? '—'}"); no se encontró en la base, búsquelo o créelo.`
       } else {
         setClienteExtraido(null)

@@ -162,6 +162,33 @@ export async function buscarClienteExtraido(
   return { cliente: null, rol: null }
 }
 
+/**
+ * Solo para SUGERIR (nunca se elige solo): la IA puede leer mal un dígito del NIT del tomador
+ * (p. ej. 901.904.932-8 leído como 981.904.932-8). Devuelve el único cliente cuyo NIT difiere en un
+ * dígito y que además comparte al menos dos palabras del nombre; si hay más de uno o ninguno, null.
+ */
+export async function clienteParecidoPorNit(
+  tomador: { nombre: string | null; doc: string | null },
+  deps: Pick<DepsExtraccion, 'buscarClientes'>,
+): Promise<ClienteSel | null> {
+  try {
+    const doc = (tomador.doc ?? '').replace(/[^0-9A-Za-z]/g, '').toUpperCase()
+    if (!doc || !tomador.nombre) return null
+    const palsT = palabras(normalizarTextoIA(tomador.nombre))
+    const larga = [...palsT].sort((a, b) => b.length - a.length)[0]
+    if (!larga) return null
+    const cercanos = (await deps.buscarClientes(larga, 50)).filter((c) => {
+      const d = (c.doc_cliente ?? '').replace(/[^0-9A-Za-z]/g, '').toUpperCase()
+      if (!(d.length === doc.length && [...d].filter((ch, i) => ch !== doc[i]).length === 1)) return false
+      const comunes = [...palabras(normalizarTextoIA(c.nombre_cliente))].filter((p) => palsT.has(p)).length
+      return comunes >= Math.min(2, palsT.size)
+    })
+    return cercanos.length === 1 ? cercanos[0] : null
+  } catch {
+    return null
+  }
+}
+
 /** Lo que sugirió la IA, para aprender de la corrección al guardar. */
 export interface SugerenciaIA {
   productoSugeridoId: number | null

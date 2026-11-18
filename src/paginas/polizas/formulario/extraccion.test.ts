@@ -4,6 +4,7 @@ import {
   aplicarExtraccion,
   aprendizajeAlGuardar,
   buscarClienteExtraido,
+  clienteParecidoPorNit,
   clienteExtraidoPorRol,
   fechaISO,
   matchPorNombre,
@@ -94,6 +95,16 @@ describe('cliente por documento en cascada', () => {
     expect(buscar).toHaveBeenCalledWith('PEREZ', 20)
     expect(r.cliente?.id).toBe(2)
     expect(r.rol).toBe('tomador')
+  })
+  test('sugerencia de cliente parecido: un dígito distinto y nombre coincidente, único', async () => {
+    const guacal = { ...cli(5932, 'CONSORCIO GUACAL - BOSA 2024'), doc_cliente: '901904932-8' }
+    const otro = { ...cli(9, 'COTRAGUACAL C.T.A.'), doc_cliente: '804005972-3' }
+    const t = { nombre: 'CONSORCIO GUACAL- BOSA 2024', doc: '981904932-8' }
+    expect((await clienteParecidoPorNit(t, { buscarClientes: async () => [otro, guacal] }))?.id).toBe(5932)
+    // más de un dígito distinto, o dos candidatos: no se sugiere nada
+    expect(await clienteParecidoPorNit({ ...t, doc: '981904922-8' }, { buscarClientes: async () => [guacal] })).toBeNull()
+    const gemelo = { ...guacal, id: 5838 }
+    expect(await clienteParecidoPorNit(t, { buscarClientes: async () => [guacal, gemelo] })).toBeNull()
   })
   test('un error en la búsqueda no rompe la importación', async () => {
     const r = await buscarClienteExtraido(
