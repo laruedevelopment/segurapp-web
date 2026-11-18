@@ -177,7 +177,7 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
   const [original, setOriginal] = useState<Original | null>(null)
   const [pendiente, setPendiente] = useState<PolizaPendiente | null>(null)
   const [nombreArchivo, setNombreArchivo] = useState<string | null>(null)
-  const [clienteExtraido, setClienteExtraido] = useState<{ nombre: string | null; doc: string | null; garantia: boolean } | null>(null)
+  const [clienteExtraido, setClienteExtraido] = useState<{ nombre: string | null; doc: string | null; garantia: boolean; parecido?: ClienteSel | null } | null>(null)
   const [intento, setIntento] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [guardandoBorrador, setGuardandoBorrador] = useState(false)
@@ -264,8 +264,10 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
       }
     }
     const c = clienteExtraidoPorRol(datos, rol)
-    if (vivoRef.current) setClienteExtraido(c.nombre || c.doc ? { ...c, garantia } : null)
-    return c
+    // Garantía con NIT que no existe: si hay UN cliente con un dígito distinto y nombre igual, se sugiere (no se elige solo).
+    const parecido = garantia ? await clienteParecidoPorNit(c, depsIA) : null
+    if (vivoRef.current) setClienteExtraido(c.nombre || c.doc ? { ...c, garantia, parecido } : null)
+    return { ...c, parecido }
   }
 
   useEffect(() => {
@@ -594,7 +596,7 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
       let aviso = ''
       if (!r.form.cliente) {
         const c = await avisarClienteNoEncontrado(datos, r.form.asegId, r.esGarantia)
-        const parecido = r.esGarantia ? await clienteParecidoPorNit(c, depsIA) : null
+        const parecido = c.parecido
         aviso = r.esGarantia
           ? // Garantía: el cliente es el tomador/afianzado/garantizado y solo se busca por su NIT.
             ` No existe en la base el cliente con NIT "${c.doc ?? '—'}" (${c.nombre ?? '—'}), que es el tomador/afianzado/garantizado: selecciónelo o créelo antes de guardar.${parecido ? ` ¿Será "${parecido.nombre_cliente}" (NIT ${parecido.doc_cliente ?? '—'})? La IA pudo leer mal un dígito: búsquelo y selecciónelo solo si es el mismo.` : ''}`
@@ -1041,6 +1043,24 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
                   Crear con estos datos
                 </Boton>
               </div>
+              {clienteExtraido.parecido && (
+                <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-line pt-2">
+                  <span className="flex-1">
+                    ¿Será <b>{clienteExtraido.parecido.nombre_cliente}</b> (NIT <span className="num">{clienteExtraido.parecido.doc_cliente ?? '—'}</span>)? La IA pudo leer mal un
+                    dígito del NIT; úselo solo si es el mismo cliente.
+                  </span>
+                  <Boton
+                    tamano="sm"
+                    variante="secundario"
+                    onClick={() => {
+                      set('cliente', clienteExtraido.parecido ?? null)
+                      setClienteExtraido(null)
+                    }}
+                  >
+                    Usar este cliente
+                  </Boton>
+                </div>
+              )}
             </Aviso>
           )}
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
