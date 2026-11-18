@@ -101,6 +101,16 @@ describe('cliente por documento en cascada', () => {
     const otro = { ...cli(9, 'COTRAGUACAL C.T.A.'), doc_cliente: '804005972-3' }
     const t = { nombre: 'CONSORCIO GUACAL- BOSA 2024', doc: '981904932-8' }
     expect((await clienteParecidoPorNit(t, { buscarClientes: async () => [otro, guacal] }))?.id).toBe(5932)
+    // la búsqueda usa la palabra distintiva (GUACAL), no la genérica (CONSORCIO), y funciona con el guion pegado
+    const llamadas: string[] = []
+    const r2 = await clienteParecidoPorNit(t, {
+      buscarClientes: async (q) => {
+        llamadas.push(q)
+        return q === 'GUACAL' || q === '904932' ? [guacal] : []
+      },
+    })
+    expect(r2?.id).toBe(5932)
+    expect(llamadas).toContain('GUACAL')
     // más de un dígito distinto, o dos candidatos: no se sugiere nada
     expect(await clienteParecidoPorNit({ ...t, doc: '981904922-8' }, { buscarClientes: async () => [guacal] })).toBeNull()
     const gemelo = { ...guacal, id: 5838 }

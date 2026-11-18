@@ -174,13 +174,19 @@ export async function clienteParecidoPorNit(
   try {
     const doc = (tomador.doc ?? '').replace(/[^0-9A-Za-z]/g, '').toUpperCase()
     if (!doc || !tomador.nombre) return null
-    const palsT = palabras(normalizarTextoIA(tomador.nombre))
-    const larga = [...palsT].sort((a, b) => b.length - a.length)[0]
-    if (!larga) return null
-    const cercanos = (await deps.buscarClientes(larga, 50)).filter((c) => {
+    const GENERICAS = new Set(['CONSORCIO', 'UNION', 'TEMPORAL', 'SOCIEDAD', 'EMPRESA', 'COMPANIA', 'ASOCIACION', 'FUNDACION', 'CORPORACION', 'LIMITADA', 'LTDA', 'SAS'])
+    const tokens = (t: string) => normalizarTextoIA(t).split(/[^A-Z0-9]+/).filter((x) => x.length >= 3)
+    const palsT = new Set(tokens(tomador.nombre))
+    // Se busca por la palabra más larga que no sea genérica (en una lista de cientos de "consorcio…" la
+    // palabra genérica no sirve) y, aparte, por los últimos dígitos del NIT sin el de verificación.
+    const distintiva = [...palsT].filter((x) => x.length >= 4 && !GENERICAS.has(x) && !/^\d+$/.test(x)).sort((x, y) => y.length - x.length)[0]
+    const sondas = [distintiva, doc.length >= 9 ? doc.slice(3, 9) : null].filter((x): x is string => !!x)
+    const vistos = new Map<number, ClienteSel>()
+    for (const q of sondas) for (const c of await deps.buscarClientes(q, 100)) vistos.set(c.id, c)
+    const cercanos = [...vistos.values()].filter((c) => {
       const d = (c.doc_cliente ?? '').replace(/[^0-9A-Za-z]/g, '').toUpperCase()
       if (!(d.length === doc.length && [...d].filter((ch, i) => ch !== doc[i]).length === 1)) return false
-      const comunes = [...palabras(normalizarTextoIA(c.nombre_cliente))].filter((p) => palsT.has(p)).length
+      const comunes = tokens(c.nombre_cliente).filter((x) => palsT.has(x)).length
       return comunes >= Math.min(2, palsT.size)
     })
     return cercanos.length === 1 ? cercanos[0] : null
