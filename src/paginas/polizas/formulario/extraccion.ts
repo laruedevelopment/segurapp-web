@@ -146,27 +146,7 @@ export async function buscarClienteExtraido(
       const m = await deps.buscarClientePorDoc(limpio)
       if (m) return { cliente: m, rol: c.rol }
     }
-    if (soloDocumento) {
-      // La IA puede leer mal UN dígito del NIT (p. ej. 901.904.932-8 leído como 981.904.932-8).
-      // Se acepta un cliente cuyo NIT difiera en un solo dígito únicamente si además comparte
-      // al menos dos palabras del nombre del tomador y es el único candidato.
-      const t = candidatos[0]
-      const doc = (t?.doc ?? '').replace(/[^0-9A-Za-z]/g, '').toUpperCase()
-      if (doc && t?.nombre) {
-        const palsT = palabras(normalizarTextoIA(t.nombre))
-        const larga = [...palsT].sort((a, b) => b.length - a.length)[0]
-        if (larga) {
-          const cercanos = (await deps.buscarClientes(larga, 50)).filter((c) => {
-            const d = (c.doc_cliente ?? '').replace(/[^0-9A-Za-z]/g, '').toUpperCase()
-            if (!(d.length === doc.length && [...d].filter((ch, i) => ch !== doc[i]).length === 1)) return false
-            const comunes = [...palabras(normalizarTextoIA(c.nombre_cliente))].filter((p) => palsT.has(p)).length
-            return comunes >= Math.min(2, palsT.size)
-          })
-          if (cercanos.length === 1) return { cliente: cercanos[0], rol: t.rol }
-        }
-      }
-      return { cliente: null, rol: null }
-    }
+    if (soloDocumento) return { cliente: null, rol: null }
     const primero = candidatos[0]
     const nombre = primero?.nombre
     if (nombre) {

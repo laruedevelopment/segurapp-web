@@ -90,7 +90,7 @@ describe('cliente de una garantía: solo el tomador, por NIT', () => {
     const buscarClientes = vi.fn(async () => [cli(5, 'CONSTRUCTORA X SAS')])
     const r = await buscarClienteExtraido(candidatos.slice(0, 1), deps({ buscarClientes }), true)
     expect(r).toEqual({ cliente: null, rol: null })
-    // Se puede consultar por nombre solo para el caso de un dígito mal leído del NIT; sin NIT parecido, no hay cliente.
+    expect(buscarClientes).not.toHaveBeenCalled()
   })
   test('soloDocumento: encuentra al tomador por NIT normalizado', async () => {
     const buscarClientePorDoc = vi.fn(async (d: string) => (d === '9001234567' ? cli(7, 'CONSTRUCTORA X SAS', '9001234567') : null))
@@ -132,7 +132,7 @@ describe('aplicarExtraccion con garantías', () => {
     // Solo se probó el NIT del tomador; el asegurado (entidad contratante) no es cliente.
     expect(buscarClientePorDoc).toHaveBeenCalledTimes(1)
     expect(buscarClientePorDoc).toHaveBeenCalledWith('9001234567')
-    // Se puede consultar por nombre solo para el caso de un dígito mal leído del NIT; sin NIT parecido, no hay cliente.
+    expect(buscarClientes).not.toHaveBeenCalled()
   })
   test('el tomador existe por NIT: queda como cliente', async () => {
     const r = await aplicarExtraccion(formVacio(), datos, cat, deps({ buscarClientePorDoc: async () => cli(7, 'CONSTRUCTORA X SAS', '9001234567') }))
