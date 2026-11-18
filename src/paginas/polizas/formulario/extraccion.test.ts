@@ -95,6 +95,25 @@ describe('cliente por documento en cascada', () => {
     expect(r.cliente?.id).toBe(2)
     expect(r.rol).toBe('tomador')
   })
+  test('garantías: el NIT leído con un dígito mal se acepta si el nombre coincide y es único', async () => {
+    const guacal = { ...cli(5932, 'CONSORCIO GUACAL - BOSA 2024'), doc_cliente: '901904932-8' }
+    const otro = { ...cli(9, 'COTRAGUACAL C.T.A.'), doc_cliente: '804005972-3' }
+    const r = await buscarClienteExtraido(
+      [{ rol: 'tomador', nombre: 'CONSORCIO GUACAL- BOSA 2024', doc: '981904932-8' }],
+      deps({ buscarClientes: async () => [otro, guacal] }),
+      true,
+    )
+    expect(r.cliente?.id).toBe(5932)
+  })
+  test('garantías: un NIT distinto en más de un dígito NO se acepta', async () => {
+    const guacal = { ...cli(5932, 'CONSORCIO GUACAL - BOSA 2024'), doc_cliente: '901904932-8' }
+    const r = await buscarClienteExtraido(
+      [{ rol: 'tomador', nombre: 'CONSORCIO GUACAL- BOSA 2024', doc: '981904922-8' }],
+      deps({ buscarClientes: async () => [guacal] }),
+      true,
+    )
+    expect(r).toEqual({ cliente: null, rol: null })
+  })
   test('un error en la búsqueda no rompe la importación', async () => {
     const r = await buscarClienteExtraido(
       [{ rol: 'tomador', nombre: 'A', doc: '1' }],
