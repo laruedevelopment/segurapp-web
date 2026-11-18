@@ -276,6 +276,7 @@ export type CampoForm =
   | 'bien'
   | 'comDistrib'
   | 'asesor1'
+  | 'porcCom'
   | 'porcPrincipal'
   | 'porcAdicional'
 
@@ -320,6 +321,15 @@ export function validar(f: EstadoForm): ErrorCampo[] {
       detalle:
         `La Com. a distribuir (${dinero2(f.comDistrib ?? 0)}) no puede ser mayor a ` +
         `Vlr. Com. + Com. fija (${dinero2(maxDistrib)}).`,
+    })
+
+  if ((f.porcCom ?? 0) > 100 + TOLERANCIA_PORC)
+    e.push({
+      campo: 'porcCom',
+      mensaje: 'No puede superar 100%',
+      detalle:
+        `El % de comisión (${fmt2(f.porcCom ?? 0)}%) no puede superar 100%. ` +
+        `Si viene del producto, corríjalo en Catálogos → Productos.`,
     })
 
   req('asesor1', 'Asesor 1', f.asesor1Id != null)
