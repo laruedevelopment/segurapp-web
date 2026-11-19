@@ -1,3 +1,4 @@
+import { nombreBien } from '@/lib/placa'
 import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -293,11 +294,11 @@ export default function ListaPolizas() {
       ancho: 165,
       celda: (p) => (
         <div className="leading-tight">
-          <div className="truncate">{p.bien_asegurado ?? '—'}</div>
+          <div className="truncate">{nombreBien(p.bien_asegurado, p.nombre_ramo, p.nombre_prod) ?? '—'}</div>
           {!!p.vlraseg_poliza && <div className="num truncate text-[11.5px] text-ink-soft">{fmtDinero(p.vlraseg_poliza)}</div>}
         </div>
       ),
-      ordenar: (p) => p.bien_asegurado?.toLowerCase(),
+      ordenar: (p) => nombreBien(p.bien_asegurado, p.nombre_ramo, p.nombre_prod)?.toLowerCase(),
       titleDe: (p) => p.bien_asegurado ?? undefined,
     },
     {

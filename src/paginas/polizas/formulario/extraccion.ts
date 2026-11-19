@@ -4,6 +4,7 @@
 // _registrarAprendizajeIA). Las consultas a la base se reciben como
 // dependencias para poder probarlo sin Supabase.
 
+import { USA_PLACA_COMO_NOMBRE, esRamoVehiculo, extraerPlaca } from '@/lib/placa'
 import type { Aseguradora, Producto, Ramo } from '@/lib/tipos'
 import {
   aplicarDefaultsProducto,
@@ -358,7 +359,8 @@ export async function aplicarExtraccion(
   }
   const bien = texto(datos, 'bien_asegurado')
   if (bien) {
-    f.bien = bien
+    // Vehículos: el bien asegurado es solo la placa (ver lib/placa.ts).
+    f.bien = USA_PLACA_COMO_NOMBRE && esRamoVehiculo(texto(datos, 'nombre_ramo'), texto(datos, 'nombre_producto')) ? (extraerPlaca(bien) ?? bien) : bien
     completados++
   }
 

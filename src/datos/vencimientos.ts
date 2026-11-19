@@ -1,3 +1,4 @@
+import { nombreBien } from '@/lib/placa'
 import { useQuery } from '@tanstack/react-query'
 import { db } from '@/lib/supabase'
 import { diasEntre, aFecha, hoy } from '@/lib/fechas'
@@ -102,7 +103,7 @@ export async function listarVencimientos(rango?: RangoFechas): Promise<Vencimien
       nombreAsesor: p.nombre_asesor,
       nombreRamo: p.nombre_ramo,
       nombreProd: p.nombre_prod,
-      bien: p.bien_asegurado,
+      bien: nombreBien(p.bien_asegurado, p.nombre_ramo, p.nombre_prod),
       prima: Number(p.prima_poliza ?? 0),
       vence: p.ffin_poliza,
       dias: fin ? diasEntre(h, fin) : 0,

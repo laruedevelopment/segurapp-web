@@ -1,3 +1,4 @@
+import { nombreBien } from '@/lib/placa'
 import { useRef, type PointerEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { CalendarCheck, CalendarClock, CalendarPlus, Shield, Trash2, User } from 'lucide-react'
@@ -128,7 +129,7 @@ export function TarjetaPoliza({
       {p.bien_asegurado && (
         <div className="mt-1 flex items-center gap-1 text-[12px] text-ink-soft">
           <Shield className="size-3 shrink-0" aria-hidden="true" />
-          <span className="truncate">{p.bien_asegurado}</span>
+          <span className="truncate" title={p.bien_asegurado ?? undefined}>{nombreBien(p.bien_asegurado, p.nombre_ramo, p.nombre_prod)}</span>
         </div>
       )}
 

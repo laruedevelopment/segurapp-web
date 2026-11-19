@@ -1,3 +1,4 @@
+import { nombreBien } from '@/lib/placa'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
@@ -51,7 +52,7 @@ export default function PolizasCliente() {
       ordenar: (p) => p.nombre_ramo?.toLowerCase(),
       titleDe: (p) => [p.nombre_ramo, p.nombre_prod].filter(Boolean).join('\n'),
     },
-    { id: 'bien', titulo: 'Bien asegurado', ancho: 190, celda: (p) => p.bien_asegurado ?? '', ordenar: (p) => p.bien_asegurado?.toLowerCase(), titleDe: (p) => p.bien_asegurado ?? undefined },
+    { id: 'bien', titulo: 'Bien asegurado', ancho: 190, celda: (p) => nombreBien(p.bien_asegurado, p.nombre_ramo, p.nombre_prod) ?? '', ordenar: (p) => nombreBien(p.bien_asegurado, p.nombre_ramo, p.nombre_prod)?.toLowerCase(), titleDe: (p) => p.bien_asegurado ?? undefined },
     { id: 'fini', titulo: 'F. inicio', ancho: 95, celda: (p) => <span className="num">{fmtFecha(aFecha(p.fini_poliza)) || '—'}</span>, ordenar: (p) => p.fini_poliza },
     { id: 'ffin', titulo: 'F. vence', ancho: 95, celda: (p) => <span className="num">{fmtFecha(aFecha(p.ffin_poliza)) || '—'}</span>, ordenar: (p) => p.ffin_poliza },
     { id: 'prima', titulo: 'V. prima', ancho: 120, alinear: 'der', celda: (p) => <span className="num">{p.prima_poliza ? fmtDinero(p.prima_poliza) : '—'}</span>, ordenar: (p) => p.prima_poliza },
