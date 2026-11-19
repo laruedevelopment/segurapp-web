@@ -8,6 +8,7 @@ const Formulario = lazy(() => import('./Formulario'))
 const Pendientes = lazy(() => import('./Pendientes'))
 const CargaMasiva = lazy(() => import('./CargaMasiva'))
 const Duplicadas = lazy(() => import('./Duplicadas'))
+const SoatVehiculos = lazy(() => import('./SoatVehiculos'))
 const Vencimientos = lazy(() => import('./Vencimientos'))
 const ComisionesRevisar = lazy(() => import('./ComisionesRevisar'))
 const EliminacionesPendientes = lazy(() => import('./EliminacionesPendientes'))
@@ -22,7 +23,12 @@ export const rutasPolizas: RouteObject[] = [
   { path: 'polizas/carga-masiva', element: <Diferida><CargaMasiva /></Diferida> },
   { path: 'polizas/duplicadas', element: <Diferida><Duplicadas /></Diferida> },
   // Solo en la copia de pruebas hasta que se aplique la migración en producción.
-  ...(ES_PRUEBAS ? [{ path: 'polizas/vencimientos', element: <Diferida><Vencimientos /></Diferida> }] : []),
+  ...(ES_PRUEBAS
+    ? [
+        { path: 'polizas/vencimientos', element: <Diferida><Vencimientos /></Diferida> },
+        { path: 'polizas/soat', element: <Diferida><SoatVehiculos /></Diferida> },
+      ]
+    : []),
   { path: 'polizas/comisiones-revisar', element: <Diferida><ComisionesRevisar /></Diferida> },
   // Bandeja del administrador (la pantalla y la base exigen el rol A).
   { path: 'polizas/eliminaciones', element: <Diferida><EliminacionesPendientes /></Diferida> },

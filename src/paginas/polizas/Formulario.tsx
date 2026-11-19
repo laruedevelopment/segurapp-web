@@ -5,6 +5,7 @@
 // La lógica pura (cálculos, validación, matching de la IA) está en
 // ./formulario/logica.ts y ./formulario/extraccion.ts, con sus pruebas.
 
+import { prellenarSoat } from './formulario/soat'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useBlocker, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
@@ -124,6 +125,9 @@ export default function Pagina() {
   const location = useLocation()
   const polizaId = id != null ? Number(id) : null
   const pendienteId = params.get('pendiente') ? Number(params.get('pendiente')) : null
+  // ?soat=ID_POLIZA_DEL_VEHICULO[&soatFin=AAAA-MM-DD]: abre un SOAT nuevo con los datos del vehículo.
+  const soatDe = params.get('soat') ? Number(params.get('soat')) : null
+  const soatFin = params.get('soatFin')
 
   if (id != null && (!Number.isInteger(polizaId) || (polizaId ?? 0) <= 0)) {
     return (
@@ -138,6 +142,8 @@ export default function Pagina() {
       key={location.pathname + location.search}
       polizaId={polizaId}
       pendienteId={pendienteId != null && Number.isInteger(pendienteId) ? pendienteId : null}
+      soatDe={soatDe != null && Number.isInteger(soatDe) && soatDe > 0 ? soatDe : null}
+      soatFin={soatFin}
     />
   )
 }
@@ -155,7 +161,7 @@ const depsIA: DepsExtraccion = {
   buscarProductoAprendido: (asegId, texto) => buscarProductoAprendido(asegId, texto),
 }
 
-function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; pendienteId: number | null }) {
+function FormularioPoliza({ polizaId, pendienteId, soatDe, soatFin }: { polizaId: number | null; pendienteId: number | null; soatDe: number | null; soatFin: string | null }) {
   const esEdicion = polizaId != null
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -286,6 +292,16 @@ function FormularioPoliza({ polizaId, pendienteId }: { polizaId: number | null; 
           setOriginal({ nro: p.nro_poliza ?? '', asegId: p.aseg_id, estadoId: p.estado_poliza_id, primaPagada: p.vlrprimapagada_poliza })
         } else {
           nuevo = valoresPorDefecto()
+          if (soatDe != null && pendienteId == null) {
+            const veh = await obtenerPoliza(soatDe)
+            if (!veh) throw new Error(`No se encontró la póliza ${soatDe} del vehículo.`)
+            const base = desdePoliza(veh)
+            const conSoat = prellenarSoat(nuevo, base, soatFin, ramos, productos)
+            if (conSoat) {
+              nuevo = conSoat
+              toast.info(`SOAT de ${nuevo.bien}: ${nuevo.fFin ? 'revise la fecha de vencimiento' : 'escriba la fecha de vencimiento'} y guarde.`, { duration: 8000 })
+            } else toast.warning('No se encontró el ramo SOAT o el producto REC SOAT en los catálogos; complete los datos a mano.')
+          }
           if (pendienteId != null) {
             const pend = await obtenerPendiente(pendienteId)
             if (!pend) throw new Error('No se encontró esta póliza pendiente. Puede que ya la hayan guardado o eliminado.')
