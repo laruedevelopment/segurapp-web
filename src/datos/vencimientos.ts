@@ -130,11 +130,12 @@ export function contarUrgentes(v: Vencimiento[]): number {
   return v.filter((x) => !estaCerrado(x.estado) && x.estado === 'P' && x.dias <= 15).length
 }
 
-export function useConteoVencimientos() {
+export function useConteoVencimientos(activo = true) {
   return useQuery({
     queryKey: [...CLAVE_VENCIMIENTOS, 'lista'],
     queryFn: listarVencimientos,
     staleTime: 60_000,
+    enabled: activo,
     select: contarUrgentes,
   })
 }

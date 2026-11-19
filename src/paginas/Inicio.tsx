@@ -39,7 +39,7 @@ export default function Inicio() {
   const casos = useCasosPendientes()
   const eliminaciones = useConteoEliminaciones()
   const comisionesRevisar = useConteoComisionesSospechosas()
-  const vencimientos = useConteoVencimientos()
+  const vencimientos = useConteoVencimientos(ES_PRUEBAS)
   const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches'
 
   return (
@@ -59,14 +59,16 @@ export default function Inicio() {
           detalle={esAdmin(u) ? 'Clientes, asesores, aseguradoras, ramos, productos y más' : 'Clientes, aseguradoras, ramos y productos'}
           color="bg-green-soft text-green"
         />
-        <Acceso
-          a="/polizas/vencimientos"
-          icono={<AlarmClock />}
-          titulo="Vencimientos"
-          detalle="Pólizas por vencer: a quién llamar y en qué va cada una"
-          color="bg-danger-soft text-danger"
-          contador={vencimientos.data}
-        />
+        {ES_PRUEBAS && (
+          <Acceso
+            a="/polizas/vencimientos"
+            icono={<AlarmClock />}
+            titulo="Vencimientos"
+            detalle="Pólizas por vencer: a quién llamar y en qué va cada una"
+            color="bg-danger-soft text-danger"
+            contador={vencimientos.data}
+          />
+        )}
         <Acceso a="/reportes" icono={<BarChart3 />} titulo="Reportes" detalle="Tablero y exportar a Excel" color="bg-navy-soft text-navy" />
         <Acceso
           a="/casos"
