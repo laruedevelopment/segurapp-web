@@ -72,6 +72,7 @@ export function AppShell() {
     { a: '/oportunidades', texto: 'Oportunidades SECOP', icono: <Target />, visible: ES_PRUEBAS },
     { a: '/consumo', texto: 'Consumo de IA', icono: <Gauge />, visible: esAdmin(usuario) },
     { a: '/dashboard', texto: 'Dashboard gerencial', icono: <LayoutDashboard />, visible: esAdmin(usuario) },
+    { a: '/tablero', texto: 'Tablero gerencial (nuevo)', icono: <LayoutDashboard />, visible: esAdmin(usuario) && ES_PRUEBAS },
   ]
 
   const salir = () => {

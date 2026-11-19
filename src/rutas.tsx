@@ -14,6 +14,7 @@ import { rutasComisiones } from '@/paginas/comisiones/rutas'
 import { rutasDashboard } from '@/paginas/dashboard/rutas'
 import { rutasPolizas } from '@/paginas/polizas/rutas'
 import { rutasReportes } from '@/paginas/reportes/rutas'
+import { rutasTablero } from '@/paginas/tablero/rutas'
 
 function NoEncontrada() {
   return (
@@ -47,6 +48,7 @@ export const router = createBrowserRouter(
             ...rutasFacturas,
             ...rutasOportunidades,
             ...rutasDashboard,
+            ...rutasTablero,
             { path: '*', element: <NoEncontrada /> },
           ],
         },
