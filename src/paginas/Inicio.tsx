@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
-import { AlarmClock, AlertTriangle, BarChart3, ChevronRight, ClipboardCheck, FilePlus2, FileSpreadsheet, Gauge, Target, FolderOpen, LayoutDashboard, ReceiptText, Trash2, WalletCards } from 'lucide-react'
+import { AlertTriangle, BarChart3, ChevronRight, ClipboardCheck, FilePlus2, FileSpreadsheet, Gauge, Target, FolderOpen, LayoutDashboard, ReceiptText, Trash2, WalletCards } from 'lucide-react'
 import { Contenido } from '@/components/layout/AppShell'
 import { useCasosPendientes } from '@/datos/casos'
 import { useConteoComisionesSospechosas } from '@/datos/comisionesRevision'
 import { useConteoVencimientos } from '@/datos/vencimientos'
-import { textoResumen } from '@/datos/vencimientosLogica'
+import TarjetaVencimientos from '@/paginas/polizas/TarjetaVencimientos'
 import { useConteoEliminaciones } from '@/datos/eliminacion'
 import { ES_PRUEBAS } from '@/lib/supabase'
 import { esAdmin, useSesion, veComisiones } from '@/lib/sesion'
@@ -61,14 +61,7 @@ export default function Inicio() {
           color="bg-green-soft text-green"
         />
         {ES_PRUEBAS && (
-          <Acceso
-            a="/polizas/vencimientos"
-            icono={<AlarmClock />}
-            titulo="Vencimientos"
-            detalle={vencimientos.data ? textoResumen(vencimientos.data) : 'Pólizas por vencer: a quién llamar y en qué va cada una'}
-            color="bg-danger-soft text-danger"
-            contador={vencimientos.data?.urgentes}
-          />
+          <TarjetaVencimientos resumen={vencimientos.data} urgentes={vencimientos.data?.urgentes} />
         )}
         <Acceso a="/reportes" icono={<BarChart3 />} titulo="Reportes" detalle="Tablero y exportar a Excel" color="bg-navy-soft text-navy" />
         <Acceso

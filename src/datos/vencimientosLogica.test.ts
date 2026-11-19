@@ -55,7 +55,7 @@ describe('resumen', () => {
       { dias: 40, estado: 'P' },
       { dias: 2, estado: 'F' },
     ])
-    expect(r).toEqual({ urgentes: 2, vencidas: 1, rojo: 2, ambar: 1, porAtender: 5, renovara: 1 })
+    expect(r).toEqual({ urgentes: 2, vencidas: 1, rojo: 2, ambar: 1, verde: 1, porAtender: 5, renovara: 1 })
     expect(textoResumen(r)).toBe('1 vencida · 2 en rojo (15 días o menos) · 1 en ámbar · 5 por atender · 1 renovará')
   })
   it('sin nada por atender', () => {

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Mail, MessageCircle, Phone, RefreshCw, StickyNote } from 'lucide-react'
 import { Contenido, EncabezadoPagina } from '@/components/layout/AppShell'
@@ -34,6 +34,13 @@ const BORDE: Record<Semaforo, string> = {
   ambar: 'border-l-warning',
   verde: 'border-l-green',
 }
+
+const SEMAFOROS: { sem: Semaforo; etiqueta: string; clase: string }[] = [
+  { sem: 'vencida', etiqueta: 'vencidas', clase: 'bg-danger text-white' },
+  { sem: 'rojo', etiqueta: 'urgentes (15 días o menos)', clase: 'bg-danger-soft text-danger' },
+  { sem: 'ambar', etiqueta: 'próximas (16 a 30 días)', clase: 'bg-warning-soft text-warning-ink' },
+  { sem: 'verde', etiqueta: 'con tiempo (más de 30)', clase: 'bg-green-soft text-green-ink' },
+]
 
 type Vista = 'pendientes' | 'todas' | EstadoSeguimiento
 
@@ -155,6 +162,10 @@ export default function Vencimientos() {
     enabled: valido,
     refetchOnMount: 'always',
   })
+  const [params, setParams] = useSearchParams()
+  const semParam = params.get('sem')
+  const sem: Semaforo | null = semParam === 'vencida' || semParam === 'rojo' || semParam === 'ambar' || semParam === 'verde' ? semParam : null
+  const elegirSem = (s: Semaforo | null) => setParams(s ? { sem: s } : {}, { replace: true })
   const [vista, setVista] = useState<Vista>('pendientes')
   const [asesor, setAsesor] = useState<string | null>(null)
   const todas = consulta.data
@@ -180,11 +191,12 @@ export default function Vencimientos() {
     () =>
       (todas ?? []).filter((x) => {
         if (asesor && x.nombreAsesor !== asesor) return false
+        if (sem && semaforo(x.dias) !== sem) return false
         if (vista === 'todas') return true
         if (vista === 'pendientes') return !estaCerrado(x.estado)
         return x.estado === vista
       }),
-    [todas, vista, asesor],
+    [todas, vista, asesor, sem],
   )
   const seleccion = filas.filter((x) => marcadas.has(x.polizaId))
   const todasMarcadas = filas.length > 0 && seleccion.length === filas.length
@@ -220,6 +232,23 @@ export default function Vencimientos() {
           ))}
         </div>
         {!valido && <MensajeError error="La fecha inicial debe ser anterior o igual a la final." />}
+        <div className="flex flex-wrap items-center gap-2">
+          {SEMAFOROS.map((x) => {
+            const n = (todas ?? []).filter((f) => semaforo(f.dias) === x.sem && !estaCerrado(f.estado) && (!asesor || f.nombreAsesor === asesor)).length
+            return (
+              <button
+                key={x.sem}
+                type="button"
+                aria-pressed={sem === x.sem}
+                onClick={() => elegirSem(sem === x.sem ? null : x.sem)}
+                className={cn('inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold transition-all', x.clase, sem === x.sem ? 'ring-2 ring-ink/50' : sem ? 'opacity-50' : '')}
+              >
+                {n} {x.etiqueta}
+              </button>
+            )
+          })}
+          {sem && <Boton variante="fantasma" tamano="sm" onClick={() => elegirSem(null)}>Quitar color</Boton>}
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           <Chip activo={vista === 'pendientes'} onClick={() => setVista('pendientes')}>Por atender</Chip>
           {ESTADOS_SEGUIMIENTO.map((e) => (

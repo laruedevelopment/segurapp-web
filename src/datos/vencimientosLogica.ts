@@ -60,13 +60,14 @@ export interface ResumenVencimientos {
   vencidas: number
   rojo: number
   ambar: number
+  verde: number
   /** Todas las que no están cerradas (renovada / no renueva). */
   porAtender: number
   renovara: number
 }
 
 export function resumir(filas: { dias: number; estado: EstadoSeguimiento }[]): ResumenVencimientos {
-  const r: ResumenVencimientos = { urgentes: 0, vencidas: 0, rojo: 0, ambar: 0, porAtender: 0, renovara: 0 }
+  const r: ResumenVencimientos = { urgentes: 0, vencidas: 0, rojo: 0, ambar: 0, verde: 0, porAtender: 0, renovara: 0 }
   for (const f of filas) {
     if (estaCerrado(f.estado)) continue
     r.porAtender++
@@ -75,6 +76,7 @@ export function resumir(filas: { dias: number; estado: EstadoSeguimiento }[]): R
     if (s === 'vencida') r.vencidas++
     else if (s === 'rojo') r.rojo++
     else if (s === 'ambar') r.ambar++
+    else r.verde++
     if (f.estado === 'P' && f.dias <= DIAS_ROJO) r.urgentes++
   }
   return r
