@@ -5,6 +5,9 @@
 // La lógica pura (cálculos, validación, matching de la IA) está en
 // ./formulario/logica.ts y ./formulario/extraccion.ts, con sus pruebas.
 
+import { ES_PRUEBAS } from '@/lib/supabase'
+import { obtenerOrigenPoliza, marcarOrigenPoliza } from '@/datos/origen'
+import { ORIGEN_MANUAL, etiquetaOrigen, origenDePendiente, origenEnBorrador, type OrigenForm } from './formulario/origen'
 import { prellenarSoat } from './formulario/soat'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useBlocker, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
@@ -199,6 +202,9 @@ function FormularioPoliza({ polizaId, pendienteId, soatDe, soatFin }: { polizaId
   const formRef = useRef(form)
   formRef.current = form
   const sugerenciaRef = useRef<SugerenciaIA>(sugerenciaVacia())
+  // Cómo se está cargando esta póliza (manual, IA del formulario o carga masiva). Solo se guarda en pruebas por ahora.
+  const origenRef = useRef<OrigenForm>(ORIGEN_MANUAL)
+  const [origenGuardado, setOrigenGuardado] = useState<string | null>(null)
   const sucioRef = useRef(false)
   const permitirSalidaRef = useRef(false)
   const vivoRef = useRef(true)
@@ -287,6 +293,7 @@ function FormularioPoliza({ polizaId, pendienteId, soatDe, soatFin }: { polizaId
           const p = await obtenerPoliza(polizaId)
           if (!p) throw new Error(`No se encontró la póliza con código ${polizaId}. Puede que la hayan eliminado.`)
           nuevo = desdePoliza(p)
+          if (ES_PRUEBAS) void obtenerOrigenPoliza(polizaId).then((o) => vivoRef.current && setOrigenGuardado(o))
           if (nuevo.asegId == null && nuevo.productoId != null)
             nuevo.asegId = productos.find((x) => x.id === nuevo.productoId)?.aseguradora_id ?? null
           setOriginal({ nro: p.nro_poliza ?? '', asegId: p.aseg_id, estadoId: p.estado_poliza_id, primaPagada: p.vlrprimapagada_poliza })
@@ -307,6 +314,7 @@ function FormularioPoliza({ polizaId, pendienteId, soatDe, soatFin }: { polizaId
             if (!pend) throw new Error('No se encontró esta póliza pendiente. Puede que ya la hayan guardado o eliminado.')
             if (!vivoRef.current) return
             setPendiente(pend)
+            origenRef.current = origenDePendiente(pend)
             if (pend.estado === 'borrador') {
               const r = desdeBorrador(nuevo, pend.datos, productos)
               nuevo = r.form
@@ -482,6 +490,7 @@ function FormularioPoliza({ polizaId, pendienteId, soatDe, soatFin }: { polizaId
         idReal = polizaId
       } else {
         idReal = await crearPoliza(mapa)
+        if (ES_PRUEBAS) marcarOrigenPoliza(idReal, origenRef.current).catch(() => {})
       }
 
       // Aprendizaje de la IA: solo con la póliza ya guardada.
@@ -546,7 +555,8 @@ function FormularioPoliza({ polizaId, pendienteId, soatDe, soatFin }: { polizaId
     setGuardandoBorrador(true)
     try {
       // nombre_cliente solo sirve para identificarlo en la lista de Pendientes.
-      const datos = { ...mapaActual(actual, usuarioId()), nombre_cliente: actual.cliente?.nombre_cliente ?? null }
+      const base = { ...mapaActual(actual, usuarioId()), nombre_cliente: actual.cliente?.nombre_cliente ?? null }
+      const datos = ES_PRUEBAS ? origenEnBorrador(base, origenRef.current) : base
       if (pendiente) await actualizarPendiente(pendiente.id, { estado: 'borrador', datos })
       else await crearPendiente({ estado: 'borrador', datos, origen: 'manual', nombre_archivo: nombreArchivo })
       toast.success('Guardado como borrador.')
@@ -601,7 +611,9 @@ function FormularioPoliza({ polizaId, pendienteId, soatDe, soatFin }: { polizaId
       const catalogo = productosActivos
         .map((p) => ({ aseguradora: asegNombre.get(p.aseguradora_id) ?? '', ramo: ramoNombre.get(p.ramo_id) ?? '', producto: p.nombre_prod }))
         .filter((x) => x.aseguradora && x.ramo)
+      const iaDesde = new Date().toISOString()
       const datos = await extraerPoliza(archivo, catalogo)
+      origenRef.current = { origen: 'ia', iaDesde, iaHasta: new Date().toISOString() }
       const base = formRef.current
       if (!base || !vivoRef.current) return
       const r = await aplicarExtraccion(base, datos, catIA, depsIA)
@@ -742,6 +754,7 @@ function FormularioPoliza({ polizaId, pendienteId, soatDe, soatFin }: { polizaId
           {' · '}Nro. <span className="num">{f.nro}</span>
         </>
       )}
+      {ES_PRUEBAS && <> · Origen: {etiquetaOrigen(origenGuardado)}</>}
     </span>
   ) : pendiente ? (
     <span>
