@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { db } from '@/lib/supabase'
-import { aISO, diasEntre, aFecha, hoy } from '@/lib/fechas'
-import { DIAS_VENCIDA, DIAS_VENTANA, estaCerrado, type EstadoSeguimiento } from './vencimientosLogica'
+import { diasEntre, aFecha, hoy } from '@/lib/fechas'
+import { rangoPorDefecto, resumir, type EstadoSeguimiento, type RangoFechas } from './vencimientosLogica'
 
 export interface Vencimiento {
   polizaId: number
@@ -55,16 +55,15 @@ async function porLotes<T>(ids: number[], f: (lote: number[]) => Promise<T[]>): 
 }
 
 /** Pólizas vigentes que vencen pronto (o vencieron hace poco), con su seguimiento y datos de contacto. */
-export async function listarVencimientos(): Promise<Vencimiento[]> {
+export async function listarVencimientos(rango?: RangoFechas): Promise<Vencimiento[]> {
   const h = hoy()
-  const desde = new Date(h.getFullYear(), h.getMonth(), h.getDate() - DIAS_VENCIDA)
-  const hasta = new Date(h.getFullYear(), h.getMonth(), h.getDate() + DIAS_VENTANA)
+  const { desde, hasta } = rango ?? rangoPorDefecto(h)
   const { data, error } = await db
     .from('vw_polizas_busqueda')
     .select('id, nro_poliza, cliente_id, ffin_poliza, prima_poliza, bien_asegurado, nombre_cliente, tel_cliente, nombre_aseg, nombre_asesor, nombre_ramo, nombre_prod')
     .neq('estado_poliza_id', 'A')
-    .gte('ffin_poliza', aISO(desde))
-    .lte('ffin_poliza', aISO(hasta))
+    .gte('ffin_poliza', desde)
+    .lte('ffin_poliza', hasta)
     .order('ffin_poliza', { ascending: true })
     .limit(2000)
   if (error) throw error
@@ -125,17 +124,18 @@ export async function guardarSeguimiento(polizaId: number, estado: EstadoSeguimi
   if (error) throw error
 }
 
-/** Cuántas pólizas siguen sin atender (por recordar o con contacto pendiente) y vencen en 15 días o menos. */
-export function contarUrgentes(v: Vencimiento[]): number {
-  return v.filter((x) => !estaCerrado(x.estado) && x.estado === 'P' && x.dias <= 15).length
+/** Cambia el estado de varias pólizas a la vez, conservando la nota y la fecha de cada una. Devuelve cuántas fallaron. */
+export async function guardarSeguimientos(filas: Vencimiento[], estado: EstadoSeguimiento): Promise<number> {
+  const r = await Promise.allSettled(filas.map((f) => guardarSeguimiento(f.polizaId, estado, f.nota, f.proximoContacto)))
+  return r.filter((x) => x.status === 'rejected').length
 }
 
 export function useConteoVencimientos(activo = true) {
   return useQuery({
-    queryKey: [...CLAVE_VENCIMIENTOS, 'lista'],
-    queryFn: listarVencimientos,
+    queryKey: [...CLAVE_VENCIMIENTOS, 'lista', 'defecto'],
+    queryFn: () => listarVencimientos(),
     staleTime: 60_000,
     enabled: activo,
-    select: contarUrgentes,
+    select: resumir,
   })
 }

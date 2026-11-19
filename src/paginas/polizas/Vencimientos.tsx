@@ -5,10 +5,14 @@ import { CheckCircle2, Mail, MessageCircle, Phone, RefreshCw, StickyNote } from 
 import { Contenido, EncabezadoPagina } from '@/components/layout/AppShell'
 import { Cargando, Chip, Etiqueta, MensajeError, Tarjeta, Vacio } from '@/components/ui/basicos'
 import { Boton } from '@/components/ui/button'
-import { AreaTexto, Input, SelectorSimple } from '@/components/ui/campos'
-import { CLAVE_VENCIMIENTOS, guardarSeguimiento, listarVencimientos, type Vencimiento } from '@/datos/vencimientos'
+import { AreaTexto, CasillaTactil, Input, SelectorSimple } from '@/components/ui/campos'
+import { CLAVE_VENCIMIENTOS, guardarSeguimiento, guardarSeguimientos, listarVencimientos, type Vencimiento } from '@/datos/vencimientos'
 import {
+  ATAJOS_RANGO,
   ESTADOS_SEGUIMIENTO,
+  rangoDias,
+  rangoPorDefecto,
+  rangoValido,
   estaCerrado,
   etiquetaEstado,
   primerTelefono,
@@ -19,7 +23,7 @@ import {
   type Semaforo,
 } from '@/datos/vencimientosLogica'
 import { causaAmigable } from '@/lib/errores'
-import { aFecha, fmtFecha } from '@/lib/fechas'
+import { aFecha, fmtFecha, hoy } from '@/lib/fechas'
 import { fmtDinero } from '@/lib/numeros'
 import { cn } from '@/lib/utils'
 
@@ -33,7 +37,7 @@ const BORDE: Record<Semaforo, string> = {
 
 type Vista = 'pendientes' | 'todas' | EstadoSeguimiento
 
-function Fila({ v }: { v: Vencimiento }) {
+function Fila({ v, marcada, onMarcar }: { v: Vencimiento; marcada: boolean; onMarcar: () => void }) {
   const qc = useQueryClient()
   const [abierta, setAbierta] = useState(false)
   const [nota, setNota] = useState(v.nota ?? '')
@@ -57,8 +61,9 @@ function Fila({ v }: { v: Vencimiento }) {
   const cerrado = estaCerrado(v.estado)
 
   return (
-    <Tarjeta className={cn('border-l-4 p-4', BORDE[sem], cerrado && 'opacity-70')}>
-      <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
+    <Tarjeta className={cn('border-l-4 p-4', BORDE[sem], cerrado && 'opacity-70', marcada && 'ring-2 ring-navy/40')}>
+      <div className="flex flex-wrap items-start gap-x-2 gap-y-2">
+        <CasillaTactil className="-ml-2 -mt-2" checked={marcada} onChange={onMarcar} label={`Seleccionar la póliza ${v.nroPoliza ?? v.polizaId}`} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <Etiqueta tono={TONO[sem]}>{textoDias(v.dias)}</Etiqueta>
@@ -141,10 +146,32 @@ function Fila({ v }: { v: Vencimiento }) {
 
 /** Pólizas por vencer con semáforo y seguimiento de a quién ya se llamó. */
 export default function Vencimientos() {
-  const consulta = useQuery({ queryKey: [...CLAVE_VENCIMIENTOS, 'lista'], queryFn: listarVencimientos, refetchOnMount: 'always' })
+  const [rango, setRango] = useState(() => rangoPorDefecto(hoy()))
+  const [atajo, setAtajo] = useState<string | null>('defecto')
+  const valido = rangoValido(rango)
+  const consulta = useQuery({
+    queryKey: [...CLAVE_VENCIMIENTOS, 'lista', rango.desde, rango.hasta],
+    queryFn: () => listarVencimientos(rango),
+    enabled: valido,
+    refetchOnMount: 'always',
+  })
   const [vista, setVista] = useState<Vista>('pendientes')
   const [asesor, setAsesor] = useState<string | null>(null)
   const todas = consulta.data
+  const qc = useQueryClient()
+  const [marcadas, setMarcadas] = useState<Set<number>>(new Set())
+  const [estadoLote, setEstadoLote] = useState<EstadoSeguimiento | null>(null)
+  const [avisoLote, setAvisoLote] = useState<string | null>(null)
+  const lote = useMutation({
+    mutationFn: ({ filas, estado }: { filas: Vencimiento[]; estado: EstadoSeguimiento }) => guardarSeguimientos(filas, estado),
+    onSuccess: (fallaron, { filas }) => {
+      setAvisoLote(fallaron ? `${fallaron} de ${filas.length} no se pudieron actualizar; vuelva a intentarlo.` : null)
+      if (!fallaron) setMarcadas(new Set())
+      setEstadoLote(null)
+      void qc.invalidateQueries({ queryKey: CLAVE_VENCIMIENTOS })
+    },
+    onError: (e) => setAvisoLote(causaAmigable(e, 'No se pudo actualizar')),
+  })
   const asesores = useMemo(
     () => [...new Set((todas ?? []).map((x) => x.nombreAsesor).filter((x): x is string => !!x))].sort().map((a) => ({ valor: a, etiqueta: a })),
     [todas],
@@ -159,6 +186,14 @@ export default function Vencimientos() {
       }),
     [todas, vista, asesor],
   )
+  const seleccion = filas.filter((x) => marcadas.has(x.polizaId))
+  const todasMarcadas = filas.length > 0 && seleccion.length === filas.length
+  const alternar = (id: number) =>
+    setMarcadas((m) => {
+      const n = new Set(m)
+      if (!n.delete(id)) n.add(id)
+      return n
+    })
   const cuenta = (e: EstadoSeguimiento) => (todas ?? []).filter((x) => x.estado === e && (!asesor || x.nombreAsesor === asesor)).length
 
   return (
@@ -175,6 +210,17 @@ export default function Vencimientos() {
       />
       <Contenido className="flex max-w-4xl flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[13px] font-semibold">Vence entre</span>
+          <Input type="date" aria-label="Vence desde" className="h-9 w-40" value={rango.desde} onChange={(e) => { setAtajo(null); setRango({ ...rango, desde: e.target.value }) }} />
+          <span className="text-[13px]">y</span>
+          <Input type="date" aria-label="Vence hasta" className="h-9 w-40" value={rango.hasta} onChange={(e) => { setAtajo(null); setRango({ ...rango, hasta: e.target.value }) }} />
+          <Chip activo={atajo === 'defecto'} onClick={() => { setAtajo('defecto'); setRango(rangoPorDefecto(hoy())) }}>Por defecto</Chip>
+          {ATAJOS_RANGO.map((a) => (
+            <Chip key={a.clave} activo={atajo === a.clave} onClick={() => { setAtajo(a.clave); setRango(rangoDias(hoy(), a.atras, a.adelante)) }}>{a.etiqueta}</Chip>
+          ))}
+        </div>
+        {!valido && <MensajeError error="La fecha inicial debe ser anterior o igual a la final." />}
+        <div className="flex flex-wrap items-center gap-2">
           <Chip activo={vista === 'pendientes'} onClick={() => setVista('pendientes')}>Por atender</Chip>
           {ESTADOS_SEGUIMIENTO.map((e) => (
             <Chip key={e.valor} activo={vista === e.valor} onClick={() => setVista(e.valor)}>
@@ -185,15 +231,36 @@ export default function Vencimientos() {
           <SelectorSimple className="ml-auto h-8 w-44 text-[13px]" valor={asesor} vacio="Todos los asesores" opciones={asesores} onCambio={setAsesor} />
         </div>
 
-        {consulta.isError && !consulta.data ? (
+        {!valido ? null : consulta.isError && !consulta.data ? (
           <MensajeError error={causaAmigable(consulta.error, 'No se pudieron cargar los vencimientos')} />
         ) : consulta.isPending ? (
           <Cargando texto="Buscando vencimientos…" />
         ) : filas.length === 0 ? (
-          <Vacio icono={<CheckCircle2 className="text-green" />} titulo="No hay pólizas en esta lista." detalle="Aquí aparecen las que vencen en los próximos 45 días." />
+          <Vacio icono={<CheckCircle2 className="text-green" />} titulo="No hay pólizas en esta lista." detalle="Pruebe con otro rango de fechas o con otro estado." />
         ) : (
           <>
-            {filas.map((v) => <Fila key={v.polizaId} v={v} />)}
+            <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface px-3 py-1 shadow-sm">
+              <CasillaTactil
+                checked={todasMarcadas}
+                indeterminada={seleccion.length > 0 && !todasMarcadas}
+                onChange={() => setMarcadas(todasMarcadas ? new Set() : new Set(filas.map((x) => x.polizaId)))}
+                label="Seleccionar todas las pólizas de la lista"
+              />
+              <span className="text-[13px] text-ink-soft">
+                {seleccion.length > 0 ? `${seleccion.length} ${seleccion.length === 1 ? 'seleccionada' : 'seleccionadas'}` : 'Seleccionar todas'}
+              </span>
+              {seleccion.length > 0 && (
+                <div className="ml-auto flex items-center gap-2">
+                  <span className="text-[13px]">Marcar como</span>
+                  <SelectorSimple<EstadoSeguimiento> className="h-9 w-40 text-[13px]" valor={estadoLote} vacio="Elegir estado…" opciones={ESTADOS_SEGUIMIENTO} onCambio={setEstadoLote} />
+                  <Boton tamano="sm" disabled={!estadoLote} cargando={lote.isPending} onClick={() => estadoLote && lote.mutate({ filas: seleccion, estado: estadoLote })}>
+                    Aplicar
+                  </Boton>
+                </div>
+              )}
+            </div>
+            {avisoLote && <MensajeError error={avisoLote} />}
+            {filas.map((v) => <Fila key={v.polizaId} v={v} marcada={marcadas.has(v.polizaId)} onMarcar={() => alternar(v.polizaId)} />)}
             <p className="text-[12px] text-ink-soft">{filas.length} {filas.length === 1 ? 'póliza' : 'pólizas'}.</p>
           </>
         )}

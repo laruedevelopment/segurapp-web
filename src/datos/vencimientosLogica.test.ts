@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { estaCerrado, etiquetaEstado, primerTelefono, semaforo, telefonoWhatsapp, textoDias } from './vencimientosLogica'
+import { rangoDias, rangoPorDefecto, rangoValido, estaCerrado, resumir, textoResumen, etiquetaEstado, primerTelefono, semaforo, telefonoWhatsapp, textoDias } from './vencimientosLogica'
 
 describe('semaforo', () => {
   it('clasifica por días', () => {
@@ -42,5 +42,34 @@ describe('teléfonos', () => {
   it('toma el primero', () => {
     expect(primerTelefono('3101234567 / 6076543210')).toBe('3101234567')
     expect(primerTelefono('')).toBeNull()
+  })
+})
+
+describe('resumen', () => {
+  it('cuenta por semáforo e ignora las cerradas', () => {
+    const r = resumir([
+      { dias: -3, estado: 'P' },
+      { dias: 5, estado: 'P' },
+      { dias: 5, estado: 'C' },
+      { dias: 20, estado: 'R' },
+      { dias: 40, estado: 'P' },
+      { dias: 2, estado: 'F' },
+    ])
+    expect(r).toEqual({ urgentes: 2, vencidas: 1, rojo: 2, ambar: 1, porAtender: 5, renovara: 1 })
+    expect(textoResumen(r)).toBe('1 vencida · 2 en rojo (15 días o menos) · 1 en ámbar · 5 por atender · 1 renovará')
+  })
+  it('sin nada por atender', () => {
+    expect(textoResumen(resumir([]))).toContain('Nada por atender')
+  })
+})
+
+describe('rangos', () => {
+  it('calcula por defecto y valida', () => {
+    const h = new Date(2026, 10, 19)
+    expect(rangoPorDefecto(h)).toEqual({ desde: '2026-10-20', hasta: '2027-01-03' })
+    expect(rangoDias(h, 0, 7)).toEqual({ desde: '2026-11-19', hasta: '2026-11-26' })
+    expect(rangoValido({ desde: '2026-11-20', hasta: '2026-11-19' })).toBe(false)
+    expect(rangoValido({ desde: '', hasta: '2026-11-19' })).toBe(false)
+    expect(rangoValido({ desde: '2026-11-19', hasta: '2026-11-19' })).toBe(true)
   })
 })

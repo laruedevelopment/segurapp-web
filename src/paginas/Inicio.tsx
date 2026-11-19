@@ -5,6 +5,7 @@ import { Contenido } from '@/components/layout/AppShell'
 import { useCasosPendientes } from '@/datos/casos'
 import { useConteoComisionesSospechosas } from '@/datos/comisionesRevision'
 import { useConteoVencimientos } from '@/datos/vencimientos'
+import { textoResumen } from '@/datos/vencimientosLogica'
 import { useConteoEliminaciones } from '@/datos/eliminacion'
 import { ES_PRUEBAS } from '@/lib/supabase'
 import { esAdmin, useSesion, veComisiones } from '@/lib/sesion'
@@ -64,9 +65,9 @@ export default function Inicio() {
             a="/polizas/vencimientos"
             icono={<AlarmClock />}
             titulo="Vencimientos"
-            detalle="Pólizas por vencer: a quién llamar y en qué va cada una"
+            detalle={vencimientos.data ? textoResumen(vencimientos.data) : 'Pólizas por vencer: a quién llamar y en qué va cada una'}
             color="bg-danger-soft text-danger"
-            contador={vencimientos.data}
+            contador={vencimientos.data?.urgentes}
           />
         )}
         <Acceso a="/reportes" icono={<BarChart3 />} titulo="Reportes" detalle="Tablero y exportar a Excel" color="bg-navy-soft text-navy" />
