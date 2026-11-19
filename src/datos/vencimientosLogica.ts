@@ -1,3 +1,5 @@
+import { extraerPlaca } from '@/lib/placa'
+
 // Lógica pura del seguimiento de renovaciones: estados, semáforo por días y filtros.
 
 export type EstadoSeguimiento = 'P' | 'C' | 'R' | 'F' | 'N'
@@ -124,3 +126,43 @@ export const ATAJOS_RANGO: { clave: string; etiqueta: string; atras: number; ade
 
 /** Un rango es usable si ambas fechas existen y desde ≤ hasta. */
 export const rangoValido = (r: RangoFechas) => !!r.desde && !!r.hasta && r.desde <= r.hasta
+
+/** Datos mínimos de una póliza para saber si otra la renueva. */
+export interface PolizaClave {
+  id: number
+  clienteId: number | null
+  ramoId: number | null
+  bien: string | null
+  vence: string
+}
+
+/**
+ * Identifica "lo mismo" entre dos pólizas: el mismo ramo y el mismo bien (la placa si la hay,
+ * o el texto sin signos). Sin bien no hay forma segura de saberlo, y devuelve null.
+ */
+export function claveRenovacion(p: Pick<PolizaClave, 'ramoId' | 'bien'>): string | null {
+  const b = (p.bien ?? '').trim()
+  if (!b || p.ramoId == null) return null
+  const id = extraerPlaca(b) ?? b.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '')
+  return id ? `${p.ramoId}|${id}` : null
+}
+
+/** Ids de las pólizas de [base] que ya tienen una posterior del mismo cliente, ramo y bien en [todas]. */
+export function renovadasAutomaticamente(base: PolizaClave[], todas: PolizaClave[]): Set<number> {
+  const maxPor = new Map<string, string>()
+  for (const t of todas) {
+    const k = claveRenovacion(t)
+    if (!k || t.clienteId == null) continue
+    const kk = `${t.clienteId}|${k}`
+    const m = maxPor.get(kk)
+    if (!m || t.vence > m) maxPor.set(kk, t.vence)
+  }
+  const r = new Set<number>()
+  for (const p of base) {
+    const k = claveRenovacion(p)
+    if (!k || p.clienteId == null) continue
+    const m = maxPor.get(`${p.clienteId}|${k}`)
+    if (m && m > p.vence) r.add(p.id)
+  }
+  return r
+}

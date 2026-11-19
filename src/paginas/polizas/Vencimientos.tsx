@@ -75,7 +75,7 @@ function Fila({ v, marcada, onMarcar }: { v: Vencimiento; marcada: boolean; onMa
           <div className="flex flex-wrap items-center gap-2">
             <Etiqueta tono={TONO[sem]}>{textoDias(v.dias)}</Etiqueta>
             <span className="text-[13px] text-ink-soft">{fmtFecha(aFecha(v.vence))}</span>
-            <Etiqueta tono={cerrado ? 'verde' : v.estado === 'P' ? 'neutro' : 'navy'}>{etiquetaEstado(v.estado)}</Etiqueta>
+            <Etiqueta tono={cerrado ? 'verde' : v.estado === 'P' ? 'neutro' : 'navy'}>{etiquetaEstado(v.estado)}{v.renovadaAuto && v.estado === 'F' ? ' (ya hay una nueva)' : ''}</Etiqueta>
           </div>
           <div className="mt-1 font-semibold">{v.nombreCliente ?? '—'}</div>
           <div className="text-[13px] text-ink-soft">

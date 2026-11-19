@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { rangoDias, rangoPorDefecto, rangoValido, estaCerrado, resumir, textoResumen, etiquetaEstado, primerTelefono, semaforo, telefonoWhatsapp, textoDias } from './vencimientosLogica'
+import { claveRenovacion, renovadasAutomaticamente, rangoDias, rangoPorDefecto, rangoValido, estaCerrado, resumir, textoResumen, etiquetaEstado, primerTelefono, semaforo, telefonoWhatsapp, textoDias } from './vencimientosLogica'
 
 describe('semaforo', () => {
   it('clasifica por días', () => {
@@ -71,5 +71,29 @@ describe('rangos', () => {
     expect(rangoValido({ desde: '2026-11-20', hasta: '2026-11-19' })).toBe(false)
     expect(rangoValido({ desde: '', hasta: '2026-11-19' })).toBe(false)
     expect(rangoValido({ desde: '2026-11-19', hasta: '2026-11-19' })).toBe(true)
+  })
+})
+
+describe('renovación automática', () => {
+  const base = { clienteId: 1, ramoId: 7 }
+  it('clave por placa o por texto, y null sin bien', () => {
+    expect(claveRenovacion({ ramoId: 7, bien: 'dsr-643' })).toBe('7|DSR643')
+    expect(claveRenovacion({ ramoId: 7, bien: 'Casa Cra. 5 #3' })).toBe('7|casacra53')
+    expect(claveRenovacion({ ramoId: 7, bien: '  ' })).toBeNull()
+    expect(claveRenovacion({ ramoId: null, bien: 'ABC123' })).toBeNull()
+  })
+  it('marca renovada si hay otra posterior con la misma placa', () => {
+    const a = { id: 1, ...base, bien: 'DSR643', vence: '2026-11-25' }
+    const b = { id: 2, ...base, bien: 'DSR 643', vence: '2027-11-25' }
+    const otraPlaca = { id: 3, ...base, bien: 'KTL356', vence: '2026-12-01' }
+    const otroCliente = { id: 4, clienteId: 2, ramoId: 7, bien: 'KTL356', vence: '2027-12-01' }
+    const r = renovadasAutomaticamente([a, b, otraPlaca], [a, b, otraPlaca, otroCliente])
+    expect([...r]).toEqual([1])
+  })
+  it('no marca si la otra es anterior o el ramo es distinto', () => {
+    const a = { id: 1, ...base, bien: 'DSR643', vence: '2026-11-25' }
+    const antes = { id: 2, ...base, bien: 'DSR643', vence: '2025-11-25' }
+    const otroRamo = { id: 3, clienteId: 1, ramoId: 8, bien: 'DSR643', vence: '2027-11-25' }
+    expect(renovadasAutomaticamente([a], [a, antes, otroRamo]).size).toBe(0)
   })
 })

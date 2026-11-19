@@ -2,7 +2,7 @@ import { nombreBien } from '@/lib/placa'
 import { useQuery } from '@tanstack/react-query'
 import { db } from '@/lib/supabase'
 import { diasEntre, aFecha, hoy } from '@/lib/fechas'
-import { rangoPorDefecto, resumir, type EstadoSeguimiento, type RangoFechas } from './vencimientosLogica'
+import { rangoPorDefecto, renovadasAutomaticamente, resumir, type PolizaClave, type EstadoSeguimiento, type RangoFechas } from './vencimientosLogica'
 
 export interface Vencimiento {
   polizaId: number
@@ -20,6 +20,8 @@ export interface Vencimiento {
   vence: string
   dias: number
   estado: EstadoSeguimiento
+  /** Hay otra póliza posterior del mismo cliente, ramo y bien: se da por renovada. */
+  renovadaAuto: boolean
   nota: string | null
   proximoContacto: string | null
   actualizado: string | null
@@ -31,6 +33,7 @@ interface FilaVista {
   id: number
   nro_poliza: string | null
   cliente_id: number | null
+  ramo_id: number | null
   ffin_poliza: string
   prima_poliza: number | null
   bien_asegurado: string | null
@@ -61,7 +64,7 @@ export async function listarVencimientos(rango?: RangoFechas): Promise<Vencimien
   const { desde, hasta } = rango ?? rangoPorDefecto(h)
   const { data, error } = await db
     .from('vw_polizas_busqueda')
-    .select('id, nro_poliza, cliente_id, ffin_poliza, prima_poliza, bien_asegurado, nombre_cliente, tel_cliente, nombre_aseg, nombre_asesor, nombre_ramo, nombre_prod')
+    .select('id, nro_poliza, cliente_id, ramo_id, ffin_poliza, prima_poliza, bien_asegurado, nombre_cliente, tel_cliente, nombre_aseg, nombre_asesor, nombre_ramo, nombre_prod')
     .neq('estado_poliza_id', 'A')
     .gte('ffin_poliza', desde)
     .lte('ffin_poliza', hasta)
@@ -89,6 +92,30 @@ export async function listarVencimientos(rango?: RangoFechas): Promise<Vencimien
   })
   const correoPor = new Map(correos.map((c) => [c.id, c.correo_cliente]))
 
+  // Posteriores del mismo cliente (para dar por renovadas las que ya tienen la siguiente).
+  const posteriores: PolizaClave[] = []
+  for (let i = 0; i < clienteIds.length; i += 40) {
+    const lote = clienteIds.slice(i, i + 40)
+    for (let desdeFila = 0; ; desdeFila += 1000) {
+      const { data: d, error: e } = await db
+        .from('vw_polizas_busqueda')
+        .select('id, cliente_id, ramo_id, bien_asegurado, ffin_poliza')
+        .in('cliente_id', lote)
+        .neq('estado_poliza_id', 'A')
+        .gte('ffin_poliza', desde)
+        .order('id')
+        .range(desdeFila, desdeFila + 999)
+      if (e) throw e
+      const filas = (d ?? []) as unknown as { id: number; cliente_id: number | null; ramo_id: number | null; bien_asegurado: string | null; ffin_poliza: string }[]
+      posteriores.push(...filas.map((x) => ({ id: x.id, clienteId: x.cliente_id, ramoId: x.ramo_id, bien: x.bien_asegurado, vence: x.ffin_poliza })))
+      if (filas.length < 1000) break
+    }
+  }
+  const renovadas = renovadasAutomaticamente(
+    polizas.map((p) => ({ id: p.id, clienteId: p.cliente_id, ramoId: p.ramo_id, bien: p.bien_asegurado, vence: p.ffin_poliza })),
+    posteriores,
+  )
+
   return polizas.map((p) => {
     const s = segPor.get(p.id)
     const fin = aFecha(p.ffin_poliza)
@@ -107,7 +134,9 @@ export async function listarVencimientos(rango?: RangoFechas): Promise<Vencimien
       prima: Number(p.prima_poliza ?? 0),
       vence: p.ffin_poliza,
       dias: fin ? diasEntre(h, fin) : 0,
-      estado: s?.estado ?? 'P',
+      renovadaAuto: renovadas.has(p.id),
+      // Si ya hay una póliza posterior, se da por renovada (salvo que el personal ya la haya cerrado).
+      estado: renovadas.has(p.id) && s?.estado !== 'N' ? 'F' : (s?.estado ?? 'P'),
       nota: s?.nota ?? null,
       proximoContacto: s?.proximo_contacto ?? null,
       actualizado: s?.factualizado ?? null,
