@@ -6,6 +6,7 @@
 import type { jsPDF } from 'jspdf'
 import { comisionDeLinea, numeroFactura, type Factura } from '@/datos/facturasLogica'
 import type { AbonoPoliza } from '@/datos/pagos'
+import { contactoEmpresa, empresaActual } from '@/lib/empresa'
 import { aFecha } from '@/lib/fechas'
 import { pesosEnLetras } from '@/lib/letras'
 import { fmtDinero, fmtPct } from '@/lib/numeros'
@@ -35,9 +36,7 @@ import {
   type LogoPdf,
 } from '@/paginas/comisiones/pdf'
 
-// Datos fijos de quien cobra (los mismos del software anterior).
-export const NIT_AGENCIA = '63.362.817-2'
-export const CONTACTO_AGENCIA = ['Celular: 3153729644', 'Correo: lstellaserranom@yahoo.com', 'Bucaramanga - Colombia']
+// Los datos de quien cobra (nombre, NIT, contacto, ciudad) salen de la configuración de la empresa.
 
 /** Pesos sin centavos, salvo que el valor los tenga (así lo escrito en letras coincide con la cifra). */
 const din = (n: number) => fmtDinero(n, Number.isInteger(Math.round(n * 100) / 100) ? 0 : 2)
@@ -77,6 +76,7 @@ function espacio(doc: jsPDF, y: number, alto: number) {
 }
 
 export function pdfCuentaCobro({ factura: f, lineas, logo }: { factura: Factura; lineas: AbonoPoliza[]; logo: LogoPdf | null }): jsPDF {
+  const empresa = empresaActual()
   const doc = nuevoDocumento()
   const ancho = anchoUtil(doc)
   const numero = numeroFactura(f.prefijo, f.numFactura)
@@ -97,7 +97,7 @@ export function pdfCuentaCobro({ factura: f, lineas, logo }: { factura: Factura;
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
   doc.setTextColor(...GRIS)
-  doc.text(`Bucaramanga, ${fechaLarga(f.fecha)}`, anchoPagina(doc) - MARGEN, y + 31, { align: 'right' })
+  doc.text(`${empresa.ciudad}, ${fechaLarga(f.fecha)}`, anchoPagina(doc) - MARGEN, y + 31, { align: 'right' })
   if (f.estado === 'N') {
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(0xc6, 0x28, 0x28)
@@ -116,8 +116,8 @@ export function pdfCuentaCobro({ factura: f, lineas, logo }: { factura: Factura;
   ]
   const acreedor: FilaInfo[] = [
     ['Intermediario', f.nombreInterm ?? '—'],
-    ['Agencia', 'Rueda Serrano Asesores de Seguros'],
-    ['NIT', NIT_AGENCIA],
+    ['Agencia', empresa.nombre],
+    ['NIT', empresa.nit],
     ['Clave intermediario', f.asegClave ?? '—'],
   ]
   const yIzq = bloqueInfo(doc, y, 'DEBE (EMPRESA)', deudor, { izquierda: MARGEN, ancho: mitad })
@@ -223,8 +223,8 @@ export function pdfCuentaCobro({ factura: f, lineas, logo }: { factura: Factura;
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...GRIS)
   doc.setFontSize(8)
-  doc.text(`NIT ${NIT_AGENCIA}`, xFirma, y + 59)
-  doc.text(CONTACTO_AGENCIA, xFirma, y + 72, { lineHeightFactor: 1.35 })
+  doc.text(`NIT ${empresa.nit}`, xFirma, y + 59)
+  doc.text(contactoEmpresa(empresa), xFirma, y + 72, { lineHeightFactor: 1.35 })
 
   encabezadosYPies(doc, logo)
   return doc

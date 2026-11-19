@@ -1,3 +1,4 @@
+import { useEmpresa } from '@/lib/empresa'
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
@@ -8,6 +9,7 @@ import { iniciarSesion, useSesion } from '@/lib/sesion'
 import { ES_PRUEBAS } from '@/lib/supabase'
 
 export default function Login() {
+  const empresa = useEmpresa()
   const sesion = useSesion()
   const navigate = useNavigate()
   const location = useLocation()
@@ -43,9 +45,9 @@ export default function Login() {
     <div className="flex min-h-full items-center justify-center bg-gradient-to-br from-navy-soft via-bg to-green-soft p-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center text-center">
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Rueda Serrano Asesores de Seguros" className="h-20" />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt={empresa.nombre} className="h-20" />
           <h1 className="mt-3 text-2xl font-bold text-navy">SegurApp</h1>
-          <p className="text-[13px] font-semibold text-green">Rueda Serrano Asesores de Seguros</p>
+          <p className="text-[13px] font-semibold text-green">{empresa.nombre}</p>
           {ES_PRUEBAS && (
             <span className="mt-2 rounded-full bg-warning px-3 py-0.5 text-[11px] font-bold text-white">PRUEBAS</span>
           )}

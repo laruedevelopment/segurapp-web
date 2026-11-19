@@ -3,6 +3,7 @@
 // Réplica de lib/ui/pagina_estado_cuenta.dart de la app Flutter, con su PDF
 // (lib/utils/generador_pdf.dart) y el comprobante de pago de cada abono.
 
+import { useEmpresa } from '@/lib/empresa'
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link, useLocation, useParams } from 'react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -562,6 +563,7 @@ function DialogoComprobante({
   onCerrar: () => void
   obtenerLogo: () => Promise<LogoPdf | null>
 }) {
+  const empresa = useEmpresa()
   const [descargando, setDescargando] = useState(false)
 
   const descargar = async () => {
@@ -603,8 +605,8 @@ function DialogoComprobante({
         <div className="flex flex-col gap-5">
           <div className="flex flex-wrap items-start gap-4">
             <div className="min-w-0 flex-1">
-              <div className="text-[17px] font-bold text-navy">Rueda Serrano Asesores de Seguros</div>
-              <div className="text-[12px] text-ink-soft">Asesoría y gestión de seguros</div>
+              <div className="text-[17px] font-bold text-navy">{empresa.nombre}</div>
+              <div className="text-[12px] text-ink-soft">{empresa.eslogan}</div>
             </div>
             <div className="rounded-[10px] bg-navy-soft px-3 py-2 text-right text-navy-dark">
               <div className="text-[13px] font-bold">COMPROBANTE DE PAGO</div>

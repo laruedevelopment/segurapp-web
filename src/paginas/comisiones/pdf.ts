@@ -3,6 +3,7 @@
 // encabezado con el logo en cada página, "Página X de N", bloques de
 // información, resumen e historial con totales (los anulados no suman).
 
+import { empresaActual } from '@/lib/empresa'
 import { jsPDF } from 'jspdf'
 import { autoTable, type CellHookData, type UserOptions } from 'jspdf-autotable'
 import { etiquetaEstadoPago, type AbonoPoliza, type ReportePago } from '@/datos/pagos'
@@ -116,11 +117,11 @@ export function encabezadosYPies(doc: jsPDF, logo: LogoPdf | null) {
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(14)
     doc.setTextColor(...AZUL)
-    doc.text('Rueda Serrano Asesores de Seguros', x, MARGEN + 17)
+    doc.text(empresaActual().nombre, x, MARGEN + 17)
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(9)
     doc.setTextColor(...GRIS)
-    doc.text('SegurApp – Sistema de Gestión de Pólizas', x, MARGEN + 30)
+    doc.text(empresaActual().sistema, x, MARGEN + 30)
 
     doc.setFontSize(8)
     doc.text(`Página ${i} de ${total}`, anchoPagina(doc) - MARGEN, altoPagina(doc) - MARGEN + 8, { align: 'right' })

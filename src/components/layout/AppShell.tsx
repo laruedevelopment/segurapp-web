@@ -1,3 +1,6 @@
+import { useQuery } from '@tanstack/react-query'
+import { cargarEmpresa } from '@/datos/empresa'
+import { useEmpresa } from '@/lib/empresa'
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { Dialog } from 'radix-ui'
@@ -30,6 +33,9 @@ function leerColapsado() {
 }
 
 export function AppShell() {
+  const empresa = useEmpresa()
+  // Datos de la empresa de esta base (solo en pruebas por ahora; sin tabla o con error, quedan los de siempre).
+  useQuery({ queryKey: ['empresa'], queryFn: cargarEmpresa, enabled: ES_PRUEBAS, staleTime: 5 * 60_000, retry: false })
   const sesion = useSesion()
   const navigate = useNavigate()
   const [menuMovil, setMenuMovil] = useState(false)
@@ -146,7 +152,7 @@ export function AppShell() {
       {!c && (
         <div className="min-w-0">
           <div className="font-bold text-navy">SegurApp</div>
-          <div className="truncate text-[11px] font-semibold text-green">Rueda Serrano Asesores</div>
+          <div className="truncate text-[11px] font-semibold text-green">{empresa.nombreCorto}</div>
         </div>
       )}
     </div>
