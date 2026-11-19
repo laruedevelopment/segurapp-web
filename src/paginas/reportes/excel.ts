@@ -2,6 +2,7 @@
 // fechas van como fechas reales de Excel (se pueden ordenar y filtrar) y los
 // montos como números.
 
+import { nombreBien } from '@/lib/placa'
 import * as XLSX from 'xlsx'
 import type { CellObject, WorkSheet } from 'xlsx'
 import { agrupar, diasParaVencer, type Dimension, type FilaReporte } from './calculos'
@@ -41,7 +42,7 @@ function hojaGrupo(filas: FilaReporte[], dim: Dimension, titulo: string): WorkSh
   )
 }
 
-export function construirLibro(filas: FilaReporte[], porVencer90: FilaReporte[], hoy: Date): XLSX.WorkBook {
+export function construirLibro(filas: FilaReporte[], porVencer: FilaReporte[], hoy: Date, nombreHojaVencimientos = 'Vencimientos 90 días'): XLSX.WorkBook {
   const wb = XLSX.utils.book_new()
 
   XLSX.utils.book_append_sheet(
@@ -49,7 +50,7 @@ export function construirLibro(filas: FilaReporte[], porVencer90: FilaReporte[],
     hoja(
       [
         [
-          'Cód', 'Nro Póliza', 'Bien Asegurado', 'Cliente', 'Doc. Cliente', 'Aseguradora', 'Ramo', 'Producto',
+          'Cód', 'Nro Póliza', 'Cliente', 'Bien Asegurado', 'Doc. Cliente', 'Aseguradora', 'Ramo', 'Producto',
           'F. Inicio', 'F. Vencimiento', 'Prima', 'Valor Póliza', 'Valor Asegurado', 'F. Expedición', 'Asesor',
           'F. Registro', 'F. Ult. Mod', 'Usuario',
         ],
@@ -58,8 +59,8 @@ export function construirLibro(filas: FilaReporte[], porVencer90: FilaReporte[],
           return [
             p.id,
             texto(p.nro_poliza),
-            texto(p.bien_asegurado),
             texto(p.nombre_cliente),
+            texto(nombreBien(p.bien_asegurado, p.nombre_ramo, p.nombre_prod)),
             texto(p.doc_cliente),
             texto(p.nombre_aseg),
             texto(p.nombre_ramo),
@@ -77,7 +78,7 @@ export function construirLibro(filas: FilaReporte[], porVencer90: FilaReporte[],
           ]
         }),
       ],
-      [8, 18, 28, 34, 16, 24, 20, 24, 12, 13, 14, 14, 16, 13, 24, 16, 16, 12],
+      [8, 18, 34, 28, 16, 24, 20, 24, 12, 13, 14, 14, 16, 13, 24, 16, 16, 12],
     ),
     'Pólizas',
   )
@@ -88,11 +89,12 @@ export function construirLibro(filas: FilaReporte[], porVencer90: FilaReporte[],
     wb,
     hoja(
       [
-        ['Cód', 'Nro Póliza', 'Cliente', 'Aseguradora', 'Ramo', 'Producto', 'F. Vencimiento', 'Días restantes', 'Prima', 'Asesor'],
-        ...porVencer90.map((r) => [
+        ['Cód', 'Nro Póliza', 'Cliente', 'Bien Asegurado', 'Aseguradora', 'Ramo', 'Producto', 'F. Vencimiento', 'Días restantes', 'Prima', 'Asesor'],
+        ...porVencer.map((r) => [
           r.p.id,
           texto(r.p.nro_poliza),
           texto(r.p.nombre_cliente),
+          texto(nombreBien(r.p.bien_asegurado, r.p.nombre_ramo, r.p.nombre_prod)),
           texto(r.p.nombre_aseg),
           texto(r.p.nombre_ramo),
           texto(r.p.nombre_prod),
@@ -102,9 +104,9 @@ export function construirLibro(filas: FilaReporte[], porVencer90: FilaReporte[],
           texto(r.p.nombre_asesor),
         ]),
       ],
-      [8, 18, 34, 24, 20, 24, 13, 13, 14, 24],
+      [8, 18, 34, 28, 24, 20, 24, 13, 13, 14, 24],
     ),
-    'Vencimientos 90 días',
+    nombreHojaVencimientos,
   )
   return wb
 }
@@ -112,8 +114,8 @@ export function construirLibro(filas: FilaReporte[], porVencer90: FilaReporte[],
 const dos = (n: number) => String(n).padStart(2, '0')
 
 /** Genera y descarga polizas_AAAAMMDD_HHMM.xlsx. */
-export function descargarExcel(filas: FilaReporte[], porVencer90: FilaReporte[], hoy: Date) {
-  const wb = construirLibro(filas, porVencer90, hoy)
+export function descargarExcel(filas: FilaReporte[], porVencer: FilaReporte[], hoy: Date, nombreHojaVencimientos?: string) {
+  const wb = construirLibro(filas, porVencer, hoy, nombreHojaVencimientos)
   const n = new Date()
   const nombre = `polizas_${n.getFullYear()}${dos(n.getMonth() + 1)}${dos(n.getDate())}_${dos(n.getHours())}${dos(n.getMinutes())}.xlsx`
   XLSX.writeFile(wb, nombre, { compression: true })

@@ -22,6 +22,7 @@ import {
   mismoRango,
   opcionesDe,
   porVencer,
+  ventanaVencimientos,
   prepararFilas,
   rangoAnio,
   rangoDias,
@@ -141,7 +142,8 @@ export default function Tablero() {
     await new Promise((r) => setTimeout(r, 50))
     try {
       const { descargarExcel } = await import('./excel')
-      descargarExcel(filtradas, porVencer(filtradas, hoy, 0, 90), hoy)
+      const ventana = ventanaVencimientos(filtros.ffin, hoy)
+      descargarExcel(filtradas, porVencer(filtradas, hoy, 0, ventana.dias), hoy, ventana.nombre)
       toast.success('Excel generado correctamente.')
     } catch (e) {
       toast.error(`Error al exportar: ${mensajeError(e)}`)

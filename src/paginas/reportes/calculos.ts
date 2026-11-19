@@ -278,3 +278,19 @@ export const rangoAnio = (hoy: Date): RangoFechas => ({
 export const mismoRango = (a: RangoFechas, b: RangoFechas) =>
   (a.desde?.getTime() ?? null) === (b.desde?.getTime() ?? null) &&
   (a.hasta?.getTime() ?? null) === (b.hasta?.getTime() ?? null)
+
+const ddmm = (d: Date) => `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`
+
+/**
+ * Ventana de la hoja de vencimientos del Excel según el filtro "F. vencimiento":
+ * sin filtro, los próximos 90 días; con un tope "hasta" (ej. Próx. 30 días), hasta ese tope.
+ * El nombre dice lo que realmente contiene la hoja (máx. 31 caracteres, sin "/").
+ */
+export function ventanaVencimientos(ffin: RangoFechas, hoy: Date): { dias: number; nombre: string } {
+  if (!ffin.hasta) return { dias: 90, nombre: 'Vencimientos 90 días' }
+  const dias = Math.max(0, diasEntre(hoy, ffin.hasta))
+  const empiezaYa = !ffin.desde || diasEntre(hoy, ffin.desde) <= 0
+  if (empiezaYa && diasEntre(hoy, ffin.hasta) >= 0) return { dias, nombre: `Vencimientos ${dias} días` }
+  const desde = ffin.desde && diasEntre(hoy, ffin.desde) > 0 ? ffin.desde : hoy
+  return { dias, nombre: `Vencen ${ddmm(desde)} a ${ddmm(ffin.hasta)}` }
+}

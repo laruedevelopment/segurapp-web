@@ -11,9 +11,11 @@ import {
   filtrar,
   opcionesDe,
   porVencer,
+  ventanaVencimientos,
   prepararFilas,
   rangoDias,
   rangoMes,
+  SIN_RANGO,
 } from './calculos'
 
 let sig = 1
@@ -110,6 +112,22 @@ describe('filtrar y clasificar', () => {
   })
 })
 
+describe('ventanaVencimientos', () => {
+  it('sin filtro: 90 días', () => {
+    expect(ventanaVencimientos(SIN_RANGO, HOY)).toEqual({ dias: 90, nombre: 'Vencimientos 90 días' })
+  })
+  it('próximos 30 días: la hoja dice 30', () => {
+    expect(ventanaVencimientos(rangoDias(HOY, 0, 30), HOY)).toEqual({ dias: 30, nombre: 'Vencimientos 30 días' })
+    expect(ventanaVencimientos(rangoDias(HOY, 0, 180), HOY).nombre).toBe('Vencimientos 180 días')
+  })
+  it('rango que empieza en el futuro: dice las fechas', () => {
+    const r = ventanaVencimientos(rangoDias(HOY, 10, 20), HOY)
+    expect(r.dias).toBe(20)
+    expect(r.nombre).toMatch(/^Vencen \d{2}-\d{2}-\d{4} a \d{2}-\d{2}-\d{4}$/)
+    expect(r.nombre.length).toBeLessThanOrEqual(31)
+  })
+})
+
 describe('excel', () => {
   it('fechas como número de serie con formato y montos como número', () => {
     expect(serialExcel(new Date(2026, 8, 25))).toBe(46290)
@@ -123,7 +141,7 @@ describe('excel', () => {
     expect(ws['K2']).toMatchObject({ t: 'n', v: 1500.5 })
     expect(ws['I2']).toBeUndefined()
     const v = wb.Sheets['Vencimientos 90 días']
-    expect(v['H2']).toMatchObject({ t: 'n', v: 10 })
+    expect(v['I2']).toMatchObject({ t: 'n', v: 10 })
     // Se puede escribir sin errores.
     expect(XLSX.write(wb, { type: 'array', bookType: 'xlsx' }).byteLength).toBeGreaterThan(0)
   })
