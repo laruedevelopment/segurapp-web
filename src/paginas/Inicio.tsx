@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
-import { AlertTriangle, BarChart3, ChevronRight, ClipboardCheck, FilePlus2, FileSpreadsheet, Gauge, Target, FolderOpen, LayoutDashboard, ReceiptText, Trash2, WalletCards } from 'lucide-react'
+import { AlarmClock, AlertTriangle, BarChart3, ChevronRight, ClipboardCheck, FilePlus2, FileSpreadsheet, Gauge, Target, FolderOpen, LayoutDashboard, ReceiptText, Trash2, WalletCards } from 'lucide-react'
 import { Contenido } from '@/components/layout/AppShell'
 import { useCasosPendientes } from '@/datos/casos'
 import { useConteoComisionesSospechosas } from '@/datos/comisionesRevision'
+import { useConteoVencimientos } from '@/datos/vencimientos'
 import { useConteoEliminaciones } from '@/datos/eliminacion'
 import { ES_PRUEBAS } from '@/lib/supabase'
 import { esAdmin, useSesion, veComisiones } from '@/lib/sesion'
@@ -38,6 +39,7 @@ export default function Inicio() {
   const casos = useCasosPendientes()
   const eliminaciones = useConteoEliminaciones()
   const comisionesRevisar = useConteoComisionesSospechosas()
+  const vencimientos = useConteoVencimientos()
   const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches'
 
   return (
@@ -56,6 +58,14 @@ export default function Inicio() {
           titulo="Catálogos"
           detalle={esAdmin(u) ? 'Clientes, asesores, aseguradoras, ramos, productos y más' : 'Clientes, aseguradoras, ramos y productos'}
           color="bg-green-soft text-green"
+        />
+        <Acceso
+          a="/polizas/vencimientos"
+          icono={<AlarmClock />}
+          titulo="Vencimientos"
+          detalle="Pólizas por vencer: a quién llamar y en qué va cada una"
+          color="bg-danger-soft text-danger"
+          contador={vencimientos.data}
         />
         <Acceso a="/reportes" icono={<BarChart3 />} titulo="Reportes" detalle="Tablero y exportar a Excel" color="bg-navy-soft text-navy" />
         <Acceso

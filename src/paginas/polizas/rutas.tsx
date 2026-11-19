@@ -7,6 +7,7 @@ const Formulario = lazy(() => import('./Formulario'))
 const Pendientes = lazy(() => import('./Pendientes'))
 const CargaMasiva = lazy(() => import('./CargaMasiva'))
 const Duplicadas = lazy(() => import('./Duplicadas'))
+const Vencimientos = lazy(() => import('./Vencimientos'))
 const ComisionesRevisar = lazy(() => import('./ComisionesRevisar'))
 const EliminacionesPendientes = lazy(() => import('./EliminacionesPendientes'))
 // El estado de cuenta de una póliza lo hace el módulo de comisiones.
@@ -19,6 +20,7 @@ export const rutasPolizas: RouteObject[] = [
   { path: 'polizas/pendientes', element: <Diferida><Pendientes /></Diferida> },
   { path: 'polizas/carga-masiva', element: <Diferida><CargaMasiva /></Diferida> },
   { path: 'polizas/duplicadas', element: <Diferida><Duplicadas /></Diferida> },
+  { path: 'polizas/vencimientos', element: <Diferida><Vencimientos /></Diferida> },
   { path: 'polizas/comisiones-revisar', element: <Diferida><ComisionesRevisar /></Diferida> },
   // Bandeja del administrador (la pantalla y la base exigen el rol A).
   { path: 'polizas/eliminaciones', element: <Diferida><EliminacionesPendientes /></Diferida> },
