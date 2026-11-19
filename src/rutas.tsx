@@ -1,5 +1,6 @@
 import { Link, createBrowserRouter } from 'react-router'
 import { AppShell } from '@/components/layout/AppShell'
+import ErrorDePagina from '@/components/layout/ErrorDePagina'
 import { RequiereSesion } from '@/components/layout/guardas'
 import { configurarAlVencer } from '@/lib/sesion'
 import Inicio from '@/paginas/Inicio'
@@ -28,9 +29,10 @@ function NoEncontrada() {
 
 export const router = createBrowserRouter(
   [
-    { path: '/login', element: <Login /> },
+    { path: '/login', element: <Login />, errorElement: <ErrorDePagina /> },
     {
       element: <RequiereSesion />,
+      errorElement: <ErrorDePagina />,
       children: [
         {
           element: <AppShell />,

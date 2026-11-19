@@ -6,6 +6,7 @@ import { Toaster } from 'sonner'
 import { ProveedorConfirmar } from '@/components/ui/dialogo'
 import { cancelarCargaMasiva } from '@/datos/cargaMasiva'
 import { configurarAlCerrar } from '@/lib/sesion'
+import { vigilarVersionNueva } from '@/lib/versionNueva'
 import { router } from './rutas'
 import './index.css'
 
@@ -20,6 +21,9 @@ configurarAlCerrar(() => {
   cancelarCargaMasiva()
   queryClient.clear()
 })
+
+// Si se publicó una versión nueva mientras la app estaba abierta, se recarga sola.
+vigilarVersionNueva()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

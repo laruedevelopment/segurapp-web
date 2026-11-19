@@ -57,10 +57,16 @@ jobs:
         run: |
           git clone --depth 1 "https://x-access-token:${DEPLOY_TOKEN}@github.com/laruedevelopment/SegurAppRSAS.git" deploy_repo
           cd deploy_repo
+          # Archivos de la versión anterior: quien tenga la app abierta los sigue pidiendo (ver scripts/conservar-assets.mjs).
+          mkdir -p ../assets-viejos/raiz ../assets-viejos/pruebas
+          [ -d assets ] && cp -r assets/. ../assets-viejos/raiz/ || true
+          [ -d pruebas/assets ] && cp -r pruebas/assets/. ../assets-viejos/pruebas/ || true
           # Se limpia la raíz (la versión anterior) pero se conservan el respaldo /flutter/ y la copia /pruebas/.
           find . -mindepth 1 -maxdepth 1 ! -name .git ! -name flutter ! -name pruebas ! -name CNAME -exec rm -rf {} +
           cp -r ../dist/. .
           rm -rf pruebas && mkdir pruebas && cp -r ../dist-pruebas/. pruebas/
+          node ../scripts/conservar-assets.mjs ../assets-viejos/raiz assets
+          node ../scripts/conservar-assets.mjs ../assets-viejos/pruebas pruebas/assets
           # Sin este archivo GitHub Pages (Jekyll) no sirve los archivos que empiezan con punto,
           # como flutter/assets/.env.prod: el respaldo de Flutter quedaría en blanco.
           touch .nojekyll
