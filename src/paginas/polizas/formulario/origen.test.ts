@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ORIGEN_MANUAL, etiquetaOrigen, origenDeBorrador, origenDePendiente, origenEnBorrador } from './origen'
+import { ORIGEN_MANUAL, etiquetaOrigen, etiquetaOrigenCorta, origenDeBorrador, origenDePendiente, origenEnBorrador } from './origen'
 
 describe('origen', () => {
   it('etiquetas', () => {
@@ -7,6 +7,9 @@ describe('origen', () => {
     expect(etiquetaOrigen('masiva')).toBe('Carga masiva con IA')
     expect(etiquetaOrigen('manual')).toBe('Manual')
     expect(etiquetaOrigen(null)).toBe('Sin dato')
+  })
+  it('etiquetas cortas', () => {
+    expect([etiquetaOrigenCorta('ia'), etiquetaOrigenCorta('masiva'), etiquetaOrigenCorta('manual'), etiquetaOrigenCorta(null)]).toEqual(['IA', 'Masiva', 'Manual', '—'])
   })
   it('el borrador recuerda el origen', () => {
     const datos = origenEnBorrador({ nro_poliza: '1' }, { origen: 'ia', iaDesde: '2026-11-19T10:00:00Z', iaHasta: '2026-11-19T10:00:09Z' })

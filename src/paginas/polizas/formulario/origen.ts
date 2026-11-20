@@ -14,6 +14,8 @@ export const ORIGEN_MANUAL: OrigenForm = { origen: 'manual' }
 export const etiquetaOrigen = (o: string | null | undefined): string =>
   o === 'ia' ? 'Con IA (formulario)' : o === 'masiva' ? 'Carga masiva con IA' : o === 'manual' ? 'Manual' : 'Sin dato'
 
+export const etiquetaOrigenCorta = (o: string | null | undefined): string => (o === 'ia' ? 'IA' : o === 'masiva' ? 'Masiva' : o === 'manual' ? 'Manual' : '—')
+
 const esOrigen = (v: unknown): v is OrigenPoliza => v === 'manual' || v === 'ia' || v === 'masiva'
 
 /** Un borrador recuerda el origen: así no se pierde al retomarlo otro día. */

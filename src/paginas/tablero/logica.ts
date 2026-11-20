@@ -88,6 +88,8 @@ export function textoRelativa(r: FechaRelativa): string {
 
 // ── Filtros ─────────────────────────────────────────────────────────────────
 
+export type FiltroOrigen = 'todos' | 'manual' | 'ia' | 'masiva' | 'sin'
+
 export interface FiltrosTablero {
   aseg: string[]
   ramo: string[]
@@ -107,6 +109,8 @@ export interface FiltrosTablero {
   incluirAnuladas: boolean
   /** Como el Power BI: con un rango de fecha de inicio activo, las pólizas sin fecha de inicio salen. Aquí se puede pedir sin rango. */
   soloConInicio: boolean
+  /** Cómo se cargó la póliza ('sin' = las anteriores, sin dato). */
+  origen: FiltroOrigen
 }
 
 export const FILTROS_TABLERO_VACIOS: FiltrosTablero = {
@@ -125,6 +129,7 @@ export const FILTROS_TABLERO_VACIOS: FiltrosTablero = {
   estado: 'todas',
   incluirAnuladas: false,
   soloConInicio: false,
+  origen: 'todos',
 }
 
 export const claveMes = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -135,7 +140,7 @@ export function contarActivos(f: FiltrosTablero): number {
   return (
     (f.aseg.length ? 1 : 0) + (f.ramo.length ? 1 : 0) + (f.prod.length ? 1 : 0) + (f.asesor.length ? 1 : 0) + (f.cliente.length ? 1 : 0) +
     (f.anios.length || f.meses.length ? 1 : 0) + r(f.fini) + (f.ffinRel || r(f.ffinRango) ? 1 : 0) +
-    (f.bien.trim() ? 1 : 0) + (f.busqueda.trim() ? 1 : 0) + (f.estado !== 'todas' ? 1 : 0) + (f.incluirAnuladas ? 1 : 0) + (f.soloConInicio ? 1 : 0)
+    (f.bien.trim() ? 1 : 0) + (f.busqueda.trim() ? 1 : 0) + (f.estado !== 'todas' ? 1 : 0) + (f.incluirAnuladas ? 1 : 0) + (f.soloConInicio ? 1 : 0) + (f.origen !== 'todos' ? 1 : 0)
   )
 }
 
@@ -176,6 +181,7 @@ export function filtrarTablero(filas: FilaReporte[], f: FiltrosTablero, hoy: Dat
       if (!anios.has(r.fini.getFullYear()) && !meses.has(claveMes(r.fini))) return false
     }
     if (f.soloConInicio && !r.fini) return false
+    if (f.origen === 'sin' ? !!p.origen : f.origen !== 'todos' && p.origen !== f.origen) return false
     if (!enRango(r.fini, f.fini)) return false
     if (!enRango(r.ffin, rv)) return false
     if (bien && !sinTildes(p.bien_asegurado ?? '').includes(bien)) return false

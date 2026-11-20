@@ -163,6 +163,8 @@ export interface Poliza extends PolizaBase {
   nombre_usuario: string | null
   apodo_usuario: string | null
   nombre_estado?: string | null
+  /** manual | ia | masiva; null en las anteriores. Solo viene si la base tiene la migración del origen. */
+  origen?: string | null
 }
 
 /** Columnas que trae la lista de pólizas (la vista tiene ~57). */
@@ -174,5 +176,5 @@ export type PolizaLista = Pick<
   | 'estado_poliza_id' | 'vlrprimapagada_poliza' | 'usuario_id'
   | 'nombre_cliente' | 'doc_cliente' | 'tipodoc_cliente' | 'tel_cliente'
   | 'nombre_asesor' | 'nombre_ramo' | 'nombre_prod' | 'nombre_aseg'
-  | 'nombre_usuario' | 'apodo_usuario'
+  | 'nombre_usuario' | 'apodo_usuario' | 'origen'
 >

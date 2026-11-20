@@ -1,3 +1,4 @@
+import { ES_AMBIENTE_PRUEBAS } from '@/lib/ambiente'
 import { lazy, useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, FilterX, RefreshCw } from 'lucide-react'
 import { Contenido, EncabezadoPagina } from '@/components/layout/AppShell'
@@ -51,6 +52,13 @@ const ESTADOS: { id: EstadoVigencia; texto: string }[] = [
   { id: 'vigentes', texto: 'Vigentes' },
   { id: 'vencidas', texto: 'Vencidas' },
   { id: 'sinFecha', texto: 'Sin fecha' },
+]
+const ORIGENES: { id: FiltrosTablero['origen']; texto: string }[] = [
+  { id: 'todos', texto: 'Todos' },
+  { id: 'manual', texto: 'Manual' },
+  { id: 'ia', texto: 'IA' },
+  { id: 'masiva', texto: 'Masiva' },
+  { id: 'sin', texto: 'Sin dato' },
 ]
 const ATAJOS_VENC = [
   { texto: '30 días', relativa: { sentido: 'siguiente', n: 30, unidad: 'dias' } },
@@ -167,6 +175,14 @@ export default function Tablero() {
               <input type="checkbox" className="size-4 accent-navy" checked={filtros.incluirAnuladas} onChange={(e) => cambiar({ incluirAnuladas: e.target.checked })} />
               Incluir anuladas
             </label>
+            {ES_AMBIENTE_PRUEBAS && (
+              <span className="ml-1 inline-flex items-center gap-1.5">
+                <span className="text-[12.5px] font-semibold text-ink-soft">Origen:</span>
+                {ORIGENES.map((o) => (
+                  <Chip key={o.id} activo={filtros.origen === o.id} onClick={() => cambiar({ origen: o.id })}>{o.texto}</Chip>
+                ))}
+              </span>
+            )}
             <label className="inline-flex cursor-pointer items-center gap-1.5 text-[12.5px] text-ink-soft" title="Deja fuera las pólizas sin fecha de inicio (SOAT y recordatorios), como hace el Power BI">
               <input type="checkbox" className="size-4 accent-navy" checked={filtros.soloConInicio} onChange={(e) => cambiar({ soloConInicio: e.target.checked })} />
               Solo con fecha de inicio

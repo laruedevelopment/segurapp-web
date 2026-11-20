@@ -71,6 +71,13 @@ describe('filtrarTablero', () => {
     expect(filtrarTablero(conSin, { ...V, soloConInicio: true }, HOY)).toHaveLength(1)
     expect(contarActivos({ ...V, soloConInicio: true })).toBe(1)
   })
+  it('filtra por origen', () => {
+    const o = prepararFilas([pol({ origen: 'ia' }), pol({ origen: 'manual' }), pol({ origen: 'masiva' }), pol({ origen: null })])
+    expect(filtrarTablero(o, V, HOY)).toHaveLength(4)
+    expect(filtrarTablero(o, { ...V, origen: 'ia' }, HOY)).toHaveLength(1)
+    expect(filtrarTablero(o, { ...V, origen: 'sin' }, HOY)).toHaveLength(1)
+    expect(contarActivos({ ...V, origen: 'masiva' })).toBe(1)
+  })
   it('estado vigentes / vencidas', () => {
     expect(filtrarTablero(filas, { ...V, estado: 'vigentes' }, HOY)).toHaveLength(2)
     expect(filtrarTablero(filas, { ...V, estado: 'vencidas' }, HOY)).toHaveLength(1)

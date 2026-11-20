@@ -1,4 +1,5 @@
 import { ilikeContiene, normalizarAlfanumerico } from '@/lib/filtros'
+import { ES_AMBIENTE_PRUEBAS } from '@/lib/ambiente'
 import { db } from '@/lib/supabase'
 import type { Poliza, PolizaBase, PolizaLista } from '@/lib/tipos'
 
@@ -14,6 +15,9 @@ export const COLS_LISTA =
   'nombre_cliente, doc_cliente, tipodoc_cliente, tel_cliente, ' +
   'nombre_asesor, nombre_ramo, nombre_prod, nombre_aseg, ' +
   'nombre_usuario, apodo_usuario'
+
+/** Columnas de las consultas a la vista de búsqueda: con el origen solo donde la base ya lo tiene (pruebas). */
+const COLS_VISTA = ES_AMBIENTE_PRUEBAS ? `${COLS_LISTA}, origen` : COLS_LISTA
 
 /** Búsqueda libre sobre la vista, con el texto escapado. */
 function filtroBusqueda(b: string) {
@@ -55,7 +59,7 @@ export async function listarTodasPolizas(
   const todas: PolizaLista[] = []
   let ultimoId: number | null = null
   for (;;) {
-    let q = db.from(VISTA).select(COLS_LISTA)
+    let q = db.from(VISTA).select(COLS_VISTA)
     if (b) q = q.or(filtroBusqueda(b))
     if (ultimoId != null) q = q.lt('id', ultimoId)
     q = q.order('id', { ascending: false }).limit(PAGINA)
@@ -73,7 +77,7 @@ export async function listarTodasPolizas(
 
 /** Las [limite] pólizas más recientes (carga rápida de la lista). */
 export async function listarPolizasRecientes(limite = 500): Promise<PolizaLista[]> {
-  const { data, error } = await db.from(VISTA).select(COLS_LISTA).order('id', { ascending: false }).limit(limite)
+  const { data, error } = await db.from(VISTA).select(COLS_VISTA).order('id', { ascending: false }).limit(limite)
   if (error) throw error
   return (data ?? []) as unknown as PolizaLista[]
 }
@@ -81,7 +85,7 @@ export async function listarPolizasRecientes(limite = 500): Promise<PolizaLista[
 /** Las pólizas indicadas, con las columnas de la lista (para refrescar filas puntuales). */
 export async function listarPolizasPorIds(ids: number[]): Promise<PolizaLista[]> {
   if (!ids.length) return []
-  const { data, error } = await db.from(VISTA).select(COLS_LISTA).in('id', ids)
+  const { data, error } = await db.from(VISTA).select(COLS_VISTA).in('id', ids)
   if (error) throw error
   return (data ?? []) as unknown as PolizaLista[]
 }
@@ -96,7 +100,7 @@ export async function obtenerPoliza(id: number): Promise<Poliza | null> {
 export async function listarPolizasDeCliente(clienteId: number): Promise<PolizaLista[]> {
   const { data, error } = await db
     .from(VISTA)
-    .select(COLS_LISTA)
+    .select(COLS_VISTA)
     .eq('cliente_id', clienteId)
     .order('fcreado', { ascending: false })
   if (error) throw error
@@ -116,7 +120,7 @@ export async function listarPolizasPorNroContiene(fragmento: string, limite = 20
   if (!f) return []
   const { data, error } = await db
     .from(VISTA)
-    .select(COLS_LISTA)
+    .select(COLS_VISTA)
     .ilike('nro_poliza', `%${f}%`)
     .order('id', { ascending: false })
     .limit(limite)

@@ -1,3 +1,5 @@
+import { ES_AMBIENTE_PRUEBAS } from '@/lib/ambiente'
+import { etiquetaOrigen, etiquetaOrigenCorta } from '@/paginas/polizas/formulario/origen'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { FileSpreadsheet } from 'lucide-react'
@@ -33,6 +35,9 @@ export default function TabPolizas({ filas, filtros, hoy }: PropsTab) {
       { id: 'ramo', titulo: 'Ramo', ancho: 150, celda: (r) => <span className="truncate">{r.p.nombre_ramo ?? '—'}</span>, ordenar: (r) => (r.p.nombre_ramo ?? '').toLowerCase() },
       { id: 'prod', titulo: 'Producto', ancho: 170, celda: (r) => <span className="truncate">{r.p.nombre_prod ?? '—'}</span>, ordenar: (r) => (r.p.nombre_prod ?? '').toLowerCase() },
       { id: 'asesor', titulo: 'Asesor', ancho: 150, celda: (r) => <span className="truncate">{r.p.nombre_asesor ?? '—'}</span>, ordenar: (r) => (r.p.nombre_asesor ?? '').toLowerCase() },
+      ...(ES_AMBIENTE_PRUEBAS
+        ? [{ id: 'origen', titulo: 'Origen', ancho: 90, celda: (r: FilaReporte) => <span title={etiquetaOrigen(r.p.origen)}>{etiquetaOrigenCorta(r.p.origen)}</span>, ordenar: (r: FilaReporte) => r.p.origen ?? '' }]
+        : []),
       { id: 'valor', titulo: 'Valor póliza', ancho: 130, alinear: 'der', celda: (r) => <span className="num">{fmtDinero(valorDe(r))}</span>, ordenar: valorDe },
       { id: 'prima', titulo: 'Prima', ancho: 130, alinear: 'der', celda: (r) => <span className="num">{fmtDinero(r.prima)}</span>, ordenar: (r) => r.prima },
     ],

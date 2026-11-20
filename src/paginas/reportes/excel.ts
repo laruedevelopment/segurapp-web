@@ -2,6 +2,8 @@
 // fechas van como fechas reales de Excel (se pueden ordenar y filtrar) y los
 // montos como números.
 
+import { ES_AMBIENTE_PRUEBAS } from '@/lib/ambiente'
+import { etiquetaOrigen } from '@/paginas/polizas/formulario/origen'
 import { nombreBien } from '@/lib/placa'
 import * as XLSX from 'xlsx'
 import type { CellObject, WorkSheet } from 'xlsx'
@@ -53,6 +55,7 @@ export function construirLibro(filas: FilaReporte[], porVencer: FilaReporte[], h
           'Cód', 'Nro Póliza', 'Cliente', 'Bien Asegurado', 'Doc. Cliente', 'Aseguradora', 'Ramo', 'Producto',
           'F. Inicio', 'F. Vencimiento', 'Prima', 'Valor Póliza', 'Valor Asegurado', 'F. Expedición', 'Asesor',
           'F. Registro', 'F. Ult. Mod', 'Usuario',
+          ...(ES_AMBIENTE_PRUEBAS ? ['Origen'] : []),
         ],
         ...filas.map((r) => {
           const p = r.p
@@ -75,10 +78,11 @@ export function construirLibro(filas: FilaReporte[], porVencer: FilaReporte[], h
             fechaHora(r.fcreado),
             fechaHora(r.fultmod),
             texto(p.apodo_usuario),
+            ...(ES_AMBIENTE_PRUEBAS ? [texto(etiquetaOrigen(p.origen))] : []),
           ]
         }),
       ],
-      [8, 18, 34, 28, 16, 24, 20, 24, 12, 13, 14, 14, 16, 13, 24, 16, 16, 12],
+      [8, 18, 34, 28, 16, 24, 20, 24, 12, 13, 14, 14, 16, 13, 24, 16, 16, 12, ...(ES_AMBIENTE_PRUEBAS ? [20] : [])],
     ),
     'Pólizas',
   )

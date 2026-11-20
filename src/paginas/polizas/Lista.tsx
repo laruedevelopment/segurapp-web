@@ -1,3 +1,5 @@
+import { ES_AMBIENTE_PRUEBAS } from '@/lib/ambiente'
+import { etiquetaOrigen, etiquetaOrigenCorta } from './formulario/origen'
 import { nombreBien } from '@/lib/placa'
 import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
@@ -301,6 +303,18 @@ export default function ListaPolizas() {
       ordenar: (p) => nombreBien(p.bien_asegurado, p.nombre_ramo, p.nombre_prod)?.toLowerCase(),
       titleDe: (p) => p.bien_asegurado ?? undefined,
     },
+    ...(ES_AMBIENTE_PRUEBAS
+      ? [
+          {
+            id: 'origen',
+            titulo: 'Origen',
+            ancho: 90,
+            celda: (p: PolizaLista) => <span title={etiquetaOrigen(p.origen)}>{etiquetaOrigenCorta(p.origen)}</span>,
+            ordenar: (p: PolizaLista) => p.origen ?? '',
+            titleDe: (p: PolizaLista) => etiquetaOrigen(p.origen),
+          },
+        ]
+      : []),
     {
       id: 'cliente',
       titulo: 'Cliente',
