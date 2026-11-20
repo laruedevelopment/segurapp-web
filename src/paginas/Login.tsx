@@ -6,7 +6,7 @@ import { Boton } from '@/components/ui/button'
 import { Campo, Input } from '@/components/ui/campos'
 import { Dialogo } from '@/components/ui/dialogo'
 import { iniciarSesion, useSesion } from '@/lib/sesion'
-import { ES_PRUEBAS } from '@/lib/supabase'
+import { ES_PRUEBAS, MODO_DEMO } from '@/lib/supabase'
 
 export default function Login() {
   const empresa = useEmpresa()
@@ -48,7 +48,7 @@ export default function Login() {
           <img src={`${import.meta.env.BASE_URL}logo.png`} alt={empresa.nombre} className="h-20" />
           <h1 className="mt-3 text-2xl font-bold text-navy">SegurApp</h1>
           <p className="text-[13px] font-semibold text-green">{empresa.nombre}</p>
-          {ES_PRUEBAS && (
+          {ES_PRUEBAS && !MODO_DEMO && (
             <span className="mt-2 rounded-full bg-warning px-3 py-0.5 text-[11px] font-bold text-white">PRUEBAS</span>
           )}
         </div>

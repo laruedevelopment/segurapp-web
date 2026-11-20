@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "demo:build": "vite build --mode demo --outDir dist-demo",
+    "demo:revisar": "node scripts/demo/revisar.mjs",
+    "demo:video": "node scripts/demo/grabar.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
@@ -35,6 +38,7 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
+    "playwright-core": "^1.65.1",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",

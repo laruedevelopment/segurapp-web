@@ -13,7 +13,14 @@ interface EstadoSesion {
 // iniciar sesión en una no cierre ni pise la de la otra. Producción conserva su clave de siempre.
 const CLAVE = (import.meta.env.VITE_APP_ENV as string | undefined) === 'prod' ? 'segurapp.sesion' : 'segurapp.sesion.pruebas'
 
-let sesion: EstadoSesion | null = leerGuardada()
+// Modo demo: arranca con la sesión de un administrador ficticio (sin escribir clave).
+const sesionDemo = (): EstadoSesion => ({
+  usuario: { id: 1, apodo_usuario: 'ADMIN', nombre_usuario: 'Administrador Demo', rol: 'A', asesor_id: null, correo_usuario: 'admin@agenciademo.co', estado_usuario: true },
+  token: 'demo',
+  expira: Math.floor(Date.now() / 1000) + 12 * 3600,
+})
+
+let sesion: EstadoSesion | null = import.meta.env.VITE_DEMO === '1' ? sesionDemo() : leerGuardada()
 let timer: ReturnType<typeof setTimeout> | null = null
 const oyentes = new Set<() => void>()
 

@@ -7,7 +7,7 @@ import { useConteoComisionesSospechosas } from '@/datos/comisionesRevision'
 import { useConteoVencimientos } from '@/datos/vencimientos'
 import TarjetaVencimientos from '@/paginas/polizas/TarjetaVencimientos'
 import { useConteoEliminaciones } from '@/datos/eliminacion'
-import { ES_PRUEBAS } from '@/lib/supabase'
+import { ES_PRUEBAS, MODO_DEMO } from '@/lib/supabase'
 import { esAdmin, useSesion, veComisiones } from '@/lib/sesion'
 import { cn } from '@/lib/utils'
 
@@ -91,7 +91,7 @@ export default function Inicio() {
           <Acceso a="/dashboard" icono={<LayoutDashboard />} titulo="Dashboard gerencial" detalle="Producción, cartera, renovaciones y metas" color="bg-green-soft text-green" />
         )}
         {esAdmin(u) && (
-          <Acceso a="/tablero" icono={<LayoutDashboard />} titulo="Tablero gerencial (nuevo)" detalle="El Power BI recreado y mejorado: valor y prima por dimensión, detalle y vencimientos" color="bg-green-soft text-green" />
+          <Acceso a="/tablero" icono={<LayoutDashboard />} titulo={MODO_DEMO ? 'Tablero gerencial' : 'Tablero gerencial (nuevo)'} detalle="El Power BI recreado y mejorado: valor y prima por dimensión, detalle y vencimientos" color="bg-green-soft text-green" />
         )}
         {veComisiones(u) && (comisionesRevisar.data ?? 0) > 0 && (
           <Acceso

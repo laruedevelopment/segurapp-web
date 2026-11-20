@@ -33,3 +33,6 @@ dist-ssr
 .codex/
 .mcp.json
 dist-pruebas
+
+dist-demo
+demo-video

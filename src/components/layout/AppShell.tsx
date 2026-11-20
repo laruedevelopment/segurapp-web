@@ -8,7 +8,7 @@ import { BarChart3, Building2, ClipboardCheck, FileSpreadsheet, FolderOpen, Home
 import { useCasosPendientes } from '@/datos/casos'
 import { useConteoEliminaciones } from '@/datos/eliminacion'
 import { cerrarSesion, esAdmin, useSesion, veComisiones } from '@/lib/sesion'
-import { ES_PRUEBAS } from '@/lib/supabase'
+import { ES_PRUEBAS, MODO_DEMO } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
 interface ItemMenu {
@@ -73,7 +73,7 @@ export function AppShell() {
     { a: '/consumo', texto: 'Consumo de IA', icono: <Gauge />, visible: esAdmin(usuario) },
     { a: '/dashboard', texto: 'Dashboard gerencial', icono: <LayoutDashboard />, visible: esAdmin(usuario) },
     { a: '/empresa', texto: 'Datos de la empresa', icono: <Building2 />, visible: esAdmin(usuario) && ES_PRUEBAS },
-    { a: '/tablero', texto: 'Tablero gerencial (nuevo)', icono: <LayoutDashboard />, visible: esAdmin(usuario) },
+    { a: '/tablero', texto: MODO_DEMO ? 'Tablero gerencial' : 'Tablero gerencial (nuevo)', icono: <LayoutDashboard />, visible: esAdmin(usuario) },
   ]
 
   const salir = () => {
@@ -208,7 +208,7 @@ export function AppShell() {
       </Dialog.Root>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {ES_PRUEBAS && (
+        {ES_PRUEBAS && !MODO_DEMO && (
           <div className="bg-warning-ink px-4 py-1 text-center text-[12px] font-bold tracking-wide text-white">
             AMBIENTE DE PRUEBAS — los datos no son reales
           </div>
