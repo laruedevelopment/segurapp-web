@@ -14,6 +14,9 @@ import { crearPdfs } from './pdfs.mjs'
 
 const SALIDA = resolve(process.env.SALIDA ?? 'demo-video')
 const SIN_VOZ = process.env.SIN_VOZ === '1'
+// VOZ: salome (mujer, colombiana; por defecto) | gonzalo (hombre, colombiano) | windows (voz básica sin internet)
+const VOZ = (process.env.VOZ ?? 'salome').toLowerCase()
+const NOMBRE = process.env.NOMBRE ?? 'SegurApp_demo'
 const DESFASE_AUDIO = Number(process.env.DESFASE_AUDIO ?? 0.25)
 const ANCHO = 1600
 const ALTO = 900
@@ -49,7 +52,36 @@ function duracionWav(ruta) {
   throw new Error('WAV sin datos: ' + ruta)
 }
 
+// Voces neuronales colombianas del servicio de lectura de Microsoft Edge (paquete edge-tts, gratis; necesita internet).
+const VOCES_EDGE = { salome: 'es-CO-SalomeNeural', gonzalo: 'es-CO-GonzaloNeural' }
+
+function generarVozEdge(textos, voz) {
+  const ffmpegExe = buscarFfmpeg()
+  return textos.map((texto, i) => {
+    const txt = join(vozDir, `n${i}.txt`)
+    const mp3 = join(vozDir, `n${i}.mp3`)
+    const wav = join(vozDir, `n${i}.wav`)
+    writeFileSync(txt, texto, 'utf8')
+    let r = spawnSync('python', ['-m', 'edge_tts', '--voice', voz, '--file', txt, '--write-media', mp3], { encoding: 'utf8' })
+    if (r.status !== 0 || !existsSync(mp3)) throw new Error('edge-tts falló: ' + (r.stderr || r.stdout).slice(-300))
+    r = spawnSync(ffmpegExe, ['-y', '-loglevel', 'error', '-i', mp3, '-ar', '24000', '-ac', '1', '-c:a', 'pcm_s16le', wav], { encoding: 'utf8' })
+    if (r.status !== 0) throw new Error('No se pudo convertir la voz: ' + r.stderr)
+    return { ruta: wav, dur: duracionWav(wav) }
+  })
+}
+
 function generarVoz(textos) {
+  if (VOZ !== 'windows') {
+    try {
+      return generarVozEdge(textos, VOCES_EDGE[VOZ] ?? VOCES_EDGE.salome)
+    } catch (e) {
+      console.warn('  ⚠ Voz neuronal no disponible (' + String(e.message).split(String.fromCharCode(10))[0].slice(0, 120) + '); se usa la voz de Windows.')
+    }
+  }
+  return generarVozWindows(textos)
+}
+
+function generarVozWindows(textos) {
   writeFileSync(join(vozDir, 'textos.json'), JSON.stringify(textos), 'utf8')
   const ps1 = [
     'Add-Type -AssemblyName System.Speech',
@@ -275,7 +307,7 @@ const corte = (tInicio - tPagina) / 1000 - 0.1
 console.log('Video sin editar:', crudoWebm, '(recorte inicial', corte.toFixed(1), 's)')
 
 // Une video + voz
-const salidaMp4 = join(SALIDA, 'SegurApp_demo.mp4')
+const salidaMp4 = join(SALIDA, `${NOMBRE}.mp4`)
 const args = ['-y', '-ss', corte.toFixed(2), '-i', crudoWebm]
 const conVoz = !SIN_VOZ
 if (conVoz) for (const m of marcas) args.push('-i', m.ruta)

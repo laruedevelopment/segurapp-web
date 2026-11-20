@@ -23,3 +23,12 @@ calculan a partir del día de hoy, así el semáforo de vencimientos siempre se 
 ## Producción no cambia
 
 Las compilaciones normales no incluyen nada del demo (se activa solo con `VITE_DEMO=1`, en `.env.demo`).
+
+## La voz
+
+Por defecto narra **Salomé**, una voz neuronal colombiana del servicio de lectura de Microsoft Edge
+(paquete `edge-tts`: `python -m pip install edge-tts`; necesita internet; solo se envía el texto de la narración).
+
+- `VOZ=gonzalo` → voz de hombre colombiano.  `VOZ=windows` → voz básica de Windows (sin internet).
+- Ejemplo: `$env:VOZ='gonzalo'; $env:NOMBRE='SegurApp_demo_gonzalo'; npm run demo:video`
+- Si la voz neuronal falla (sin internet), el robot usa la de Windows y avisa.
