@@ -56,6 +56,7 @@ export function useEmpresa(): Empresa {
       return () => oyentes.delete(f)
     },
     empresaActual,
+    empresaActual,
   )
 }
 

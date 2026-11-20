@@ -4,7 +4,7 @@ import { useEmpresa } from '@/lib/empresa'
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { Dialog } from 'radix-ui'
-import { BarChart3, ClipboardCheck, FileSpreadsheet, FolderOpen, Home, Gauge, LayoutDashboard, LogOut, Target, Menu, PanelLeftClose, PanelLeftOpen, ReceiptText, Trash2, WalletCards, X } from 'lucide-react'
+import { BarChart3, Building2, ClipboardCheck, FileSpreadsheet, FolderOpen, Home, Gauge, LayoutDashboard, LogOut, Target, Menu, PanelLeftClose, PanelLeftOpen, ReceiptText, Trash2, WalletCards, X } from 'lucide-react'
 import { useCasosPendientes } from '@/datos/casos'
 import { useConteoEliminaciones } from '@/datos/eliminacion'
 import { cerrarSesion, esAdmin, useSesion, veComisiones } from '@/lib/sesion'
@@ -72,6 +72,7 @@ export function AppShell() {
     { a: '/oportunidades', texto: 'Oportunidades SECOP', icono: <Target />, visible: ES_PRUEBAS },
     { a: '/consumo', texto: 'Consumo de IA', icono: <Gauge />, visible: esAdmin(usuario) },
     { a: '/dashboard', texto: 'Dashboard gerencial', icono: <LayoutDashboard />, visible: esAdmin(usuario) },
+    { a: '/empresa', texto: 'Datos de la empresa', icono: <Building2 />, visible: esAdmin(usuario) && ES_PRUEBAS },
     { a: '/tablero', texto: 'Tablero gerencial (nuevo)', icono: <LayoutDashboard />, visible: esAdmin(usuario) },
   ]
 
