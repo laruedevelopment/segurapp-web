@@ -10,9 +10,15 @@ vi.mock('@/datos/dashboard', () => ({
     isError: false,
     data: [{ idPoliza: 1, fecha: new Date(2026, 9, 5), prima: 1000, comision: 100 }],
   }),
+  useMetas: () => ({ isPending: false, isError: false, data: [{ anio: 2026, mes: 11, indicador: 'prima', asesorId: 0, valor: 5000 }] }),
+  esTablaMetasFaltante: () => false,
+  MENSAJE_TABLA_METAS: 'falta',
+  claveMetas: (a: number) => ['m', a],
+  guardarMetas: async () => {},
 }))
 
 import { renderToString } from 'react-dom/server'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router'
 import type { PolizaLista } from '@/lib/tipos'
 import { prepararFilas } from '@/paginas/reportes/calculos'
@@ -22,6 +28,8 @@ import { FiltroMulti } from './FiltroMulti'
 import TabPolizas from './TabPolizas'
 import TabProduccion from './TabProduccion'
 import TabCartera from './TabCartera'
+import TabClientes from './TabClientes'
+import TabMetas from './TabMetas'
 import TabRenovaciones from './TabRenovaciones'
 import TabResumen from './TabResumen'
 import TabVencimientos from './TabVencimientos'
@@ -57,6 +65,20 @@ describe('pestañas del tablero', () => {
     expect(h).toContain('Por recaudar')
     expect(h).toContain('Rentabilidad por aseguradora')
     expect(h).toContain('Antigüedad de la cartera')
+  })
+  it('Metas', () => {
+    const h = dibujar(
+      <QueryClientProvider client={new QueryClient()}>
+        <TabMetas {...props()} />
+      </QueryClientProvider>,
+    )
+    expect(h).toContain('Metas y cumplimiento')
+    expect(h).toContain('Prima emitida')
+  })
+  it('Clientes y asesores', () => {
+    const h = dibujar(<TabClientes {...props()} />)
+    expect(h).toContain('Concentración (Pareto)')
+    expect(h).toContain('Detalle por asesor')
   })
   it('Renovaciones', () => {
     const h = dibujar(<TabRenovaciones {...props()} />)

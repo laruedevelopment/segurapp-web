@@ -3,7 +3,7 @@ import type { PolizaLista } from '@/lib/tipos'
 import { prepararFilas } from '@/paginas/reportes/calculos'
 import {
   FILTROS_TABLERO_VACIOS as V,
-  agruparTablero, arbolAnioMes, vencidasRecientes, contarActivos, filtrarTablero, opcionesTablero, rangoRelativo, textoRelativa, totales,
+  agruparTablero, arbolAnioMes, comparacionDe, variacionPct, vencidasRecientes, contarActivos, filtrarTablero, opcionesTablero, rangoRelativo, textoRelativa, totales,
 } from './logica'
 
 const HOY = new Date(2026, 10, 19)
@@ -114,5 +114,32 @@ describe('vencidasRecientes', () => {
     const todas2 = [vieja, renovada, sinRen, antigua, sinBien]
     expect(vencidasRecientes(todas2, todas2, HOY)).toEqual({ vencidas: 3, sinRenovar: 2 })
     expect(vencidasRecientes([], todas2, HOY)).toEqual({ vencidas: 0, sinRenovar: 0 })
+  })
+})
+
+describe('comparacionDe', () => {
+  it('rango de inicio: el mismo largo justo antes', () => {
+    const c = comparacionDe({ ...V, fini: { desde: new Date(2026, 0, 1), hasta: new Date(2026, 2, 31) } }, 'anterior')!
+    expect(c.filtros.fini.hasta).toEqual(new Date(2025, 11, 31))
+    expect(c.filtros.fini.desde).toEqual(new Date(2025, 9, 3))
+  })
+  it('rango de inicio: mismas fechas del año anterior', () => {
+    const c = comparacionDe({ ...V, fini: { desde: new Date(2026, 0, 1), hasta: new Date(2026, 2, 31) } }, 'anioAnterior')!
+    expect([c.filtros.fini.desde, c.filtros.fini.hasta]).toEqual([new Date(2025, 0, 1), new Date(2025, 2, 31)])
+  })
+  it('un solo año escogido: el año anterior', () => {
+    const c = comparacionDe({ ...V, anios: [2026] }, 'anterior')!
+    expect(c.filtros.anios).toEqual([2025])
+    expect(c.etiqueta).toBe('2025')
+  })
+  it('sin período comparable: null', () => {
+    expect(comparacionDe(V, 'anterior')).toBeNull()
+    expect(comparacionDe({ ...V, anios: [2025, 2026] }, 'anterior')).toBeNull()
+    expect(comparacionDe({ ...V, fini: { desde: new Date(2026, 0, 1), hasta: null } }, 'anterior')).toBeNull()
+  })
+  it('variación', () => {
+    expect(variacionPct(150, 100)).toBe(50)
+    expect(variacionPct(50, 100)).toBe(-50)
+    expect(variacionPct(10, 0)).toBeNull()
   })
 })

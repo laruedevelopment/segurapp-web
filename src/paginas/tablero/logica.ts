@@ -3,7 +3,7 @@
 // Sin React: se prueba con vitest en logica.test.ts.
 
 import { renovadasAutomaticamente, type PolizaClave } from '@/datos/vencimientosLogica'
-import { diasEntre } from '@/lib/fechas'
+import { diasEntre, fmtFecha, sumarAnios } from '@/lib/fechas'
 import type { PolizaLista } from '@/lib/tipos'
 import { SIN_RANGO, enRango, esAnulada, type EstadoVigencia, type FilaReporte, type RangoFechas } from '@/paginas/reportes/calculos'
 
@@ -314,3 +314,44 @@ export function vencidasRecientes(filas: FilaReporte[], todas: FilaReporte[], ho
   )
   return { vencidas: recientes.length, sinRenovar: recientes.length - renovadas.size }
 }
+
+// ── Comparación con otro período ────────────────────────────────────────────
+
+export type ModoComparar = 'anterior' | 'anioAnterior'
+
+export interface Comparacion {
+  /** "01/01/2025 – 31/12/2025" o "2025". */
+  etiqueta: string
+  filtros: FiltrosTablero
+}
+
+const sumarDiasF = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)
+
+/**
+ * Filtros del período con que comparar. Se puede comparar cuando hay un rango de F. inicio completo
+ * (se compara con el mismo largo justo antes, o con las mismas fechas del año anterior) o un solo año
+ * escogido (contra el año anterior). Sin período, devuelve null.
+ */
+export function comparacionDe(f: FiltrosTablero, modo: ModoComparar): Comparacion | null {
+  if (f.fini.desde && f.fini.hasta && f.fini.desde <= f.fini.hasta && f.anios.length === 0 && f.meses.length === 0) {
+    let desde: Date
+    let hasta: Date
+    if (modo === 'anioAnterior') {
+      desde = sumarAnios(f.fini.desde, -1)
+      hasta = sumarAnios(f.fini.hasta, -1)
+    } else {
+      const n = diasEntre(f.fini.desde, f.fini.hasta) + 1
+      hasta = sumarDiasF(f.fini.desde, -1)
+      desde = sumarDiasF(hasta, -(n - 1))
+    }
+    return { etiqueta: `${fmtFecha(desde)} – ${fmtFecha(hasta)}`, filtros: { ...f, fini: { desde, hasta } } }
+  }
+  if (f.anios.length === 1 && f.meses.length === 0 && !f.fini.desde && !f.fini.hasta) {
+    const a = f.anios[0] - 1
+    return { etiqueta: String(a), filtros: { ...f, anios: [a] } }
+  }
+  return null
+}
+
+/** Variación porcentual de [actual] contra [previo]; null si no hay base. */
+export const variacionPct = (actual: number, previo: number): number | null => (previo > 0 ? ((actual - previo) / previo) * 100 : null)

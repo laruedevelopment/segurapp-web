@@ -5,7 +5,7 @@ import { fmtEntero, fmtMonto, fmtPesosCompacto } from '@/paginas/dashboard/forma
 import { DashCard, GraficoColumnas, KpiTile, RankingBarras, Rejilla, type FilaRanking } from '@/paginas/dashboard/graficos'
 import { Chip } from '@/components/ui/basicos'
 import { alternarGrupo, type PropsTab } from './comun'
-import { agruparTablero, diasVence, porAnioInicio, totales, vencidasRecientes, type DimTablero, type Medida } from './logica'
+import { agruparTablero, comparacionDe, diasVence, filtrarTablero, porAnioInicio, totales, variacionPct, vencidasRecientes, type ModoComparar, type DimTablero, type Medida } from './logica'
 
 const TEXTO_MEDIDA: Record<Medida, string> = { valor: 'Valor póliza', prima: 'Prima', registros: 'Registros' }
 
@@ -17,7 +17,11 @@ function top(filas: PropsTab['filas'], dim: DimTablero): FilaRanking[] {
 
 export default function TabResumen({ filas, todas, filtros, cambiar, hoy }: PropsTab) {
   const [medida, setMedida] = useState<Medida>('valor')
+  const [modo, setModo] = useState<ModoComparar | null>('anterior')
   const t = totales(filas)
+  const comp = useMemo(() => (modo ? comparacionDe(filtros, modo) : null), [filtros, modo])
+  const tPrev = useMemo(() => (comp ? totales(filtrarTablero(todas, comp.filtros, hoy)) : null), [comp, todas, hoy])
+  const hayPeriodo = useMemo(() => comparacionDe(filtros, 'anterior') != null, [filtros])
   let vigentes = 0
   let vencidas = 0
   let vence30 = 0
@@ -36,10 +40,21 @@ export default function TabResumen({ filas, todas, filtros, cambiar, hoy }: Prop
 
   return (
     <div className="flex flex-col gap-4">
+      {hayPeriodo ? (
+        <div className="flex flex-wrap items-center gap-2 text-[13px]">
+          <span className="font-semibold">Comparar con:</span>
+          <Chip activo={modo === 'anterior'} onClick={() => setModo('anterior')}>Período anterior</Chip>
+          <Chip activo={modo === 'anioAnterior'} onClick={() => setModo('anioAnterior')}>Mismo período del año anterior</Chip>
+          <Chip activo={modo === null} onClick={() => setModo(null)}>Sin comparar</Chip>
+          {comp && <span className="text-ink-soft">contra {comp.etiqueta}</span>}
+        </div>
+      ) : (
+        <p className="text-[12px] text-ink-soft">Para comparar con otro período, escoja un rango en «F. inicio» (con las dos fechas) o un solo año en «Inicio (año/mes)».</p>
+      )}
       <Rejilla anchoMinimo={190}>
-        <KpiTile etiqueta="Valor póliza" valor={fmtPesosCompacto(t.valor)} valorExacto={fmtMonto(t.valor)} icono={<CircleCheck />} color={DashColors.real} />
-        <KpiTile etiqueta="Prima" valor={fmtPesosCompacto(t.prima)} valorExacto={fmtMonto(t.prima)} icono={<CircleCheck />} color={DashColors.bueno} />
-        <KpiTile etiqueta="Registros" valor={fmtEntero(t.registros)} icono={<CircleCheck />} />
+        <KpiTile etiqueta="Valor póliza" valor={fmtPesosCompacto(t.valor)} valorExacto={fmtMonto(t.valor)} icono={<CircleCheck />} color={DashColors.real} delta={tPrev ? variacionPct(t.valor, tPrev.valor) : null} pie={tPrev ? `Antes: ${fmtPesosCompacto(tPrev.valor)}` : undefined} />
+        <KpiTile etiqueta="Prima" valor={fmtPesosCompacto(t.prima)} valorExacto={fmtMonto(t.prima)} icono={<CircleCheck />} color={DashColors.bueno} delta={tPrev ? variacionPct(t.prima, tPrev.prima) : null} pie={tPrev ? `Antes: ${fmtPesosCompacto(tPrev.prima)}` : undefined} />
+        <KpiTile etiqueta="Registros" valor={fmtEntero(t.registros)} icono={<CircleCheck />} delta={tPrev ? variacionPct(t.registros, tPrev.registros) : null} pie={tPrev ? `Antes: ${fmtEntero(tPrev.registros)}` : undefined} />
         <KpiTile etiqueta="Vigentes" valor={fmtEntero(vigentes)} icono={<CircleCheck />} color={DashColors.bueno} onTap={() => cambiar({ estado: 'vigentes' })} />
         <KpiTile
           etiqueta="Vencidas hace menos de 90 días"
