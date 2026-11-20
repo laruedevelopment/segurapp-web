@@ -361,3 +361,23 @@ export function comparacionDe(f: FiltrosTablero, modo: ModoComparar): Comparacio
 
 /** Variación porcentual de [actual] contra [previo]; null si no hay base. */
 export const variacionPct = (actual: number, previo: number): number | null => (previo > 0 ? ((actual - previo) / previo) * 100 : null)
+
+// ── Hoja de vencimientos del Excel ──────────────────────────────────────────
+
+/** ¿El usuario eligió una ventana en "F. vencimiento" (relativa o rango)? */
+export const hayVentanaVencimiento = (f: FiltrosTablero): boolean => !!f.ffinRel || !!f.ffinRango.desde || !!f.ffinRango.hasta
+
+/** Nombre de la hoja de vencimientos del Excel: siempre "Vencimientos". */
+export const nombreHojaVencimientos = (): string => 'Vencimientos'
+
+/**
+ * Pólizas de la hoja de vencimientos: con ventana elegida, todas las filtradas que tienen fecha de
+ * vencimiento (ya están dentro de la ventana); sin ventana, las que vencen en los próximos 12 meses.
+ * De la que vence primero a la que vence después.
+ */
+export function filasHojaVencimientos(filas: FilaReporte[], f: FiltrosTablero, hoy: Date): FilaReporte[] {
+  const base = hayVentanaVencimiento(f)
+    ? filas.filter((r) => r.ffin)
+    : filas.filter((r) => enRango(r.ffin, rangoRelativo({ sentido: 'siguiente', n: 12, unidad: 'meses' }, hoy)))
+  return [...base].sort((a, b) => a.ffin!.getTime() - b.ffin!.getTime())
+}

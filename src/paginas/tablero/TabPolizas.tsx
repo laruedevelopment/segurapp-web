@@ -10,10 +10,10 @@ import { fmtDinero } from '@/lib/numeros'
 import { fmtFecha } from '@/lib/fechas'
 import { nombreBien } from '@/lib/placa'
 import { mensajeAmigable } from '@/lib/errores'
-import { porVencer, type FilaReporte } from '@/paginas/reportes/calculos'
+import { type FilaReporte } from '@/paginas/reportes/calculos'
 import { fmtEntero } from '@/paginas/dashboard/formato'
 import type { PropsTab } from './comun'
-import { rangoVencimiento, totales, valorDe } from './logica'
+import { filasHojaVencimientos, nombreHojaVencimientos, totales, valorDe } from './logica'
 
 const bienDe = (r: FilaReporte) => nombreBien(r.p.bien_asegurado, r.p.nombre_ramo, r.p.nombre_prod) ?? ''
 
@@ -49,9 +49,7 @@ export default function TabPolizas({ filas, filtros, hoy }: PropsTab) {
     await new Promise((r) => setTimeout(r, 50))
     try {
       const { descargarExcel } = await import('@/paginas/reportes/excel')
-      const rv = rangoVencimiento(filtros, hoy)
-      const dias = rv.hasta ? Math.max(0, Math.round((rv.hasta.getTime() - hoy.getTime()) / 86_400_000)) : 90
-      descargarExcel(filas, porVencer(filas, hoy, 0, dias), hoy, `Vencimientos ${dias} días`)
+      descargarExcel(filas, filasHojaVencimientos(filas, filtros, hoy), hoy, nombreHojaVencimientos())
       toast.success('Excel generado correctamente.')
     } catch (e) {
       toast.error(`Error al exportar: ${mensajeAmigable(e)}`)

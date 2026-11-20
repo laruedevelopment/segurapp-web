@@ -135,12 +135,14 @@ describe('excel', () => {
       pol({ id: 7, nro_poliza: '123', ffin_poliza: '2026-10-05T00:00:00+00:00', prima_poliza: 1500.5, fcreado: '2026-09-01T15:30:00Z' }),
     ])
     const wb = construirLibro(filas, filas, HOY)
-    expect(wb.SheetNames).toEqual(['Pólizas', 'Por Aseguradora', 'Por Ramo', 'Por Asesor', 'Vencimientos 90 días'])
+    expect(wb.SheetNames).toEqual(['Pólizas', 'Por Aseguradora', 'Por Ramo', 'Por Asesor', 'Vencimientos'])
     const ws = wb.Sheets['Pólizas']
     expect(ws['J2']).toMatchObject({ t: 'n', v: serialExcel(new Date(2026, 9, 5)), z: 'dd/mm/yyyy' })
-    expect(ws['K2']).toMatchObject({ t: 'n', v: 1500.5 })
+    expect(ws['K2']).toMatchObject({ t: 'n', v: 1500.5, z: '#,##0.00' })
+    // Un valor entero no lleva decimales (antes salía "1.875.673,").
+    expect(construirLibro(prepararFilas([pol({ id: 8, prima_poliza: 1875673 })]), [], HOY).Sheets['Pólizas']['K2']).toMatchObject({ v: 1875673, z: '#,##0' })
     expect(ws['I2']).toBeUndefined()
-    const v = wb.Sheets['Vencimientos 90 días']
+    const v = wb.Sheets['Vencimientos']
     expect(v['I2']).toMatchObject({ t: 'n', v: 10 })
     // Se puede escribir sin errores.
     expect(XLSX.write(wb, { type: 'array', bookType: 'xlsx' }).byteLength).toBeGreaterThan(0)

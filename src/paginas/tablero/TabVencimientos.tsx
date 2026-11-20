@@ -15,7 +15,7 @@ import { fmtEntero } from '@/paginas/dashboard/formato'
 import { ES_PRUEBAS } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import type { PropsTab } from './comun'
-import { diasVence, filtrarTablero, rangoVencimiento, totales, valorDe } from './logica'
+import { diasVence, filtrarTablero, nombreHojaVencimientos, totales, valorDe } from './logica'
 
 const GRUPOS: { sem: Semaforo; texto: string; clase: string }[] = [
   { sem: 'vencida', texto: 'vencidas', clase: 'bg-danger text-white' },
@@ -77,9 +77,7 @@ export default function TabVencimientos({ todas, filtros, hoy }: PropsTab) {
     await new Promise((r) => setTimeout(r, 50))
     try {
       const { descargarExcel } = await import('@/paginas/reportes/excel')
-      const rv = rangoVencimiento(filtros, hoy)
-      const dias = rv.hasta ? Math.max(0, Math.round((rv.hasta.getTime() - hoy.getTime()) / 86_400_000)) : 365
-      descargarExcel(visibles, visibles, hoy, `Vencimientos ${dias} días`)
+      descargarExcel(visibles, visibles, hoy, nombreHojaVencimientos())
       toast.success('Excel generado correctamente.')
     } catch (e) {
       toast.error(`Error al exportar: ${mensajeAmigable(e)}`)

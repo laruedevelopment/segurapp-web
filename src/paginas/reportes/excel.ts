@@ -11,7 +11,9 @@ import { agrupar, diasParaVencer, type Dimension, type FilaReporte } from './cal
 
 const FMT_FECHA = 'dd/mm/yyyy'
 const FMT_FECHA_HORA = 'dd/mm/yyyy hh:mm'
-const FMT_DINERO = '#,##0.##'
+// Sin centavos si el valor es entero (con '#,##0.##' Excel deja el separador decimal colgando: "1.875.673,").
+const FMT_PESOS = '#,##0'
+const FMT_PESOS_CENTAVOS = '#,##0.00'
 
 const EPOCA_EXCEL = Date.UTC(1899, 11, 30)
 
@@ -25,7 +27,7 @@ type Celda = CellObject | string | number | null
 
 const fecha = (d: Date | null): Celda => (d ? { t: 'n', v: serialExcel(d), z: FMT_FECHA } : null)
 const fechaHora = (d: Date | null): Celda => (d ? { t: 'n', v: serialExcel(d, true), z: FMT_FECHA_HORA } : null)
-const dinero = (n: number | null | undefined): Celda => (n == null ? null : { t: 'n', v: n, z: FMT_DINERO })
+const dinero = (n: number | null | undefined): Celda => (n == null ? null : { t: 'n', v: n, z: Number.isInteger(n) ? FMT_PESOS : FMT_PESOS_CENTAVOS })
 const texto = (s: string | null | undefined): Celda => s ?? ''
 
 function hoja(filas: Celda[][], anchos: number[]): WorkSheet {
@@ -44,7 +46,7 @@ function hojaGrupo(filas: FilaReporte[], dim: Dimension, titulo: string): WorkSh
   )
 }
 
-export function construirLibro(filas: FilaReporte[], porVencer: FilaReporte[], hoy: Date, nombreHojaVencimientos = 'Vencimientos 90 días'): XLSX.WorkBook {
+export function construirLibro(filas: FilaReporte[], porVencer: FilaReporte[], hoy: Date, nombreHojaVencimientos = 'Vencimientos'): XLSX.WorkBook {
   const wb = XLSX.utils.book_new()
 
   XLSX.utils.book_append_sheet(

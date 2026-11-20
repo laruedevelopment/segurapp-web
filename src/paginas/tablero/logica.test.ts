@@ -3,7 +3,7 @@ import type { PolizaLista } from '@/lib/tipos'
 import { prepararFilas } from '@/paginas/reportes/calculos'
 import {
   FILTROS_TABLERO_VACIOS as V,
-  agruparTablero, arbolAnioMes, comparacionDe, variacionPct, vencidasRecientes, contarActivos, filtrarTablero, opcionesTablero, rangoRelativo, textoRelativa, totales,
+  agruparTablero, arbolAnioMes, comparacionDe, filasHojaVencimientos, nombreHojaVencimientos, variacionPct, vencidasRecientes, contarActivos, filtrarTablero, opcionesTablero, rangoRelativo, textoRelativa, totales,
 } from './logica'
 
 const HOY = new Date(2026, 10, 19)
@@ -148,5 +148,23 @@ describe('comparacionDe', () => {
     expect(variacionPct(150, 100)).toBe(50)
     expect(variacionPct(50, 100)).toBe(-50)
     expect(variacionPct(10, 0)).toBeNull()
+  })
+})
+
+describe('hoja de vencimientos del Excel', () => {
+  const todas2 = prepararFilas([
+    pol({ ffin_poliza: '2026-08-09' }), // ya venció
+    pol({ ffin_poliza: '2026-12-05' }),
+    pol({ ffin_poliza: '2027-03-01' }),
+    pol({ ffin_poliza: '2028-01-01' }), // fuera de 12 meses
+    pol({ ffin_poliza: null }),
+  ])
+  it('sin ventana: 12 meses, como la pestaña', () => {
+    expect(nombreHojaVencimientos()).toBe('Vencimientos')
+    expect(filasHojaVencimientos(todas2, V, HOY).map((r) => r.p.ffin_poliza)).toEqual(['2026-12-05', '2027-03-01'])
+  })
+  it('con ventana: todo lo filtrado que tiene fecha de vencimiento', () => {
+    const f = { ...V, ffinRel: { sentido: 'anterior' as const, n: 120, unidad: 'dias' as const } }
+    expect(filasHojaVencimientos(todas2, f, HOY)).toHaveLength(4) // las 4 con fecha: ya están filtradas por la ventana
   })
 })

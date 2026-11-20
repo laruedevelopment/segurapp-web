@@ -143,7 +143,7 @@ export default function Tablero() {
     try {
       const { descargarExcel } = await import('./excel')
       const ventana = ventanaVencimientos(filtros.ffin, hoy)
-      descargarExcel(filtradas, porVencer(filtradas, hoy, 0, ventana.dias), hoy, ventana.nombre)
+      descargarExcel(filtradas, porVencer(filtradas, hoy, 0, ventana.dias), hoy, 'Vencimientos')
       toast.success('Excel generado correctamente.')
     } catch (e) {
       toast.error(`Error al exportar: ${mensajeError(e)}`)
