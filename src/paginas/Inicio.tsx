@@ -90,7 +90,7 @@ export default function Inicio() {
         {esAdmin(u) && (
           <Acceso a="/dashboard" icono={<LayoutDashboard />} titulo="Dashboard gerencial" detalle="Producción, cartera, renovaciones y metas" color="bg-green-soft text-green" />
         )}
-        {esAdmin(u) && ES_PRUEBAS && (
+        {esAdmin(u) && (
           <Acceso a="/tablero" icono={<LayoutDashboard />} titulo="Tablero gerencial (nuevo)" detalle="El Power BI recreado y mejorado: valor y prima por dimensión, detalle y vencimientos" color="bg-green-soft text-green" />
         )}
         {veComisiones(u) && (comisionesRevisar.data ?? 0) > 0 && (
