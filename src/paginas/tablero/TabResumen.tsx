@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { AlertTriangle, CalendarClock, CircleCheck, CircleX } from 'lucide-react'
 import { DashColors } from '@/paginas/dashboard/colores'
 import { fmtEntero, fmtMonto, fmtPesosCompacto } from '@/paginas/dashboard/formato'
 import { DashCard, GraficoColumnas, KpiTile, RankingBarras, Rejilla, type FilaRanking } from '@/paginas/dashboard/graficos'
 import { Chip } from '@/components/ui/basicos'
 import { alternarGrupo, type PropsTab } from './comun'
-import { agruparTablero, diasVence, porAnioInicio, totales, type DimTablero, type Medida } from './logica'
+import { agruparTablero, diasVence, porAnioInicio, totales, vencidasRecientes, type DimTablero, type Medida } from './logica'
 
 const TEXTO_MEDIDA: Record<Medida, string> = { valor: 'Valor póliza', prima: 'Prima', registros: 'Registros' }
 
@@ -15,7 +15,7 @@ function top(filas: PropsTab['filas'], dim: DimTablero): FilaRanking[] {
     .map((g) => ({ nombre: g.nombre, valor: g.valor, valorTexto: fmtPesosCompacto(g.valor), detalle: `${fmtEntero(g.registros)} registros · prima ${fmtPesosCompacto(g.prima)}` }))
 }
 
-export default function TabResumen({ filas, filtros, cambiar, hoy }: PropsTab) {
+export default function TabResumen({ filas, todas, filtros, cambiar, hoy }: PropsTab) {
   const [medida, setMedida] = useState<Medida>('valor')
   const t = totales(filas)
   let vigentes = 0
@@ -30,6 +30,7 @@ export default function TabResumen({ filas, filtros, cambiar, hoy }: PropsTab) {
       if (d <= 30) vence30++
     }
   }
+  const rec = useMemo(() => vencidasRecientes(filas, todas, hoy, 90), [filas, todas, hoy])
   const anios = porAnioInicio(filas)
   const fmtMedida = (n: number) => (medida === 'registros' ? fmtEntero(n) : fmtPesosCompacto(n))
 
@@ -40,7 +41,22 @@ export default function TabResumen({ filas, filtros, cambiar, hoy }: PropsTab) {
         <KpiTile etiqueta="Prima" valor={fmtPesosCompacto(t.prima)} valorExacto={fmtMonto(t.prima)} icono={<CircleCheck />} color={DashColors.bueno} />
         <KpiTile etiqueta="Registros" valor={fmtEntero(t.registros)} icono={<CircleCheck />} />
         <KpiTile etiqueta="Vigentes" valor={fmtEntero(vigentes)} icono={<CircleCheck />} color={DashColors.bueno} onTap={() => cambiar({ estado: 'vigentes' })} />
-        <KpiTile etiqueta="Vencidas" valor={fmtEntero(vencidas)} icono={<CircleX />} color={DashColors.malo} onTap={() => cambiar({ estado: 'vencidas' })} />
+        <KpiTile
+          etiqueta="Vencidas hace menos de 90 días"
+          valor={fmtEntero(rec.vencidas)}
+          pie={`${fmtEntero(vencidas)} vencidas en todo el historial`}
+          icono={<CircleX />}
+          color={DashColors.alerta}
+          onTap={() => cambiar({ ffinRel: { sentido: 'anterior', n: 90, unidad: 'dias' }, estado: 'todas' })}
+        />
+        <KpiTile
+          etiqueta="…y sin renovar"
+          valor={fmtEntero(rec.sinRenovar)}
+          pie="No hay otra póliza posterior del mismo cliente, ramo y bien"
+          icono={<CircleX />}
+          color={DashColors.malo}
+          onTap={() => cambiar({ ffinRel: { sentido: 'anterior', n: 90, unidad: 'dias' }, estado: 'todas' })}
+        />
         <KpiTile
           etiqueta="Vencen en 30 días"
           valor={fmtEntero(vence30)}

@@ -3,7 +3,7 @@ import type { PolizaLista } from '@/lib/tipos'
 import { prepararFilas } from '@/paginas/reportes/calculos'
 import {
   FILTROS_TABLERO_VACIOS as V,
-  agruparTablero, arbolAnioMes, contarActivos, filtrarTablero, opcionesTablero, rangoRelativo, textoRelativa, totales,
+  agruparTablero, arbolAnioMes, vencidasRecientes, contarActivos, filtrarTablero, opcionesTablero, rangoRelativo, textoRelativa, totales,
 } from './logica'
 
 const HOY = new Date(2026, 10, 19)
@@ -100,5 +100,19 @@ describe('opciones, árbol y agrupación', () => {
   it('cuenta filtros activos', () => {
     expect(contarActivos(V)).toBe(0)
     expect(contarActivos({ ...V, aseg: ['X'], ramo: ['Y'], anios: [2026], bien: 'a' })).toBe(4)
+  })
+})
+
+describe('vencidasRecientes', () => {
+  const f = (d: Partial<PolizaLista>) => prepararFilas([pol({ cliente_id: 1, ramo_id: 7, ...d })])[0]
+  it('cuenta las vencidas de los últimos 90 días y descuenta las ya renovadas', () => {
+    const vieja = f({ bien_asegurado: 'ABC123', ffin_poliza: '2026-10-01' })
+    const renovada = f({ bien_asegurado: 'ABC123', ffin_poliza: '2027-10-01' })
+    const sinRen = f({ bien_asegurado: 'KTL356', ffin_poliza: '2026-11-01' })
+    const antigua = f({ bien_asegurado: 'DSR643', ffin_poliza: '2025-01-01' })
+    const sinBien = f({ bien_asegurado: null, ffin_poliza: '2026-11-10' })
+    const todas2 = [vieja, renovada, sinRen, antigua, sinBien]
+    expect(vencidasRecientes(todas2, todas2, HOY)).toEqual({ vencidas: 3, sinRenovar: 2 })
+    expect(vencidasRecientes([], todas2, HOY)).toEqual({ vencidas: 0, sinRenovar: 0 })
   })
 })

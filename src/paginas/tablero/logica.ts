@@ -2,6 +2,7 @@
 // filtros de selección múltiple, fechas relativas, agrupación por cinco dimensiones y totales.
 // Sin React: se prueba con vitest en logica.test.ts.
 
+import { renovadasAutomaticamente, type PolizaClave } from '@/datos/vencimientosLogica'
 import { diasEntre } from '@/lib/fechas'
 import type { PolizaLista } from '@/lib/tipos'
 import { SIN_RANGO, enRango, esAnulada, type EstadoVigencia, type FilaReporte, type RangoFechas } from '@/paginas/reportes/calculos'
@@ -287,3 +288,29 @@ export function porAnioInicio(filas: FilaReporte[]): { anio: number; registros: 
 
 /** Días hasta el vencimiento (negativo = vencida); null sin fecha. */
 export const diasVence = (r: FilaReporte, hoy: Date) => (r.ffin ? diasEntre(hoy, r.ffin) : null)
+
+const aClave = (r: FilaReporte): PolizaClave => ({
+  id: r.p.id,
+  clienteId: r.p.cliente_id,
+  ramoId: r.p.ramo_id,
+  bien: r.p.bien_asegurado,
+  vence: (r.p.ffin_poliza ?? '').slice(0, 10),
+})
+
+/**
+ * Pólizas que vencieron en los últimos [dias] días y cuántas de ellas siguen sin renovar: no existe otra
+ * póliza posterior del mismo cliente, ramo y bien (placa). Las que no tienen bien asegurado no se pueden
+ * cruzar y cuentan como sin renovar. [todas] debe traer las demás pólizas para buscar la renovación.
+ */
+export function vencidasRecientes(filas: FilaReporte[], todas: FilaReporte[], hoy: Date, dias = 90): { vencidas: number; sinRenovar: number } {
+  const recientes = filas.filter((r) => {
+    const d = diasVence(r, hoy)
+    return d != null && d < 0 && d >= -dias
+  })
+  if (!recientes.length) return { vencidas: 0, sinRenovar: 0 }
+  const renovadas = renovadasAutomaticamente(
+    recientes.map(aClave),
+    todas.filter((r) => r.ffin && !esAnulada(r.p)).map(aClave),
+  )
+  return { vencidas: recientes.length, sinRenovar: recientes.length - renovadas.size }
+}
