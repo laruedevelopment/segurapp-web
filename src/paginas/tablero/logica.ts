@@ -289,7 +289,7 @@ export function porAnioInicio(filas: FilaReporte[]): { anio: number; registros: 
 /** Días hasta el vencimiento (negativo = vencida); null sin fecha. */
 export const diasVence = (r: FilaReporte, hoy: Date) => (r.ffin ? diasEntre(hoy, r.ffin) : null)
 
-const aClave = (r: FilaReporte): PolizaClave => ({
+export const aClave = (r: FilaReporte): PolizaClave => ({
   id: r.p.id,
   clienteId: r.p.cliente_id,
   ramoId: r.p.ramo_id,

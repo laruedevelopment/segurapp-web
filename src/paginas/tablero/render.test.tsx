@@ -22,6 +22,7 @@ import { FiltroMulti } from './FiltroMulti'
 import TabPolizas from './TabPolizas'
 import TabProduccion from './TabProduccion'
 import TabCartera from './TabCartera'
+import TabRenovaciones from './TabRenovaciones'
 import TabResumen from './TabResumen'
 import TabVencimientos from './TabVencimientos'
 import { FILTROS_TABLERO_VACIOS, arbolAnioMes, filtrarTablero, opcionesTablero } from './logica'
@@ -56,6 +57,11 @@ describe('pestañas del tablero', () => {
     expect(h).toContain('Por recaudar')
     expect(h).toContain('Rentabilidad por aseguradora')
     expect(h).toContain('Antigüedad de la cartera')
+  })
+  it('Renovaciones', () => {
+    const h = dibujar(<TabRenovaciones {...props()} />)
+    expect(h).toContain('Tasa de renovación')
+    expect(h).toContain('Vencimientos de los próximos 12 meses')
   })
   it('Vencimientos', () => {
     const h = dibujar(<TabVencimientos {...props()} />)
