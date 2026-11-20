@@ -104,6 +104,8 @@ export interface FiltrosTablero {
   busqueda: string
   estado: EstadoVigencia
   incluirAnuladas: boolean
+  /** Como el Power BI: con un rango de fecha de inicio activo, las pólizas sin fecha de inicio salen. Aquí se puede pedir sin rango. */
+  soloConInicio: boolean
 }
 
 export const FILTROS_TABLERO_VACIOS: FiltrosTablero = {
@@ -121,6 +123,7 @@ export const FILTROS_TABLERO_VACIOS: FiltrosTablero = {
   busqueda: '',
   estado: 'todas',
   incluirAnuladas: false,
+  soloConInicio: false,
 }
 
 export const claveMes = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -131,7 +134,7 @@ export function contarActivos(f: FiltrosTablero): number {
   return (
     (f.aseg.length ? 1 : 0) + (f.ramo.length ? 1 : 0) + (f.prod.length ? 1 : 0) + (f.asesor.length ? 1 : 0) + (f.cliente.length ? 1 : 0) +
     (f.anios.length || f.meses.length ? 1 : 0) + r(f.fini) + (f.ffinRel || r(f.ffinRango) ? 1 : 0) +
-    (f.bien.trim() ? 1 : 0) + (f.busqueda.trim() ? 1 : 0) + (f.estado !== 'todas' ? 1 : 0) + (f.incluirAnuladas ? 1 : 0)
+    (f.bien.trim() ? 1 : 0) + (f.busqueda.trim() ? 1 : 0) + (f.estado !== 'todas' ? 1 : 0) + (f.incluirAnuladas ? 1 : 0) + (f.soloConInicio ? 1 : 0)
   )
 }
 
@@ -171,6 +174,7 @@ export function filtrarTablero(filas: FilaReporte[], f: FiltrosTablero, hoy: Dat
       if (!r.fini) return false
       if (!anios.has(r.fini.getFullYear()) && !meses.has(claveMes(r.fini))) return false
     }
+    if (f.soloConInicio && !r.fini) return false
     if (!enRango(r.fini, f.fini)) return false
     if (!enRango(r.ffin, rv)) return false
     if (bien && !sinTildes(p.bien_asegurado ?? '').includes(bien)) return false

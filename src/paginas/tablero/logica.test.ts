@@ -65,6 +65,12 @@ describe('filtrarTablero', () => {
     expect(filtrarTablero(filas, { ...V, bien: 'abc' }, HOY)).toHaveLength(1)
     expect(filtrarTablero(filas, { ...V, busqueda: 'luís' }, HOY)).toHaveLength(1)
   })
+  it('solo con fecha de inicio (como el Power BI)', () => {
+    const conSin = prepararFilas([pol({ nombre_ramo: 'SOAT', ffin_poliza: '2027-01-01' }), pol({ nombre_ramo: 'HOGAR', fini_poliza: '2026-01-01', ffin_poliza: '2027-01-01' })])
+    expect(filtrarTablero(conSin, V, HOY)).toHaveLength(2)
+    expect(filtrarTablero(conSin, { ...V, soloConInicio: true }, HOY)).toHaveLength(1)
+    expect(contarActivos({ ...V, soloConInicio: true })).toBe(1)
+  })
   it('estado vigentes / vencidas', () => {
     expect(filtrarTablero(filas, { ...V, estado: 'vigentes' }, HOY)).toHaveLength(2)
     expect(filtrarTablero(filas, { ...V, estado: 'vencidas' }, HOY)).toHaveLength(1)

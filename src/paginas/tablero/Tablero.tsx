@@ -159,6 +159,10 @@ export default function Tablero() {
               <input type="checkbox" className="size-4 accent-navy" checked={filtros.incluirAnuladas} onChange={(e) => cambiar({ incluirAnuladas: e.target.checked })} />
               Incluir anuladas
             </label>
+            <label className="inline-flex cursor-pointer items-center gap-1.5 text-[12.5px] text-ink-soft" title="Deja fuera las pólizas sin fecha de inicio (SOAT y recordatorios), como hace el Power BI">
+              <input type="checkbox" className="size-4 accent-navy" checked={filtros.soloConInicio} onChange={(e) => cambiar({ soloConInicio: e.target.checked })} />
+              Solo con fecha de inicio
+            </label>
           </div>
           {activos > 0 && (
             <Boton variante="fantasma" tamano="sm" className="ml-auto" onClick={limpiar}>
