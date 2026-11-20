@@ -3,6 +3,14 @@ import { describe, expect, it, vi } from 'vitest'
 
 // El cliente de Supabase exige claves en el entorno; aquí no se usa.
 vi.mock('@/lib/supabase', () => ({ ES_PRUEBAS: true, db: {}, APP_ENV: 'dev' }))
+// Pagos de ejemplo para la pestaña de cartera.
+vi.mock('@/datos/dashboard', () => ({
+  useAbonosDashboard: () => ({
+    isPending: false,
+    isError: false,
+    data: [{ idPoliza: 1, fecha: new Date(2026, 9, 5), prima: 1000, comision: 100 }],
+  }),
+}))
 
 import { renderToString } from 'react-dom/server'
 import { MemoryRouter } from 'react-router'
@@ -13,6 +21,7 @@ import { FiltroFechas } from './FiltroFechas'
 import { FiltroMulti } from './FiltroMulti'
 import TabPolizas from './TabPolizas'
 import TabProduccion from './TabProduccion'
+import TabCartera from './TabCartera'
 import TabResumen from './TabResumen'
 import TabVencimientos from './TabVencimientos'
 import { FILTROS_TABLERO_VACIOS, arbolAnioMes, filtrarTablero, opcionesTablero } from './logica'
@@ -41,6 +50,12 @@ describe('pestañas del tablero', () => {
   })
   it('Pólizas', () => {
     expect(dibujar(<TabPolizas {...props()} />)).toContain('Exportar a Excel')
+  })
+  it('Cartera y comisiones', () => {
+    const h = dibujar(<TabCartera {...props()} />)
+    expect(h).toContain('Por recaudar')
+    expect(h).toContain('Rentabilidad por aseguradora')
+    expect(h).toContain('Antigüedad de la cartera')
   })
   it('Vencimientos', () => {
     const h = dibujar(<TabVencimientos {...props()} />)

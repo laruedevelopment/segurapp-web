@@ -30,13 +30,15 @@ const TabResumen = lazy(() => import('./TabResumen'))
 const TabProduccion = lazy(() => import('./TabProduccion'))
 const TabPolizas = lazy(() => import('./TabPolizas'))
 const TabVencimientos = lazy(() => import('./TabVencimientos'))
+const TabCartera = lazy(() => import('./TabCartera'))
 
-type Pestana = 'resumen' | 'produccion' | 'polizas' | 'vencimientos'
+type Pestana = 'resumen' | 'produccion' | 'polizas' | 'vencimientos' | 'cartera'
 const PESTANAS: { id: Pestana; texto: string }[] = [
   { id: 'resumen', texto: 'Resumen' },
   { id: 'produccion', texto: 'Producción' },
   { id: 'polizas', texto: 'Pólizas' },
   { id: 'vencimientos', texto: 'Vencimientos' },
+  { id: 'cartera', texto: 'Cartera y comisiones' },
 ]
 const ESTADOS: { id: EstadoVigencia; texto: string }[] = [
   { id: 'todas', texto: 'Todas' },
@@ -201,6 +203,7 @@ export default function Tablero() {
           {pestana === 'produccion' && <TabProduccion {...props} />}
           {pestana === 'polizas' && <TabPolizas {...props} />}
           {pestana === 'vencimientos' && <TabVencimientos {...props} />}
+          {pestana === 'cartera' && <TabCartera {...props} />}
         </Diferida>
       </Contenido>
     </div>
