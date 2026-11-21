@@ -21,7 +21,7 @@ const ESTADOS: { e: EstadoSoat; etiqueta: string; clase: string; borde: string }
 ]
 
 function urlNuevoSoat(f: FilaSoat) {
-  const p = new URLSearchParams({ soat: String(f.vehiculo.id) })
+  const p = new URLSearchParams({ soat: String(f.vehiculo.id), placa: f.placa })
   if (f.finSugerido) p.set('soatFin', f.finSugerido)
   return `/polizas/nueva?${p.toString()}`
 }

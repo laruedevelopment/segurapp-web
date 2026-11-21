@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { esRamoVehiculo, extraerPlaca, nombreBien } from './placa'
+import { esRamoVehiculo, extraerPlaca, extraerPlacas, nombreBien } from './placa'
 
 describe('extraerPlaca', () => {
   it('carros, motos y remolques', () => {
@@ -36,5 +36,17 @@ describe('nombreBien', () => {
     expect(nombreBien('Edificio ABC 123 piso 4', 'INCENDIO')).toBe('Edificio ABC 123 piso 4')
     expect(nombreBien('Mazda sin placa', 'AUTOMOVILES')).toBe('Mazda sin placa')
     expect(nombreBien('  ', 'AUTOMOVILES')).toBeNull()
+  })
+})
+
+describe('pólizas colectivas (varias placas)', () => {
+  it('extrae todas las placas, sin repetir y en orden', () => {
+    expect(extraerPlacas('FLOTA: ABC123, KTL-356 y moto XYZ45D. Remolque R54321. Repite abc 123')).toEqual(['ABC123', 'KTL356', 'XYZ45D', 'R54321'])
+    expect(extraerPlacas('sin placas')).toEqual([])
+    expect(extraerPlaca('KTL356 y ABC123')).toBe('KTL356')
+  })
+  it('el nombre del bien muestra todas las placas de un vehículo colectivo', () => {
+    expect(nombreBien('5 vehículos: ABC123, KTL356, DSR643, NQS607, TUV482', 'LIVIANOS', 'AUTOMOVILES')).toBe('ABC123 · KTL356 · DSR643 · NQS607 · TUV482')
+    expect(nombreBien('Local ABC 123 piso 2', 'INCENDIO')).toBe('Local ABC 123 piso 2')
   })
 })

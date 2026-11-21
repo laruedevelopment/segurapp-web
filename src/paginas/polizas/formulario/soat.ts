@@ -16,6 +16,8 @@ export function prellenarSoat(
   finIso: string | null,
   ramos: Ramo[],
   productos: Producto[],
+  /** Placa a registrar (en una póliza colectiva hay varias); sin ella, la primera. */
+  placa?: string | null,
 ): EstadoForm | null {
   const ramo = ramos.find((r) => r.estado_ramo && r.nombre_ramo.trim().toUpperCase() === 'SOAT')
   if (!ramo) return null
@@ -26,7 +28,7 @@ export function prellenarSoat(
   return {
     ...base,
     cliente: vehiculo.cliente,
-    bien: extraerPlaca(vehiculo.bien) ?? vehiculo.bien.trim(),
+    bien: placa?.trim().toUpperCase() || extraerPlaca(vehiculo.bien) || vehiculo.bien.trim(),
     ramoId: ramo.id,
     productoId: producto.id,
     asegId: producto.aseguradora_id,

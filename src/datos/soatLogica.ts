@@ -1,6 +1,6 @@
 // Cruce de las pólizas de vehículos con sus SOAT: qué placas no tienen SOAT, cuál venció y cuál vence pronto.
 
-import { extraerPlaca } from '@/lib/placa'
+import { extraerPlacas } from '@/lib/placa'
 import { sumarAnios } from '@/lib/fechas'
 
 export type EstadoSoat = 'sin' | 'vencido' | 'porVencer' | 'vigente'
@@ -57,17 +57,18 @@ export function estadoSoat(dias: number | null): EstadoSoat {
 export function cruzarSoat(vehiculos: VehiculoPoliza[], soats: SoatRegistro[], hoy: Date): FilaSoat[] {
   const ultimoSoat = new Map<string, string>()
   for (const s of soats) {
-    const placa = extraerPlaca(s.bien)
-    if (!placa) continue
-    const m = ultimoSoat.get(placa)
-    if (!m || s.vence > m) ultimoSoat.set(placa, s.vence)
+    for (const placa of extraerPlacas(s.bien)) {
+      const m = ultimoSoat.get(placa)
+      if (!m || s.vence > m) ultimoSoat.set(placa, s.vence)
+    }
   }
   const porPlaca = new Map<string, VehiculoPoliza>()
   for (const v of vehiculos) {
-    const placa = extraerPlaca(v.bien)
-    if (!placa) continue
-    const m = porPlaca.get(placa)
-    if (!m || v.vence > m.vence) porPlaca.set(placa, v)
+    // Póliza colectiva: cada vehículo (placa) es una fila.
+    for (const placa of extraerPlacas(v.bien)) {
+      const m = porPlaca.get(placa)
+      if (!m || v.vence > m.vence) porPlaca.set(placa, v)
+    }
   }
   const filas: FilaSoat[] = []
   for (const [placa, vehiculo] of porPlaca) {

@@ -131,6 +131,7 @@ export default function Pagina() {
   // ?soat=ID_POLIZA_DEL_VEHICULO[&soatFin=AAAA-MM-DD]: abre un SOAT nuevo con los datos del vehículo.
   const soatDe = params.get('soat') ? Number(params.get('soat')) : null
   const soatFin = params.get('soatFin')
+  const soatPlaca = params.get('placa')
 
   if (id != null && (!Number.isInteger(polizaId) || (polizaId ?? 0) <= 0)) {
     return (
@@ -147,6 +148,7 @@ export default function Pagina() {
       pendienteId={pendienteId != null && Number.isInteger(pendienteId) ? pendienteId : null}
       soatDe={soatDe != null && Number.isInteger(soatDe) && soatDe > 0 ? soatDe : null}
       soatFin={soatFin}
+      soatPlaca={soatPlaca}
     />
   )
 }
@@ -164,7 +166,7 @@ const depsIA: DepsExtraccion = {
   buscarProductoAprendido: (asegId, texto) => buscarProductoAprendido(asegId, texto),
 }
 
-function FormularioPoliza({ polizaId, pendienteId, soatDe, soatFin }: { polizaId: number | null; pendienteId: number | null; soatDe: number | null; soatFin: string | null }) {
+function FormularioPoliza({ polizaId, pendienteId, soatDe, soatFin, soatPlaca }: { polizaId: number | null; pendienteId: number | null; soatDe: number | null; soatFin: string | null; soatPlaca: string | null }) {
   const esEdicion = polizaId != null
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -303,7 +305,7 @@ function FormularioPoliza({ polizaId, pendienteId, soatDe, soatFin }: { polizaId
             const veh = await obtenerPoliza(soatDe)
             if (!veh) throw new Error(`No se encontró la póliza ${soatDe} del vehículo.`)
             const base = desdePoliza(veh)
-            const conSoat = prellenarSoat(nuevo, base, soatFin, ramos, productos)
+            const conSoat = prellenarSoat(nuevo, base, soatFin, ramos, productos, soatPlaca)
             if (conSoat) {
               nuevo = conSoat
               toast.info(`SOAT de ${nuevo.bien}: ${nuevo.fFin ? 'revise la fecha de vencimiento' : 'escriba la fecha de vencimiento'} y guarde.`, { duration: 8000 })

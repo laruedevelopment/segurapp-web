@@ -97,3 +97,18 @@ describe('renovación automática', () => {
     expect(renovadasAutomaticamente([a], [a, antes, otroRamo]).size).toBe(0)
   })
 })
+
+describe('renovación de pólizas colectivas', () => {
+  const base = { clienteId: 1, ramoId: 7 }
+  it('basta con una placa en común con una póliza posterior', () => {
+    const vieja = { id: 1, ...base, bien: 'ABC123, KTL356, DSR643', vence: '2026-10-01' }
+    const renovada = { id: 2, ...base, bien: 'KTL356, NQS607', vence: '2027-10-01' }
+    const otraGente = { id: 3, clienteId: 2, ramoId: 7, bien: 'ABC123', vence: '2027-10-01' }
+    expect([...renovadasAutomaticamente([vieja], [vieja, renovada, otraGente])]).toEqual([1])
+  })
+  it('sin ninguna placa en común no cuenta como renovada', () => {
+    const vieja = { id: 1, ...base, bien: 'ABC123, KTL356', vence: '2026-10-01' }
+    const otra = { id: 2, ...base, bien: 'DSR643', vence: '2027-10-01' }
+    expect(renovadasAutomaticamente([vieja], [vieja, otra]).size).toBe(0)
+  })
+})

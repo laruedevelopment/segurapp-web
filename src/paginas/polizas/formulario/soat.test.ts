@@ -18,6 +18,12 @@ describe('prellenarSoat', () => {
     expect(f.asesor1Id).toBe(3)
     expect(f.fFin?.getFullYear()).toBe(2027)
   })
+  it('en una póliza colectiva registra la placa elegida', () => {
+    const colectiva = { ...vehiculo, bien: 'FLOTA ABC123, KTL356, DSR643' }
+    const f = prellenarSoat(formVacio(), colectiva, null, [ramo(2, 'SOAT')], [prod(11, 'REC SOAT', 2)], 'ktl356')!
+    expect(f.bien).toBe('KTL356')
+    expect(prellenarSoat(formVacio(), colectiva, null, [ramo(2, 'SOAT')], [prod(11, 'REC SOAT', 2)])!.bien).toBe('ABC123')
+  })
   it('sin fecha deja el fin vacío; sin ramo SOAT devuelve null', () => {
     const f = prellenarSoat(formVacio(), vehiculo, null, [ramo(2, 'SOAT')], [prod(11, 'REC SOAT', 2)])!
     expect(f.fFin).toBeNull()
