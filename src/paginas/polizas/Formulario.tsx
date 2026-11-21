@@ -5,6 +5,7 @@
 // La lógica pura (cálculos, validación, matching de la IA) está en
 // ./formulario/logica.ts y ./formulario/extraccion.ts, con sus pruebas.
 
+import HistorialPoliza from './HistorialPoliza'
 import { ES_PRUEBAS } from '@/lib/supabase'
 import { obtenerOrigenPoliza, marcarOrigenPoliza } from '@/datos/origen'
 import { ORIGEN_MANUAL, etiquetaOrigen, origenDePendiente, origenEnBorrador, type OrigenForm } from './formulario/origen'
@@ -1242,6 +1243,9 @@ function FormularioPoliza({ polizaId, pendienteId, soatDe, soatFin, soatPlaca }:
               </>
             )}
           </p>
+          {ES_PRUEBAS && esEdicion && polizaId != null && f.nro.trim() && (
+            <HistorialPoliza polizaId={polizaId} nro={f.nro} asegId={f.asegId} />
+          )}
           {intento && errores.length > 0 && (
             <button type="button" className="text-[13px] font-semibold text-danger underline-offset-2 hover:underline" onClick={() => irACampo(errores[0].campo)}>
               {errores.length === 1 ? '1 campo por revisar' : `${errores.length} campos por revisar`}

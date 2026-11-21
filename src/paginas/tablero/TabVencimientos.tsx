@@ -24,7 +24,7 @@ const GRUPOS: { sem: Semaforo; texto: string; clase: string }[] = [
   { sem: 'verde', texto: 'con tiempo (más de 30)', clase: 'bg-green-soft text-green-ink' },
 ]
 const TONO: Record<Semaforo, string> = { vencida: 'text-danger', rojo: 'text-danger', ambar: 'text-warning-ink', verde: 'text-green-ink' }
-const bienDe = (r: FilaReporte) => nombreBien(r.p.bien_asegurado, r.p.nombre_ramo, r.p.nombre_prod) ?? ''
+const bienDe = (r: FilaReporte) => nombreBien(r.p.bien_asegurado, r.p.nombre_ramo, r.p.nombre_prod, r.p.obs_poliza) ?? ''
 
 /** Pólizas por vencer: la ventana se elige arriba en "F. vencimiento" (sin elegirla, los siguientes 12 meses). */
 export default function TabVencimientos({ todas, filtros, hoy }: PropsTab) {

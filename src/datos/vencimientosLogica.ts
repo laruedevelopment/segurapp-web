@@ -1,4 +1,5 @@
-import { extraerPlacas } from '@/lib/placa'
+import { placasDePoliza } from '@/lib/placa'
+import { claveGrupo } from './grupoPolizaLogica'
 
 // Lógica pura del seguimiento de renovaciones: estados, semáforo por días y filtros.
 
@@ -134,23 +135,38 @@ export interface PolizaClave {
   ramoId: number | null
   bien: string | null
   vence: string
+  /** Observaciones: en las colectivas traen las placas. */
+  obs?: string | null
+  asegId?: number | null
+  nro?: string | null
 }
 
 /**
  * Claves con las que se reconoce "lo mismo" entre dos pólizas: el ramo más cada placa del bien (una póliza
  * colectiva trae varias) o, si no hay placa, el texto del bien sin signos. Vacío si no hay bien.
  */
-export function clavesRenovacion(p: Pick<PolizaClave, 'ramoId' | 'bien'>): string[] {
+export function clavesRenovacion(p: Pick<PolizaClave, 'ramoId' | 'bien'> & Partial<Pick<PolizaClave, 'obs' | 'asegId' | 'nro'>>): string[] {
+  const claves: string[] = []
+  // Mismo número base y aseguradora: es la misma póliza renovada (otra vigencia).
+  const grupo = claveGrupo(p.asegId, p.nro)
+  if (grupo) claves.push(`G|${grupo}`)
   const b = (p.bien ?? '').trim()
-  if (!b || p.ramoId == null) return []
-  const placas = extraerPlacas(b)
-  if (placas.length) return placas.map((x) => `${p.ramoId}|${x}`)
-  const texto = b.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '')
-  return texto ? [`${p.ramoId}|${texto}`] : []
+  if (p.ramoId != null && b) {
+    const placas = placasDePoliza(b, p.obs)
+    if (placas.length) claves.push(...placas.map((x) => `${p.ramoId}|${x}`))
+    else {
+      const texto = b.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '')
+      // "COLECTIVA", "FLOTA"… no identifican un bien: no sirven para reconocer una renovación.
+      if (texto && !GENERICOS.has(texto)) claves.push(`${p.ramoId}|${texto}`)
+    }
+  }
+  return claves
 }
 
+const GENERICOS = new Set(['colectiva', 'colectivo', 'flota', 'varios', 'variosvehiculos', 'vehiculos', 'grupo'])
+
 /** La primera clave (o null): se conserva por compatibilidad. */
-export const claveRenovacion = (p: Pick<PolizaClave, 'ramoId' | 'bien'>): string | null => clavesRenovacion(p)[0] ?? null
+export const claveRenovacion = (p: Pick<PolizaClave, 'ramoId' | 'bien'> & Partial<Pick<PolizaClave, 'obs' | 'asegId' | 'nro'>>): string | null => clavesRenovacion(p)[0] ?? null
 
 /**
  * Ids de las pólizas de [base] que ya tienen una posterior del mismo cliente y ramo con algún bien en común

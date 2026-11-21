@@ -1,6 +1,6 @@
 // Cruce de las pólizas de vehículos con sus SOAT: qué placas no tienen SOAT, cuál venció y cuál vence pronto.
 
-import { extraerPlacas } from '@/lib/placa'
+import { extraerPlacas, placasDePoliza } from '@/lib/placa'
 import { sumarAnios } from '@/lib/fechas'
 
 export type EstadoSoat = 'sin' | 'vencido' | 'porVencer' | 'vigente'
@@ -13,6 +13,8 @@ export interface VehiculoPoliza {
   nombreCliente: string | null
   tel: string | null
   bien: string | null
+  /** Observaciones: en las colectivas traen las placas. */
+  obs?: string | null
   ramo: string | null
   producto: string | null
   nombreAseg: string | null
@@ -65,7 +67,7 @@ export function cruzarSoat(vehiculos: VehiculoPoliza[], soats: SoatRegistro[], h
   const porPlaca = new Map<string, VehiculoPoliza>()
   for (const v of vehiculos) {
     // Póliza colectiva: cada vehículo (placa) es una fila.
-    for (const placa of extraerPlacas(v.bien)) {
+    for (const placa of placasDePoliza(v.bien, v.obs)) {
       const m = porPlaca.get(placa)
       if (!m || v.vence > m.vence) porPlaca.set(placa, v)
     }

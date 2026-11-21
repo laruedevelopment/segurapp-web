@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { esRamoVehiculo, extraerPlaca, extraerPlacas, nombreBien } from './placa'
+import { esRamoVehiculo, extraerPlaca, extraerPlacas, nombreBien, placasDePoliza } from './placa'
 
 describe('extraerPlaca', () => {
   it('carros, motos y remolques', () => {
@@ -48,5 +48,21 @@ describe('pólizas colectivas (varias placas)', () => {
   it('el nombre del bien muestra todas las placas de un vehículo colectivo', () => {
     expect(nombreBien('5 vehículos: ABC123, KTL356, DSR643, NQS607, TUV482', 'LIVIANOS', 'AUTOMOVILES')).toBe('ABC123 · KTL356 · DSR643 · NQS607 · TUV482')
     expect(nombreBien('Local ABC 123 piso 2', 'INCENDIO')).toBe('Local ABC 123 piso 2')
+  })
+})
+
+describe('colectivas con las placas en observaciones', () => {
+  it('lee las placas del bien y de las observaciones', () => {
+    expect(placasDePoliza('COLECTIVA', 'KSW194 - KTK168 - KTL356')).toEqual(['KSW194', 'KTK168', 'KTL356'])
+    expect(placasDePoliza('OWW80G', 'MOTO')).toEqual(['OWW80G'])
+    expect(placasDePoliza('COLECTIVA', null)).toEqual([])
+  })
+  it('el nombre dice Colectiva y lista todas las placas', () => {
+    expect(nombreBien('COLECTIVA', 'LIVIANOS', 'AUTOMOVILES', 'LVY184 - NQS607')).toBe('Colectiva · LVY184 · NQS607')
+    expect(nombreBien('KKZ219', 'LIVIANOS', null, null)).toBe('KKZ219')
+    // Colectiva sin placas en observaciones: se deja el texto
+    expect(nombreBien('COLECTIVA', 'LIVIANOS', null, null)).toBe('COLECTIVA')
+    // Un ramo que no es de vehículos no cambia
+    expect(nombreBien('COLECTIVA', 'RESPONSABILIDAD CIVIL', null, 'ABC123')).toBe('COLECTIVA')
   })
 })

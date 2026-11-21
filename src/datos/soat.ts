@@ -11,6 +11,7 @@ interface FilaVista {
   nombre_cliente: string | null
   tel_cliente: string | null
   bien_asegurado: string | null
+  obs_poliza: string | null
   nombre_ramo: string | null
   nombre_prod: string | null
   nombre_aseg: string | null
@@ -36,7 +37,7 @@ export async function listarSoatVehiculos(): Promise<FilaSoat[]> {
   const polizas = await paginar<FilaVista>((d, a) =>
     db
       .from('vw_polizas_busqueda')
-      .select('id, cliente_id, nombre_cliente, tel_cliente, bien_asegurado, nombre_ramo, nombre_prod, nombre_aseg, nombre_asesor, ffin_poliza')
+      .select('id, cliente_id, nombre_cliente, tel_cliente, bien_asegurado, obs_poliza, nombre_ramo, nombre_prod, nombre_aseg, nombre_asesor, ffin_poliza')
       .in('nombre_ramo', RAMOS_VEHICULO)
       .neq('estado_poliza_id', 'A')
       .gte('ffin_poliza', hoyIso)
@@ -49,6 +50,7 @@ export async function listarSoatVehiculos(): Promise<FilaSoat[]> {
     nombreCliente: p.nombre_cliente,
     tel: p.tel_cliente,
     bien: p.bien_asegurado,
+    obs: p.obs_poliza,
     ramo: p.nombre_ramo,
     producto: p.nombre_prod,
     nombreAseg: p.nombre_aseg,

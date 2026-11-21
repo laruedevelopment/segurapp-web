@@ -300,6 +300,9 @@ export const aClave = (r: FilaReporte): PolizaClave => ({
   clienteId: r.p.cliente_id,
   ramoId: r.p.ramo_id,
   bien: r.p.bien_asegurado,
+  obs: r.p.obs_poliza,
+  asegId: r.p.aseg_id,
+  nro: r.p.nro_poliza,
   vence: (r.p.ffin_poliza ?? '').slice(0, 10),
 })
 

@@ -112,3 +112,24 @@ describe('renovación de pólizas colectivas', () => {
     expect(renovadasAutomaticamente([vieja], [vieja, otra]).size).toBe(0)
   })
 })
+
+describe('renovación por número base', () => {
+  it('otra vigencia del mismo número base cuenta como renovación aunque no haya placa', () => {
+    const base = { clienteId: 1, ramoId: 4, asegId: 10, bien: 'COLECTIVA', obs: null }
+    const v2025 = { id: 1, ...base, nro: '96-30-101000378-0', vence: '2025-08-01' }
+    const v2026 = { id: 2, ...base, nro: '96-30-101000378-1', vence: '2026-08-01' }
+    const otraPoliza = { id: 3, ...base, nro: '96-31-101000999-0', vence: '2027-08-01' }
+    expect([...renovadasAutomaticamente([v2025], [v2025, v2026, otraPoliza])]).toEqual([1])
+  })
+  it('dos colectivas distintas del mismo cliente no se confunden por decir COLECTIVA', () => {
+    const base = { clienteId: 1, ramoId: 4, asegId: 10, bien: 'COLECTIVA', obs: null }
+    const a = { id: 1, ...base, nro: '96-30-101000378-0', vence: '2025-08-01' }
+    const b = { id: 2, ...base, nro: '96-31-101000745-0', vence: '2026-08-01' }
+    expect(renovadasAutomaticamente([a], [a, b]).size).toBe(0)
+  })
+  it('las placas de las observaciones también reconocen la renovación', () => {
+    const vieja = { id: 1, clienteId: 1, ramoId: 1, bien: 'COLECTIVA', obs: 'KSW194 - KTK168', vence: '2025-10-10' }
+    const nueva = { id: 2, clienteId: 1, ramoId: 1, bien: 'COLECTIVA', obs: 'KTK168 - LVY184', vence: '2026-10-10' }
+    expect([...renovadasAutomaticamente([vieja], [vieja, nueva])]).toEqual([1])
+  })
+})

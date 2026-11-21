@@ -15,7 +15,7 @@ import { fmtEntero } from '@/paginas/dashboard/formato'
 import type { PropsTab } from './comun'
 import { filasHojaVencimientos, nombreHojaVencimientos, totales, valorDe } from './logica'
 
-const bienDe = (r: FilaReporte) => nombreBien(r.p.bien_asegurado, r.p.nombre_ramo, r.p.nombre_prod) ?? ''
+const bienDe = (r: FilaReporte) => nombreBien(r.p.bien_asegurado, r.p.nombre_ramo, r.p.nombre_prod, r.p.obs_poliza) ?? ''
 
 /** Detalle de pólizas (la página "Detalle" del Power BI), con búsqueda, total y exportación a Excel. */
 export default function TabPolizas({ filas, filtros, hoy }: PropsTab) {

@@ -296,11 +296,11 @@ export default function ListaPolizas() {
       ancho: 165,
       celda: (p) => (
         <div className="leading-tight">
-          <div className="truncate">{nombreBien(p.bien_asegurado, p.nombre_ramo, p.nombre_prod) ?? '—'}</div>
+          <div className="truncate">{nombreBien(p.bien_asegurado, p.nombre_ramo, p.nombre_prod, p.obs_poliza) ?? '—'}</div>
           {!!p.vlraseg_poliza && <div className="num truncate text-[11.5px] text-ink-soft">{fmtDinero(p.vlraseg_poliza)}</div>}
         </div>
       ),
-      ordenar: (p) => nombreBien(p.bien_asegurado, p.nombre_ramo, p.nombre_prod)?.toLowerCase(),
+      ordenar: (p) => nombreBien(p.bien_asegurado, p.nombre_ramo, p.nombre_prod, p.obs_poliza)?.toLowerCase(),
       titleDe: (p) => p.bien_asegurado ?? undefined,
     },
     ...(ES_AMBIENTE_PRUEBAS

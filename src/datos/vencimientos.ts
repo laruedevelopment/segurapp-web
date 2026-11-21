@@ -2,6 +2,7 @@ import { nombreBien } from '@/lib/placa'
 import { useQuery } from '@tanstack/react-query'
 import { db } from '@/lib/supabase'
 import { diasEntre, aFecha, hoy } from '@/lib/fechas'
+import { colapsarAnexos } from './grupoPolizaLogica'
 import { rangoPorDefecto, renovadasAutomaticamente, resumir, type PolizaClave, type EstadoSeguimiento, type RangoFechas } from './vencimientosLogica'
 
 export interface Vencimiento {
@@ -16,6 +17,8 @@ export interface Vencimiento {
   nombreRamo: string | null
   nombreProd: string | null
   bien: string | null
+  /** Anexos de la misma vigencia que se agrupan en esta fila (0 si no tiene). */
+  anexos: number
   prima: number
   vence: string
   dias: number
@@ -34,9 +37,11 @@ interface FilaVista {
   nro_poliza: string | null
   cliente_id: number | null
   ramo_id: number | null
+  aseg_id: number | null
   ffin_poliza: string
   prima_poliza: number | null
   bien_asegurado: string | null
+  obs_poliza: string | null
   nombre_cliente: string | null
   tel_cliente: string | null
   nombre_aseg: string | null
@@ -64,7 +69,7 @@ export async function listarVencimientos(rango?: RangoFechas): Promise<Vencimien
   const { desde, hasta } = rango ?? rangoPorDefecto(h)
   const { data, error } = await db
     .from('vw_polizas_busqueda')
-    .select('id, nro_poliza, cliente_id, ramo_id, ffin_poliza, prima_poliza, bien_asegurado, nombre_cliente, tel_cliente, nombre_aseg, nombre_asesor, nombre_ramo, nombre_prod')
+    .select('id, nro_poliza, cliente_id, ramo_id, aseg_id, ffin_poliza, prima_poliza, bien_asegurado, obs_poliza, nombre_cliente, tel_cliente, nombre_aseg, nombre_asesor, nombre_ramo, nombre_prod')
     .neq('estado_poliza_id', 'A')
     .gte('ffin_poliza', desde)
     .lte('ffin_poliza', hasta)
@@ -99,24 +104,29 @@ export async function listarVencimientos(rango?: RangoFechas): Promise<Vencimien
     for (let desdeFila = 0; ; desdeFila += 1000) {
       const { data: d, error: e } = await db
         .from('vw_polizas_busqueda')
-        .select('id, cliente_id, ramo_id, bien_asegurado, ffin_poliza')
+        .select('id, cliente_id, ramo_id, aseg_id, nro_poliza, bien_asegurado, obs_poliza, ffin_poliza')
         .in('cliente_id', lote)
         .neq('estado_poliza_id', 'A')
         .gte('ffin_poliza', desde)
         .order('id')
         .range(desdeFila, desdeFila + 999)
       if (e) throw e
-      const filas = (d ?? []) as unknown as { id: number; cliente_id: number | null; ramo_id: number | null; bien_asegurado: string | null; ffin_poliza: string }[]
-      posteriores.push(...filas.map((x) => ({ id: x.id, clienteId: x.cliente_id, ramoId: x.ramo_id, bien: x.bien_asegurado, vence: x.ffin_poliza })))
+      const filas = (d ?? []) as unknown as { id: number; cliente_id: number | null; ramo_id: number | null; aseg_id: number | null; nro_poliza: string | null; bien_asegurado: string | null; obs_poliza: string | null; ffin_poliza: string }[]
+      posteriores.push(...filas.map((x) => ({ id: x.id, clienteId: x.cliente_id, ramoId: x.ramo_id, bien: x.bien_asegurado, obs: x.obs_poliza, asegId: x.aseg_id, nro: x.nro_poliza, vence: x.ffin_poliza })))
       if (filas.length < 1000) break
     }
   }
   const renovadas = renovadasAutomaticamente(
-    polizas.map((p) => ({ id: p.id, clienteId: p.cliente_id, ramoId: p.ramo_id, bien: p.bien_asegurado, vence: p.ffin_poliza })),
+    polizas.map((p) => ({ id: p.id, clienteId: p.cliente_id, ramoId: p.ramo_id, bien: p.bien_asegurado, obs: p.obs_poliza, asegId: p.aseg_id, nro: p.nro_poliza, vence: p.ffin_poliza })),
     posteriores,
   )
 
-  return polizas.map((p) => {
+  // Los anexos de una misma vigencia (mismo número base y mismo fin) se muestran como UNA póliza.
+  const porId = new Map(polizas.map((p) => [p.id, p]))
+  const colapsadas = colapsarAnexos(polizas.map((p) => ({ id: p.id, nro: p.nro_poliza, fin: p.ffin_poliza, bien: p.bien_asegurado, obs: p.obs_poliza, asegId: p.aseg_id })))
+
+  return colapsadas.map((c) => {
+    const p = porId.get(c.id)!
     const s = segPor.get(p.id)
     const fin = aFecha(p.ffin_poliza)
     return {
@@ -130,7 +140,9 @@ export async function listarVencimientos(rango?: RangoFechas): Promise<Vencimien
       nombreAsesor: p.nombre_asesor,
       nombreRamo: p.nombre_ramo,
       nombreProd: p.nombre_prod,
-      bien: nombreBien(p.bien_asegurado, p.nombre_ramo, p.nombre_prod),
+      // Con anexos, el nombre trae las placas de todos los vehículos de la vigencia.
+      bien: nombreBien(c.placas.length ? `${p.bien_asegurado ?? ''} ${c.placas.join(' ')}` : p.bien_asegurado, p.nombre_ramo, p.nombre_prod, null),
+      anexos: c.anexos,
       prima: Number(p.prima_poliza ?? 0),
       vence: p.ffin_poliza,
       dias: fin ? diasEntre(h, fin) : 0,

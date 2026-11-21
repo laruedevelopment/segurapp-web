@@ -17,7 +17,7 @@ export const COLS_LISTA =
   'nombre_usuario, apodo_usuario'
 
 /** Columnas de las consultas a la vista de búsqueda: con el origen solo donde la base ya lo tiene (pruebas). */
-const COLS_VISTA = ES_AMBIENTE_PRUEBAS ? `${COLS_LISTA}, origen` : COLS_LISTA
+const COLS_VISTA = ES_AMBIENTE_PRUEBAS ? `${COLS_LISTA}, obs_poliza, origen` : COLS_LISTA
 
 /** Búsqueda libre sobre la vista, con el texto escapado. */
 function filtroBusqueda(b: string) {

@@ -177,4 +177,5 @@ export type PolizaLista = Pick<
   | 'nombre_cliente' | 'doc_cliente' | 'tipodoc_cliente' | 'tel_cliente'
   | 'nombre_asesor' | 'nombre_ramo' | 'nombre_prod' | 'nombre_aseg'
   | 'nombre_usuario' | 'apodo_usuario' | 'origen'
->
+> &
+  Partial<Pick<Poliza, 'obs_poliza'>>

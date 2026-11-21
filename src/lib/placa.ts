@@ -35,11 +35,21 @@ export function esRamoVehiculo(ramo: string | null | undefined, producto?: strin
   return SOLO_VEHICULO.test(t) || (TODO_RIESGO.test(t) && !NO_VEHICULO.test(t))
 }
 
-/** Lo que se muestra como bien asegurado: las placas (todas, si es colectiva) si es un vehículo; si no, el texto tal cual. */
-export function nombreBien(bien: string | null | undefined, ramo?: string | null, producto?: string | null): string | null {
+/**
+ * Placas de una póliza: las del bien asegurado y las de las observaciones (en las colectivas el bien dice
+ * "COLECTIVA" y las placas van en observaciones: "KSW194 - KTK168 - KTL356").
+ */
+export const placasDePoliza = (bien: string | null | undefined, obs?: string | null): string[] => extraerPlacas(`${bien ?? ''} ${obs ?? ''}`)
+
+/**
+ * Lo que se muestra como bien asegurado: si es un vehículo, todas sus placas ("Colectiva · A · B · C" si es
+ * colectiva); si no, el texto tal cual.
+ */
+export function nombreBien(bien: string | null | undefined, ramo?: string | null, producto?: string | null, obs?: string | null): string | null {
   const b = (bien ?? '').trim()
   if (!b) return null
   if (!USA_PLACA_COMO_NOMBRE) return b
-  const placas = esRamoVehiculo(ramo, producto) ? extraerPlacas(b) : []
-  return placas.length ? placas.join(' · ') : b
+  const placas = esRamoVehiculo(ramo, producto) ? placasDePoliza(b, obs) : []
+  if (!placas.length) return b
+  return (/colectiv|flota/i.test(b) ? 'Colectiva · ' : '') + placas.join(' · ')
 }
