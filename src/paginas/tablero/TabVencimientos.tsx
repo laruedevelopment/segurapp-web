@@ -12,7 +12,6 @@ import { mensajeAmigable } from '@/lib/errores'
 import { semaforo, textoDias, type Semaforo } from '@/datos/vencimientosLogica'
 import { type FilaReporte } from '@/paginas/reportes/calculos'
 import { fmtEntero } from '@/paginas/dashboard/formato'
-import { ES_PRUEBAS } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import type { PropsTab } from './comun'
 import { diasVence, filtrarTablero, nombreHojaVencimientos, totales, valorDe } from './logica'
@@ -105,11 +104,9 @@ export default function TabVencimientos({ todas, filtros, hoy }: PropsTab) {
             {fmtEntero(cuenta(g.sem))} {g.texto}
           </button>
         ))}
-        {ES_PRUEBAS && (
-          <Link to="/polizas/vencimientos" className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-line-strong px-3 text-[13px] font-semibold text-navy hover:bg-muted">
-            <AlarmClock className="size-4" /> Abrir seguimiento (llamadas y estados)
-          </Link>
-        )}
+        <Link to="/polizas/vencimientos" className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-line-strong px-3 text-[13px] font-semibold text-navy hover:bg-muted">
+          <AlarmClock className="size-4" /> Abrir seguimiento (llamadas y estados)
+        </Link>
       </div>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-[13px]">
         <span><b className="num">{fmtEntero(t.registros)}</b> registros</span>

@@ -1,7 +1,6 @@
 import { lazy } from 'react'
 import type { RouteObject } from 'react-router'
 import { Diferida } from '@/components/layout/guardas'
-import { ES_PRUEBAS } from '@/lib/supabase'
 
 const Lista = lazy(() => import('./Lista'))
 const Formulario = lazy(() => import('./Formulario'))
@@ -22,13 +21,8 @@ export const rutasPolizas: RouteObject[] = [
   { path: 'polizas/pendientes', element: <Diferida><Pendientes /></Diferida> },
   { path: 'polizas/carga-masiva', element: <Diferida><CargaMasiva /></Diferida> },
   { path: 'polizas/duplicadas', element: <Diferida><Duplicadas /></Diferida> },
-  // Solo en la copia de pruebas hasta que se aplique la migración en producción.
-  ...(ES_PRUEBAS
-    ? [
-        { path: 'polizas/vencimientos', element: <Diferida><Vencimientos /></Diferida> },
-        { path: 'polizas/soat', element: <Diferida><SoatVehiculos /></Diferida> },
-      ]
-    : []),
+  { path: 'polizas/vencimientos', element: <Diferida><Vencimientos /></Diferida> },
+  { path: 'polizas/soat', element: <Diferida><SoatVehiculos /></Diferida> },
   { path: 'polizas/comisiones-revisar', element: <Diferida><ComisionesRevisar /></Diferida> },
   // Bandeja del administrador (la pantalla y la base exigen el rol A).
   { path: 'polizas/eliminaciones', element: <Diferida><EliminacionesPendientes /></Diferida> },

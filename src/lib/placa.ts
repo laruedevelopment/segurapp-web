@@ -1,8 +1,7 @@
 // Pólizas de vehículos: el "nombre" del bien asegurado es solo la placa.
 
-/** Interruptor: la placa como nombre solo está activa en la copia de pruebas por ahora. */
-// (Se lee el ambiente directo: así este archivo no exige las claves de Supabase en las pruebas.)
-export const USA_PLACA_COMO_NOMBRE = ((import.meta.env.VITE_APP_ENV as string | undefined) ?? 'dev') !== 'prod'
+/** Interruptor de la placa como nombre (activo en todos los ambientes desde la Etapa A). */
+export const USA_PLACA_COMO_NOMBRE = true
 
 // Carro/camión: ABC123 · moto: ABC12D · remolque/semirremolque: R12345 / S12345.
 const FORMAS_PLACA = [String.raw`\b([A-Z]{3})[\s-]?(\d{3})\b`, String.raw`\b([A-Z]{3})[\s-]?(\d{2})([A-Z])\b`, String.raw`\b([RS])[\s-]?(\d{5})\b`]
