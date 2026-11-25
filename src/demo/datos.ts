@@ -146,6 +146,17 @@ export function crearTablas(hoy: Date): Tablas {
     { cli: 5, prod: 8, bien: 'GRUPO DE 22 EMPLEADOS', fin: 340, prima: 3_600_000, nro: '330-1-0013300-0', pagada: 0, estado: 'I' },
     { cli: 9, prod: 8, bien: 'GRUPO DE 41 DOCENTES', fin: 331, prima: 4_900_000, nro: '330-1-0013312-0', pagada: 0, estado: 'I' },
     { cli: 11, prod: 1, bien: 'WLM774', fin: 327, prima: 1_730_000, vlraseg: 44_000_000, nro: '3001-4411077-0', pagada: 0, estado: 'I' },
+    // Las más recientes (salen arriba en la lista): ramos variados, para que se vea que el sistema es para todos
+    { cli: 5, prod: 11, bien: 'BODEGA INDUSTRIAL ANILLO VIAL KM 4', fin: 351, prima: 2_870_000, vlraseg: 420_000_000, nro: '1002-91340-0' },
+    { cli: 4, prod: 8, bien: 'VIDA FAMILIAR - 4 ASEGURADOS', fin: 354, prima: 1_460_000, vlraseg: 200_000_000, nro: '330-1-0013421-0' },
+    { cli: 2, prod: 9, bien: 'RC EXTRACONTRACTUAL - OPERACION DE CARGA', fin: 356, prima: 4_300_000, vlraseg: 500_000_000, nro: '48-70-101004220-0' },
+    { cli: 8, prod: 7, bien: 'CASA CONJUNTO ALTOS DEL PARQUE - CASA 18', fin: 358, prima: 890_000, vlraseg: 240_000_000, nro: '1002-91388-0' },
+    { cli: 7, prod: 11, bien: 'SEDE CLINICA - EDIFICIO Y EQUIPOS MEDICOS', fin: 359, prima: 12_400_000, vlraseg: 2_800_000_000, nro: '1002-91401-0' },
+    { cli: 9, prod: 7, bien: 'SEDE EDUCATIVA CAMPESTRE', fin: 361, prima: 3_150_000, vlraseg: 900_000_000, nro: '1002-91455-0' },
+    { cli: 1, prod: 6, bien: 'CONTRATO DE CONSULTORIA No. 052 DE 2026', fin: 362, prima: 1_720_000, nro: '96-44-101186910-0' },
+    { cli: 6, prod: 10, bien: 'ACCIDENTES PERSONALES - DEPORTISTA', fin: 363, prima: 310_000, vlraseg: 80_000_000, nro: '400-37-994000023110-0' },
+    { cli: 12, prod: 7, bien: 'APARTAMENTO EDIFICIO MIRADOR - APTO 802', fin: 364, prima: 560_000, vlraseg: 170_000_000, nro: '1002-91502-0' },
+    { cli: 11, prod: 5, bien: 'CONTRATO DE SUMINISTRO No. 058 DE 2026', fin: 364, prima: 940_000, nro: '400-47-994000119004-0' },
   ]
 
   const polizas: Fila[] = specs.map((s, i) => {

@@ -127,9 +127,9 @@ async function funcion(nombre: string): Promise<unknown> {
     await pausa(2600)
     const h = hoy()
     return {
-      nro_poliza: '3001-4412099-0', nombre_cliente: 'María Fernanda Gómez Ruiz', doc_cliente: '63456789', nombre_asegurado: null, doc_asegurado: null, nombre_beneficiario: null, doc_beneficiario: null,
-      nombre_aseguradora: 'SURA', nombre_ramo: 'LIVIANOS', nombre_producto: 'AUTOMOVILES TODO RIESGO', fecha_inicio: iso(h), fecha_fin: iso(new Date(h.getFullYear() + 1, h.getMonth(), h.getDate() - 1)),
-      fecha_expedicion: iso(h), bien_asegurado: 'GHT581', prima: 2_380_000, valor_asegurado: 62_000_000, valor_poliza: 2_832_200,
+      nro_poliza: '400-47-994000118420-0', nombre_cliente: 'CONSTRUCTORA ANDES SAS', doc_cliente: '900456789-1', nombre_asegurado: null, doc_asegurado: null, nombre_beneficiario: null, doc_beneficiario: null,
+      nombre_aseguradora: 'SEGUROS DEL ESTADO', nombre_ramo: 'CUMPLIMIENTO', nombre_producto: 'CUMPLIMIENTO', fecha_inicio: iso(h), fecha_fin: iso(new Date(h.getFullYear() + 1, h.getMonth(), h.getDate() - 1)),
+      fecha_expedicion: iso(h), bien_asegurado: 'CONTRATO DE OBRA No. 027 DE 2026 - PAVIMENTACION VIA RURAL', prima: 3_150_000, valor_asegurado: 450_000_000, valor_poliza: 3_748_500,
     }
   }
   if (nombre === 'extraer-reporte-pago') {

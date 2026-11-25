@@ -15,11 +15,12 @@ function pdf(titulo, lineas) {
 
 export function crearPdfs(carpeta) {
   mkdirSync(carpeta, { recursive: true })
-  const poliza = join(carpeta, 'Poliza_SURA_Autos_Todo_Riesgo.pdf')
+  const poliza = join(carpeta, 'Poliza_Seguros_del_Estado_Cumplimiento.pdf')
   const reporte = join(carpeta, 'Reporte_Comisiones_SURA_Octubre.pdf')
-  writeFileSync(poliza, pdf('SURA - Póliza Autos Todo Riesgo', [
-    'Póliza No. 3001-4412099-0', 'Tomador: MARÍA FERNANDA GÓMEZ RUIZ   C.C. 63456789', 'Vehículo: Mazda 3 - Placa GHT581',
-    'Vigencia: un año desde la fecha de expedición', 'Prima: $ 2.380.000   Total: $ 2.832.200', 'Valor asegurado: $ 62.000.000',
+  writeFileSync(poliza, pdf('SEGUROS DEL ESTADO - Póliza de Cumplimiento', [
+    'Póliza No. 400-47-994000118420  Anexo 0', 'Tomador: CONSTRUCTORA ANDES SAS   NIT 900456789-1',
+    'Objeto: Contrato de obra No. 027 de 2026 - Pavimentación vía rural',
+    'Vigencia: un año desde la fecha de expedición', 'Prima: $ 3.150.000   Total: $ 3.748.500', 'Valor asegurado: $ 450.000.000',
   ]))
   writeFileSync(reporte, pdf('SURA - Reporte de comisiones', [
     'Intermediario: 31022 - AGENCIA DEMO ASESORES', 'Período: último mes', 'Pólizas con pago aplicado: 4',

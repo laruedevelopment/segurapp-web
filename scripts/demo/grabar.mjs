@@ -199,17 +199,26 @@ async function subirArchivo(texto, ruta) {
 }
 
 const guion = [
-  { narr: 'SegurApp es el sistema que organiza el trabajo diario de una agencia de seguros: pólizas, vencimientos, pagos de comisiones y reportes para la gerencia.',
+  { narr: 'SegurApp es el sistema que organiza el trabajo diario de una agencia de seguros, sea cual sea el ramo: cumplimiento, vida, hogar, responsabilidad civil, accidentes, pymes, vehículos y SOAT.',
     accion: async () => { await pausa(800) }, tarjeta: ['SegurApp', 'La gestión de su agencia de seguros, en un solo lugar', 'Demostración con datos ficticios'] },
   { narr: 'Al entrar, el panel de inicio muestra lo que necesita atención hoy: las pólizas por vencer, los casos por revisar y el acceso directo a cada módulo.',
     accion: async () => { await mover(enlace(/^Vencimientos/)); await pausa(900); await mover(enlace(/^Casos por revisar/).last()) } },
-  { narr: 'El módulo de pólizas reúne todo el portafolio. Se busca por cliente, documento, número, placa o aseguradora, y la lista responde al instante.',
-    accion: async () => { await ir('Pólizas'); await escribir(pagina.getByPlaceholder(/Buscar por código/), 'Barrera'); await pausa(1500); await pagina.getByPlaceholder(/Buscar por código/).fill(''); await pausa(500) } },
-  { narr: 'Cada póliza guarda al cliente, la vigencia, los valores y cómo se reparte la comisión entre los asesores.',
-    accion: async () => { await clic(pagina.getByText('WLM774').first()); await pagina.waitForLoadState('networkidle').catch(() => {}); await pausa(900); await desplazar(520); await pausa(600); await desplazar(520) } },
+  { narr: 'El módulo de pólizas reúne todo el portafolio, de cualquier ramo. Se busca por cliente, documento, número, placa, objeto del contrato o aseguradora, y la lista responde al instante.',
+    accion: async () => {
+      await ir('Pólizas')
+      const buscar = pagina.getByPlaceholder(/Buscar por código/)
+      await escribir(buscar, 'Constructora'); await pausa(1500)
+      await buscar.fill(''); await pausa(300)
+      await escribir(buscar, 'Hogar'); await pausa(1300)
+      await buscar.fill(''); await pausa(300)
+      await escribir(buscar, 'Colegio'); await pausa(1300)
+      await buscar.fill(''); await pausa(400)
+    } },
+  { narr: 'Cada póliza guarda al cliente, la vigencia, los valores y cómo se reparte la comisión entre los asesores. Aquí, una póliza de cumplimiento de un contrato de obra.',
+    accion: async () => { await escribir(pagina.getByPlaceholder(/Buscar por código/), 'CONTRATO DE OBRA No. 014'); await pausa(1200); await clic(pagina.getByText(/CONTRATO DE OBRA No/).first());await pagina.waitForLoadState('networkidle').catch(() => {}); await pausa(900); await desplazar(520); await pausa(600); await desplazar(520) } },
   { narr: 'Para registrar una póliza nueva basta con subir el documento. La inteligencia artificial lo lee y llena el formulario sola.',
     accion: async () => { await ir('Pólizas'); await clic(pagina.getByRole('button', { name: 'Nueva póliza' }).or(pagina.getByRole('link', { name: 'Nueva póliza' })).first()); await pausa(900); await subirArchivo(/Importar desde PDF/, poliza) } },
-  { narr: 'Reconoce al cliente, la aseguradora, el producto, las fechas, la placa del vehículo y los valores. La persona solo revisa y confirma.',
+  { narr: 'Reconoce al cliente, la aseguradora, el ramo y el producto, las fechas, el objeto asegurado, ya sea un contrato, un inmueble o la placa de un vehículo, y los valores. La persona solo revisa y confirma.',
     accion: async () => { await pausa(2800); await desplazar(430); await pausa(800); await desplazar(430) } },
   { narr: 'Se elige el asesor responsable y se guarda. El sistema le asigna su código, y la póliza queda disponible de inmediato en la lista, en los reportes y en el tablero.',
     accion: async () => {
@@ -238,7 +247,7 @@ const guion = [
     accion: async () => { await clic(pagina.getByRole('dialog').getByRole('button').last()); await pausa(1800); await desplazar(560); await pausa(900) } },
   { narr: 'Con los reportes se genera la cuenta de cobro a la aseguradora, con IVA y retenciones, lista para descargar en PDF.',
     accion: async () => { await ir('Facturas'); await pausa(900); await clic(pagina.getByText(/2-274\d/).first()); await pagina.waitForLoadState('networkidle').catch(() => {}); await pausa(900); await mover(boton(/Cuenta de cobro/).or(pagina.getByText(/Cuenta de cobro \(PDF\)/)).first()); await pausa(1500) } },
-  { narr: 'El control de vencimientos usa un semáforo. Muestra a quién llamar primero, con su teléfono y su WhatsApp, y permite marcar en qué va cada renovación.',
+  { narr: 'El control de vencimientos usa un semáforo y sirve para todos los ramos: un cumplimiento, una póliza de hogar o las de un colegio. Muestra a quién llamar primero, con su teléfono y su WhatsApp, y permite marcar en qué va cada renovación.',
     accion: async () => {
       await ir('Inicio'); await pausa(500)
       await clic(enlace(/^Vencimientos/).first()); await pagina.waitForLoadState('networkidle').catch(() => {}); await pausa(1200)
@@ -246,10 +255,17 @@ const guion = [
       await intentar('estado', async () => { await pagina.locator('select').nth(1).selectOption({ label: 'Contactado' }); await pausa(900) })
       await clic(boton(/urgentes/).first()); await pausa(400)
     } },
-  { narr: 'Para los vehículos, el sistema vigila el SOAT por placa: quién no lo tiene, a quién se le venció, y con un clic prepara el registro del nuevo.',
+  { narr: 'Y para quienes tienen vehículos, el sistema vigila además el SOAT por placa: quién no lo tiene, a quién se le venció, y con un clic prepara el registro del nuevo.',
     accion: async () => { await ir('Inicio'); await pausa(400); await clic(enlace(/SOAT de los vehículos/).first()); await pagina.waitForLoadState('networkidle').catch(() => {}); await pausa(1500); await mover(enlace(/Registrar SOAT/).first()); await pausa(1200) } },
-  { narr: 'Para la gerencia, el tablero reúne la producción por aseguradora, ramo, producto, asesor o cliente, con filtros de fechas como en una hoja de análisis.',
-    accion: async () => { await ir(/^Tablero gerencial/); await pausa(1800); await clic(pagina.getByRole('tab', { name: 'Producción' })); await pausa(1200); await clic(pagina.getByRole('button', { name: 'Asesor', exact: true })); await pausa(1500); await desplazar(360); await pausa(600) } },
+  { narr: 'Para la gerencia, el tablero reúne la producción por ramo, aseguradora, producto, asesor o cliente, con filtros de fechas como en una hoja de análisis. Se ve de un vistazo qué ramos pesan más en la agencia.',
+    accion: async () => {
+      await ir(/^Tablero gerencial/); await pausa(1800)
+      await clic(pagina.getByRole('tab', { name: 'Producción' })); await pausa(1200)
+      await intentar('ramo', async () => { await clic(pagina.getByRole('button', { name: 'Ramo', exact: true })); await pausa(2200) })
+      await desplazar(360); await pausa(500)
+      await pagina.mouse.wheel(0, -2000); await pausa(300)
+      await clic(pagina.getByRole('button', { name: 'Asesor', exact: true })); await pausa(1500)
+    } },
   { narr: 'También muestra los vencimientos y la tasa de renovación, la cartera por recaudar y la comisión recibida de cada aseguradora.',
     accion: async () => { await pagina.mouse.wheel(0, -2000); await clic(pagina.getByRole('tab', { name: 'Renovaciones' })); await pausa(1800); await clic(pagina.getByRole('tab', { name: 'Cartera y comisiones' })); await pausa(1800); await desplazar(420); await pausa(600) } },
   { narr: 'Y compara el avance contra las metas del año, por agencia y por asesor.',
@@ -260,7 +276,7 @@ const guion = [
     accion: async () => { await ir(/^Casos por revisar/); await pausa(2500) } },
   { narr: 'Y el administrador ve cuánto se lee con inteligencia artificial y cuánto cuesta, por día y por mes, para tener el gasto bajo control.',
     accion: async () => { await ir('Consumo de IA'); await pausa(2800) } },
-  { narr: 'Menos digitación, más control sobre la agencia. Los datos que vio en este video son ficticios.',
+  { narr: 'Para todos los ramos y todos los clientes: menos digitación, más control sobre la agencia. Los datos que vio en este video son ficticios.',
     accion: async () => { await pausa(600) }, tarjeta: ['SegurApp', 'Menos digitación, más control', 'Todos los datos de esta demostración son ficticios'], final: true },
 ]
 
