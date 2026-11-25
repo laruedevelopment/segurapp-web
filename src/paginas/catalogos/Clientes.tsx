@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertCircle, CopyCheck, Download, FileText } from 'lucide-react'
+import { AlertCircle, CopyCheck, Download, FileText, UserRound } from 'lucide-react'
+import { ES_PRUEBAS } from '@/lib/supabase'
 import { Aviso } from '@/components/ui/basicos'
 import { Boton } from '@/components/ui/button'
 import type { Columna } from '@/components/ui/tabla'
@@ -91,9 +92,14 @@ export default function Clientes() {
     {
       id: 'acciones',
       titulo: '',
-      ancho: 120,
+      ancho: ES_PRUEBAS ? 150 : 120,
       celda: (c) => (
         <AccionesFila onEditar={() => editor.editar(c)} onEliminar={() => void borrar(c)}>
+          {ES_PRUEBAS && (
+            <Link to={`/clientes/${c.id}`} title="Ficha 360° del cliente" className="rounded-lg p-2 text-ink-soft hover:bg-muted hover:text-green">
+              <UserRound className="size-4" />
+            </Link>
+          )}
           <Link
             to={`/catalogos/clientes/${c.id}/polizas`}
             title="Ver pólizas"
