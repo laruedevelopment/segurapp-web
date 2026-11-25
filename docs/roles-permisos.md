@@ -81,3 +81,12 @@ Ocultar una pantalla no es seguridad; la protege la base. Por eso:
 4. ~~¿Las notas de gestión las ve el digitador?~~ **Decidido: sí** (permiso `notas.ver` sembrado para A, S y D).
 
 Decididas por Javier: cada asesor ve solo sus clientes salvo roles con alcance mayor (admin, gerente); asignar tareas lo hace el administrador u otro rol con jerarquía; los roles y permisos deben ser parametrizables.
+
+## 7. Cómo quedó construido (migración `20261126090000_crm_roles_actividades.sql`)
+Cambia respecto a la sección 2, para no tocar nada de lo actual:
+- **No hay `rol_base` ni se cambia `usuarios`.** El rol A/S/D sigue gobernando la seguridad de hoy; el perfil del CRM va en la tabla aparte `usuario_perfiles(usuario_id, rol, jefe_id)`, que solo se escribe con `crm_asignar_perfil`.
+- El vínculo usuario → asesor ya existe (`usuarios.asesor_id`), así que la pregunta 2 queda resuelta.
+- Roles sembrados: ADMIN, GERENTE, COORDINADOR, SUPERVISOR, DIGITADOR y ASESOR. Quien no tenga perfil asignado queda como hoy (A→ADMIN, S→SUPERVISOR, D→DIGITADOR) y **ve todos** los clientes. La restricción "solo los suyos" empieza al asignar ASESOR o COORDINADOR.
+- Un cliente sin asesor lo ve solo quien tiene `clientes.ver_todos`.
+- Prueba: `supabase/tests/crm/run.mjs` (27 comprobaciones).
+- Falta: pantalla para editar roles y permisos, y las pantallas de actividades.
