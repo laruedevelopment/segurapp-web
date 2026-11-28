@@ -329,7 +329,7 @@ const conVoz = !SIN_VOZ
 if (conVoz) for (const m of marcas) args.push('-i', m.ruta)
 if (conVoz) {
   const filtros = marcas.map((m, i) => `[${i + 1}:a]adelay=${Math.max(0, Math.round((m.inicio - corte) * 1000))}:all=1[a${i}]`)
-  args.push('-filter_complex', `${filtros.join(';')};${marcas.map((_, i) => `[a${i}]`).join('')}amix=inputs=${marcas.length}:normalize=0:dropout_transition=0[aout]`, '-map', '0:v', '-map', '[aout]')
+  args.push('-filter_complex', `${filtros.join(';')};${marcas.map((_, i) => `[a${i}]`).join('')}amix=inputs=${marcas.length}:normalize=0:dropout_transition=0,loudnorm=I=-17:TP=-1.5:LRA=11[aout]`, '-map', '0:v', '-map', '[aout]')
 } else args.push('-map', '0:v')
 args.push('-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-pix_fmt', 'yuv420p', '-r', '25')
 if (conVoz) args.push('-c:a', 'aac', '-b:a', '160k', '-ar', '44100', '-shortest')
