@@ -99,7 +99,7 @@ export function crearTablas(hoy: Date): Tablas {
     { cli: 6, prod: 2, bien: 'DSR643', fin: 241, prima: 1_320_000, vlraseg: 39_000_000, nro: '48-40-101098765-0' },
     { cli: 8, prod: 1, bien: 'NQS607', fin: 29, prima: 2_870_000, vlraseg: 71_000_000, nro: '3001-4410552-0' },
     { cli: 10, prod: 1, bien: 'TUV482', fin: 12, prima: 1_640_000, vlraseg: 42_000_000, nro: '3001-4410611-0' },
-    { cli: 12, prod: 2, bien: 'HJK914', fin: 5, prima: 1_150_000, vlraseg: 33_000_000, nro: '48-40-101099410-0', pagada: 0, estado: 'I' },
+    { cli: 12, prod: 2, bien: 'HJK914', fin: 44, prima: 1_150_000, vlraseg: 33_000_000, nro: '48-40-101099410-0', pagada: 0, estado: 'I' },
     { cli: 2, prod: 3, bien: 'SWZ911', fin: 21, prima: 5_900_000, vlraseg: 210_000_000, nro: '77-120-300012-0' },
     { cli: 2, prod: 3, bien: 'TRK205', fin: 150, prima: 6_400_000, vlraseg: 235_000_000, nro: '77-120-300013-0' },
     { cli: 1, prod: 3, bien: 'SXM330', fin: 190, prima: 7_250_000, vlraseg: 280_000_000, nro: '77-120-300147-0' },
@@ -157,6 +157,9 @@ export function crearTablas(hoy: Date): Tablas {
     { cli: 6, prod: 10, bien: 'ACCIDENTES PERSONALES - DEPORTISTA', fin: 363, prima: 310_000, vlraseg: 80_000_000, nro: '400-37-994000023110-0' },
     { cli: 12, prod: 7, bien: 'APARTAMENTO EDIFICIO MIRADOR - APTO 802', fin: 364, prima: 560_000, vlraseg: 170_000_000, nro: '1002-91502-0' },
     { cli: 11, prod: 5, bien: 'CONTRATO DE SUMINISTRO No. 058 DE 2026', fin: 364, prima: 940_000, nro: '400-47-994000119004-0' },
+    // Lo más urgente por renovar también es de otros ramos
+    { cli: 5, prod: 8, bien: 'GRUPO DE 30 EMPLEADOS', fin: 2, prima: 4_200_000, nro: '330-1-0012980-0' },
+    { cli: 6, prod: 7, bien: 'APARTAMENTO EDIFICIO LOS CEDROS - APTO 401', fin: 4, prima: 610_000, vlraseg: 160_000_000, nro: '1002-89215-0' },
   ]
 
   const polizas: Fila[] = specs.map((s, i) => {
